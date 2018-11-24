@@ -1,2 +1,2 @@
 # doxygeneditor
-A simple C# based editor for Doxygen Documentation files
+A simple C#/Scintilla based editor for Doxygen Documentation files
