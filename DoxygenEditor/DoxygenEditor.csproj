@@ -11,25 +11,51 @@
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\build\DoxygenEditor\x64-Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\build\DoxygenEditor\x64-Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\build\x64-Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>..\build\x64-Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>doxygeneditor.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ScintillaNET, Version=3.6.3.0, Culture=neutral, processorArchitecture=MSIL">
@@ -48,18 +74,76 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DoxygenLexer.cs" />
-    <Compile Include="DoxygenParser.cs" />
-    <Compile Include="MainForm.cs">
+    <Compile Include="Controls\ISearchReplaceControl.cs" />
+    <Compile Include="Controls\SearchReplaceControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SearchReplaceControl.Designer.cs">
+      <DependentUpon>SearchReplaceControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Editor\IFileHandler.cs" />
+    <Compile Include="Editor\ScintillaEditor.cs" />
+    <Compile Include="Editor\IEditor.cs" />
+    <Compile Include="Editor\IFileActions.cs" />
+    <Compile Include="Lexer\IDoxygenLexer.cs" />
+    <Compile Include="MVVM\CommandUtils.cs" />
+    <Compile Include="MVVM\DelegateCommand.cs" />
+    <Compile Include="MVVM\PropertyManager.cs" />
+    <Compile Include="Parser\Entities\Entity.cs" />
+    <Compile Include="Parser\Entities\PageEntity.cs" />
+    <Compile Include="Parser\Entities\RootEntity.cs" />
+    <Compile Include="Parser\Entities\SectionEntity.cs" />
+    <Compile Include="Parser\Entities\SubSectionEntity.cs" />
+    <Compile Include="Parser\IDoxygenParser.cs" />
+    <Compile Include="Parser\LineState.cs" />
+    <Compile Include="Parser\ParseMessage.cs" />
+    <Compile Include="Parser\ParseState.cs" />
+    <Compile Include="Parser\SequenceInfo.cs" />
+    <Compile Include="Utils\ReflectionUtils.cs" />
+    <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="Services\IDialogService.cs" />
+    <Compile Include="Services\WinFormsDialogService.cs" />
+    <Compile Include="MVVM\DefaultIOCContainer.cs" />
+    <Compile Include="Lexer\DoxygenLexer.cs" />
+    <Compile Include="Parser\DoxygenParser.cs" />
+    <Compile Include="Editor\FileHandler.cs" />
+    <Compile Include="Services\IMessageBoxService.cs" />
+    <Compile Include="ViewModels\SearchReplaceViewModel.cs" />
+    <Compile Include="ViewModels\SymbolSearchResultItemViewModel.cs" />
+    <Compile Include="ViewModels\SymbolSearchViewModel.cs" />
+    <Compile Include="Models\TypeStringModel.cs" />
+    <Compile Include="Views\AboutForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
+    <Compile Include="Views\AboutForm.Designer.cs">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Views\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UIExtensions.cs" />
-    <EmbeddedResource Include="MainForm.resx">
+    <Compile Include="MVVM\BindableBase.cs" />
+    <Compile Include="MVVM\IOCContainer.cs" />
+    <Compile Include="Extensions\UIExtensions.cs" />
+    <Compile Include="Services\WinFormsMessageBoxService.cs" />
+    <Compile Include="MVVM\ViewModelBase.cs" />
+    <Compile Include="Views\SymbolSearchForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\SymbolSearchForm.Designer.cs">
+      <DependentUpon>SymbolSearchForm.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="Controls\SearchReplaceControl.resx">
+      <DependentUpon>SearchReplaceControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\AboutForm.resx">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -71,7 +155,11 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="Views\SymbolSearchForm.resx">
+      <DependentUpon>SymbolSearchForm.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -84,7 +172,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="doxygeneditor.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
