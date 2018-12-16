@@ -144,7 +144,7 @@ namespace DoxygenEditor.Lexer
         }
 
         private readonly static string BLANKS = "(?:(?!\\n)\\s+)";
-        private readonly static string IDENTIFIER = "\\w";
+        private readonly static string IDENTIFIER = "[\\w\\.\\-]";
 
         private readonly Regex _rexDoxyMultiLineComment = new Regex("\\/\\*\\!(.*?)\\*\\/", RegexOptions.Singleline | RegexOptions.Compiled);
         private readonly Regex _rexDoxySingleLineComment = new Regex("\\/\\/([^\n]+)?", RegexOptions.Singleline | RegexOptions.Compiled);
@@ -456,9 +456,10 @@ namespace DoxygenEditor.Lexer
                     commandGroup.Ranges[6].PushStyle(commands, DoxyStyle.DoxyCommandIdentifier);
                     commandGroup.Ranges[7].PushStyle(commands, DoxyStyle.DoxyCodeType);
                 }
-                else if (commandName.StartsWith("@note") || commandName.StartsWith("@warning"))
+                else if (commandName.StartsWith("@note") || commandName.StartsWith("@warning") || commandName.StartsWith("@attention") || commandName.StartsWith("@headerfile"))
                 {
                     commandGroup.Ranges[9].PushStyle(commands, DoxyStyle.DoxyCommandIdentifier);
+                    commandGroup.Ranges[10].PushStyle(commands, DoxyStyle.DoxyCommandCaption);
                 }
                 else
                 {

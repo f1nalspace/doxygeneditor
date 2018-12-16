@@ -8,6 +8,8 @@ namespace DoxygenEditor.Parser.Entities
         private readonly List<Entity> _children = new List<Entity>();
         public IEnumerable<Entity> Children { get { return _children; } }
         public SequenceInfo LineInfo { get; }
+        public abstract string DisplayName { get; }
+
         public Entity(SequenceInfo lineInfo)
         {
             LineInfo = lineInfo;
@@ -17,6 +19,12 @@ namespace DoxygenEditor.Parser.Entities
         {
             child.Parent = this;
             _children.Add(child);
+        }
+        public void Clear()
+        {
+            foreach (var child in _children)
+                child.Clear();
+            _children.Clear();
         }
     }
 }

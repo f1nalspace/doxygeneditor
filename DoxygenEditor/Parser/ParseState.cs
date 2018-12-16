@@ -16,6 +16,8 @@ namespace DoxygenEditor.Parser
 
         private readonly List<ParseMessage> _messages = new List<ParseMessage>();
         public IEnumerable<ParseMessage> Messages { get { return _messages; } }
+        private readonly List<string> _headerFiles = new List<string>();
+        public IEnumerable<string> HeaderFiles { get { return _headerFiles; } }
 
         private readonly Stopwatch _watch;
         private TimeSpan _duration = new TimeSpan();
@@ -23,6 +25,8 @@ namespace DoxygenEditor.Parser
         {
             get { return _duration; }
         }
+
+        public GroupEntity CurrentGroup { get; set; }
 
         public ParseState(string sourceText)
         {
@@ -104,7 +108,7 @@ namespace DoxygenEditor.Parser
                 throw new InvalidOperationException("All lines are already consumed!");
         }
 
-        public LineState GetCurrentLine()
+        public LineState CreateLineState()
         {
             if (LinePos < LineCount)
             {
@@ -120,6 +124,11 @@ namespace DoxygenEditor.Parser
         public void AddMessage(ParseMessage.MessageType type, SequenceInfo lineInfo, string text)
         {
             _messages.Add(new ParseMessage(type, text, lineInfo));
+        }
+        
+        public void AddHeaderFile(string headerFile)
+        {
+            _headerFiles.Add(headerFile);
         }
     }
 }

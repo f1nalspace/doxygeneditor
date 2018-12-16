@@ -11,6 +11,8 @@ using DoxygenEditor.Utils;
 using System.Diagnostics;
 using System.Reflection;
 using DoxygenEditor.Editor;
+using DoxygenEditor.Models;
+using System.Collections.Generic;
 
 namespace DoxygenEditor.ViewModels
 {
@@ -20,6 +22,9 @@ namespace DoxygenEditor.ViewModels
         private readonly BackgroundWorker _parseWorker;
         private readonly IDoxygenParser _parser;
         private ParseState _parseState;
+        public ConfigurationModel Configuration { get; }
+        private readonly List<LogItemModel> _logItems = new List<LogItemModel>();
+        public IEnumerable<LogItemModel> LogItems { get { return _logItems; } }
 
         public ParseState ParseState
         {
@@ -65,10 +70,14 @@ namespace DoxygenEditor.ViewModels
         public delegate void UpdateTreeEventHandler(object sender, ParseState parseState);
         public event UpdateTreeEventHandler UpdateTree;
 
+        public delegate void ConfigurationChangedEventHandler(object sender, ConfigurationModel config);
+        public event ConfigurationChangedEventHandler ConfigurationChanged;
+
         public DelegateCommand<object> NewFileCommand { get; }
         public DelegateCommand<string> OpenFileCommand { get; }
         public DelegateCommand<object> SaveFileCommand { get; }
         public DelegateCommand<object> SaveFileAsCommand { get; }
+        public DelegateCommand<object> ReloadFileCommand { get; }
 
         public DelegateCommand<object> UndoCommand { get; }
         public DelegateCommand<object> RedoCommand { get; }
@@ -109,6 +118,7 @@ namespace DoxygenEditor.ViewModels
             OpenFileCommand.RaiseCanExecuteChanged();
             SaveFileCommand.RaiseCanExecuteChanged();
             SaveFileAsCommand.RaiseCanExecuteChanged();
+            ReloadFileCommand.RaiseCanExecuteChanged();
         }
         private void UpdateUndoCommands()
         {
@@ -124,6 +134,12 @@ namespace DoxygenEditor.ViewModels
 
         public MainViewModel()
         {
+            Configuration = new ConfigurationModel();
+            Configuration.PropertyChanged += (s, e) =>
+            {
+                ConfigurationChanged?.Invoke(this, Configuration);
+            };
+
             FileHandler = new FileHandler(this, "Doxygen files|*.docs", ".docs");
             FileHandler.PropertyChanged += (s, e) =>
             {
@@ -135,7 +151,6 @@ namespace DoxygenEditor.ViewModels
                     UpdateCutCommands();
                 }
             };
-            // @TODO(final): Control should not instaniated here, not MVVM conform!
             _editor = new ScintillaEditor(FileHandler, this);
             _editor.DelayedTextChanged += (s, text) =>
             {
@@ -161,9 +176,11 @@ namespace DoxygenEditor.ViewModels
 
             NewFileCommand = new DelegateCommand<object>((e) => {
                 FileHandler.New();
+                Configuration.LastOpenFilePath = null;
             });
             OpenFileCommand = new DelegateCommand<string>((filePath) => {
-                FileHandler.Open(filePath);
+                if (FileHandler.Open(filePath))
+                    Configuration.PushRecentFiles(filePath);
             });
             SaveFileCommand = new DelegateCommand<object>((e) => {
                 FileHandler.SaveWithConfirmation();
@@ -171,6 +188,9 @@ namespace DoxygenEditor.ViewModels
             SaveFileAsCommand = new DelegateCommand<object>((e) => {
                 FileHandler.SaveAs();
             });
+            ReloadFileCommand = new DelegateCommand<object>((e) => {
+                FileHandler.Open(FileHandler.FilePath);
+            }, (e) => !string.IsNullOrEmpty(FileHandler.FilePath));
 
             GoToLineCommand = new DelegateCommand<int>((lineIndex) => {
                 _editor.GoToLine(lineIndex);
@@ -213,23 +233,62 @@ namespace DoxygenEditor.ViewModels
 
             ViewWhitespacesCommand = new DelegateCommand<bool>((e) => {
                 _editor.SetShowWhitespaces(e);
+                Configuration.IsWhitespaceVisible = e;
             });
         }
 
         public override void ViewLoaded(object view) {
             FileHandler.New();
+            Configuration.Load();
             InsertEditorControl?.Invoke(this, _editor.GetControl());
             string[] args = Environment.GetCommandLineArgs();
             if (args.Length == 2)
                 FileHandler.Open(args[1]);
+            else if (!string.IsNullOrEmpty(Configuration.LastOpenFilePath))
+                FileHandler.Open(Configuration.LastOpenFilePath);
+            _editor.SetShowWhitespaces(Configuration.IsWhitespaceVisible);
+        }
+
+        public override void ViewClosed(object view)
+        {
+            Configuration.Save();
         }
 
         private void _parseWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            //
+            // Parse
+            //
             LastParsedState = "Parsing text...";
             string text = (string)e.Argument;
-            ParseState state = _parser.Parse(text);
-            e.Result = state;
+            ParseState textParseState = _parser.Parse(text);
+
+            //
+            // Validate
+            //
+            _logItems.Clear();
+            string filePath = FileHandler.FilePath;
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                string path = Path.GetDirectoryName(filePath);
+                foreach (var headerFile in textParseState.HeaderFiles)
+                {
+                    string headerFilePath = Path.Combine(path, headerFile);
+                    if (!File.Exists(headerFilePath))
+                        _logItems.Add(new LogItemModel(LogItemModel.IconType.Error, $"Header file '{headerFilePath}' could not be found!", "Root", new SequenceInfo()));
+                    else
+                    {
+                        string headerSource = File.ReadAllText(headerFilePath);
+                        ParseState headerParseState = _parser.Parse(headerSource);
+                        foreach (var entity in headerParseState.RootEntity.Children)
+                        {
+
+                        }
+                    }
+                }
+            }
+
+            e.Result = textParseState;
         }
 
         private void _parseWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -240,6 +299,8 @@ namespace DoxygenEditor.ViewModels
                 LastParsedState = $"Successfully parsed text in {_parseState.Duration.TotalMilliseconds,0:F3} ms";
             else
                 LastParsedState = $"Failed parsing text: {e.Error}";
+
+            RaisePropertyChanged(() => LogItems);
         }
 
         public void FileNew()
@@ -254,6 +315,7 @@ namespace DoxygenEditor.ViewModels
             string text = File.ReadAllText(filePath);
             _editor.SetText(text);
             LastStatus = $"Loaded file '{filename}'";
+            Configuration.LastOpenFilePath = filePath;
         }
         public void FileSave(string filePath)
         {
@@ -273,6 +335,8 @@ namespace DoxygenEditor.ViewModels
                 writer.Flush();
             }
             LastStatus = $"Saved file '{Path.GetFileName(filePath)}'";
+            Configuration.PushRecentFiles(filePath);
+            Configuration.LastOpenFilePath = filePath;
         }
     }
 }

@@ -1,168 +1,342 @@
-﻿using DoxygenEditor.Editor;
-using DoxygenEditor.MVVM;
-using DoxygenEditor.Parser;
-using DoxygenEditor.Parser.Entities;
-using DoxygenEditor.Utils;
-using DoxygenEditor.ViewModels;
-using System;
-using System.Data;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace DoxygenEditor.Views
 {
     public partial class MainForm : Form
     {
-        private readonly MainViewModel _viewModel;
+        class TabEditorState
+        {
+            public TabPage Tab { get; }
+            public ScintillaNET.Scintilla Editor { get; }
+            public string FilePath { get; set; }
+            public string Name { get; set; }
+            public bool IsChanged { get; set; }
+            public Encoding FileEncoding { get; set; }
+            public int MaxLineNumberCharLength { get; set; }
+
+            public TabEditorState(TabPage tab, ScintillaNET.Scintilla editor)
+            {
+                Tab = tab;
+                Editor = editor;
+                FilePath = null;
+                Name = null;
+                IsChanged = false;
+                FileEncoding = Encoding.UTF8;
+                MaxLineNumberCharLength = 0;
+            }
+        }
 
         public MainForm()
         {
             InitializeComponent();
 
-            _viewModel = new MainViewModel();
-            _viewModel.InsertEditorControl += _viewModel_InsertEditorControl;
-            _viewModel.UpdateTree += _viewModel_UpdateTree;
-            _viewModel.PropertyChanged += (s, e) =>
-            {
-                if (ReflectionUtils.GetMemberName((MainViewModel v) => v.IsChanged).Equals(e.PropertyName) || ReflectionUtils.GetMemberName((MainViewModel v) => v.FilePath).Equals(e.PropertyName))
-                    UpdateFileState(_viewModel.FileHandler);
-                else if (ReflectionUtils.GetMemberName((MainViewModel v) => v.LastStatus).Equals(e.PropertyName) || ReflectionUtils.GetMemberName((MainViewModel v) => v.LastParsedState).Equals(e.PropertyName) || ReflectionUtils.GetMemberName((MainViewModel v) => v.LastLexedState).Equals(e.PropertyName))
-                    UpdateStatus(_viewModel.LastStatus, _viewModel.LastParsedState, _viewModel.LastLexedState);
-            };
-
-            // File menu
-            CommandUtils.BindClickCommand(menuItemFileNew, _viewModel.NewFileCommand);
-            CommandUtils.BindClickCommand(menuItemFileOpen, _viewModel.OpenFileCommand);
-            CommandUtils.BindClickCommand(menuItemFileSave, _viewModel.SaveFileCommand);
-            CommandUtils.BindClickCommand(menuItemFileSaveAs, _viewModel.SaveFileAsCommand);
-
-            // Edit menu
-            CommandUtils.BindClickCommand(menuItemEditUndo, _viewModel.UndoCommand);
-            CommandUtils.BindClickCommand(menuItemEditRedo, _viewModel.RedoCommand);
-
-            CommandUtils.BindClickCommand(menuItemEditCut, _viewModel.CutCommand);
-            CommandUtils.BindClickCommand(menuItemEditCopy, _viewModel.CopyCommand);
-            CommandUtils.BindClickCommand(menuItemEditPaste, _viewModel.PasteCommand);
-
-            CommandUtils.BindClickCommand(menuItemEditSelectAll, _viewModel.SelectAllCommand);
-
-            CommandUtils.BindClickCommand(menuItemEditFindReplaceQuickSearch, _viewModel.QuickSearchCommand);
-            CommandUtils.BindClickCommand(menuItemEditFindReplaceQuickReplace, _viewModel.QuickReplaceCommand);
-
-            CommandUtils.BindClickCommand(menuItemEditUndo, _viewModel.UndoCommand);
-            CommandUtils.BindClickCommand(menuItemEditRedo, _viewModel.RedoCommand);
-
-            // View menu
-            CommandUtils.BindCheckCommand(menuItemViewShowWhitespaces, _viewModel.ViewWhitespacesCommand);
-
-            // Tool buttons
-            CommandUtils.BindClickCommand(toolButtonFileNew, _viewModel.NewFileCommand);
-            CommandUtils.BindClickCommand(toolButtonFileOpen, _viewModel.OpenFileCommand);
-            CommandUtils.BindClickCommand(toolButtonFileSave, _viewModel.SaveFileCommand);
-            CommandUtils.BindClickCommand(toolButtonFileSaveAs, _viewModel.SaveFileAsCommand);
-            CommandUtils.BindClickCommand(toolButtonEditUndo, _viewModel.UndoCommand);
-            CommandUtils.BindClickCommand(toolButtonEditRedo, _viewModel.RedoCommand);
         }
 
-        private void _viewModel_UpdateTree(object sender, ParseState parseState)
+        private readonly Regex _rexIndexFromName = new Regex("(?<index>[0-9]+)$", RegexOptions.Compiled);
+        private string GetNextName(string prefix)
         {
-            tvTree.BeginUpdate();
-            tvTree.Nodes.Clear();
-            if (parseState != null)
+            int highIndex = 0;
+            foreach (TabPage tab in tcFiles.TabPages)
             {
-                // Pages
-                foreach (PageEntity pageEntity in parseState.RootEntity.Children.Where(p => typeof(PageEntity).IsInstanceOfType(p)))
+                TabEditorState tabState = (TabEditorState)tab.Tag;
+                if (tabState.FilePath == null)
                 {
-                    string pageCaption = !string.IsNullOrEmpty(pageEntity.PageCaption) ? pageEntity.PageCaption : pageEntity.PageId;
-                    TreeNode pageNode = tvTree.Nodes.Add(pageEntity.PageId, pageCaption);
-                    pageNode.Tag = pageEntity;
-
-                    // Sections
-                    foreach (SectionEntity sectionEntity in pageEntity.Children.Where(p => typeof(SectionEntity).Equals(p.GetType())))
+                    string name = tabState.Name;
+                    Match m = _rexIndexFromName.Match(name);
+                    if (m.Success)
                     {
-                        string sectionCaption = !string.IsNullOrEmpty(sectionEntity.SectionCaption) ? sectionEntity.SectionCaption : sectionEntity.SectionId;
-                        TreeNode sectionNode = pageNode.Nodes.Add(sectionEntity.SectionId, sectionCaption);
-                        sectionNode.Tag = sectionEntity;
-
-                        // Subsections
-                        foreach (SubSectionEntity subSectionEntity in sectionEntity.Children.Where(p => typeof(SubSectionEntity).Equals(p.GetType())))
-                        {
-                            string subSectionCaption = !string.IsNullOrEmpty(subSectionEntity.SectionCaption) ? subSectionEntity.SectionCaption : subSectionEntity.SectionId;
-                            TreeNode subSectionNode = sectionNode.Nodes.Add(subSectionEntity.SectionId, subSectionCaption);
-                            subSectionNode.Tag = subSectionEntity;
-                        }
+                        int testIndex = int.Parse(m.Groups["index"].Value);
+                        if (testIndex > highIndex)
+                            highIndex = testIndex;
                     }
                 }
             }
-            tvTree.EndUpdate();
+            string result = $"{prefix}{highIndex + 1}";
+            return (result);
         }
 
-        private void _viewModel_InsertEditorControl(object sender, Control control)
+        private void SetupEditor(ScintillaNET.Scintilla editor)
         {
-            splitContainer1.Panel2.Controls.Add(control);
-            control.Dock = DockStyle.Fill;
-        }
+            editor.WrapMode = ScintillaNET.WrapMode.None;
+            editor.IndentationGuides = ScintillaNET.IndentView.LookBoth;
+            editor.CaretLineVisible = true;
+            editor.CaretLineBackColorAlpha = 50;
+            editor.CaretLineBackColor = Color.CornflowerBlue;
+            editor.TabWidth = editor.IndentWidth = 4;
+            editor.Margins[0].Width = 16;
+            editor.ViewWhitespace = ScintillaNET.WhitespaceMode.Invisible;
+            editor.UseTabs = true;
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            menuItemViewShowWhitespaces.PerformClick();
-            _viewModel.ViewLoaded(this);
-        }
+            Font editorFont = new Font(FontFamily.GenericMonospace, 14.0f, FontStyle.Regular);
+            editor.StyleResetDefault();
+            editor.Styles[ScintillaNET.Style.Default].Font = editorFont.Name;
+            editor.Styles[ScintillaNET.Style.Default].Size = (int)editorFont.SizeInPoints;
+            editor.StyleClearAll();
 
-        private void UpdateStatus(string lastStatus, string parsedState, string lexedState)
-        {
-            if (InvokeRequired)
-                this.Invoke(new Action(() => UpdateStatus(lastStatus, parsedState, lexedState)));
-            else
+            editor.TextChanged += (s, e) =>
             {
-                lastStatusLabel.Text = lastStatus;
-                lastParsedLabel.Text = parsedState;
-                lastLexedLabel.Text = lexedState;
+                ScintillaNET.Scintilla thisEditor = (ScintillaNET.Scintilla)s;
+                TabEditorState tabState = (TabEditorState)thisEditor.Parent.Tag;
+
+                // Autofit left-margin to fit-in line count number
+                int maxLineNumberCharLength = thisEditor.Lines.Count.ToString().Length;
+                if (maxLineNumberCharLength != tabState.MaxLineNumberCharLength)
+                {
+                    thisEditor.Margins[0].Width = thisEditor.TextWidth(ScintillaNET.Style.LineNumber, new string('9', maxLineNumberCharLength + 1));
+                    tabState.MaxLineNumberCharLength = maxLineNumberCharLength;
+                }
+
+                tabState.IsChanged = true;
+                UpdateTabState(tabState);
+            };
+        }
+
+        private TabEditorState AddFileTab(string name)
+        {
+            ScintillaNET.Scintilla editor = new ScintillaNET.Scintilla()
+            {
+                Dock = DockStyle.Fill,
+            };
+            SetupEditor(editor);
+            TabPage newTab = new TabPage() { Text = name };
+            TabEditorState newState = new TabEditorState(newTab, editor) { Name = name };
+            newTab.Tag = newState;
+            newTab.Controls.Add(editor);
+            tcFiles.TabPages.Add(newTab);
+            return (newState);
+        }
+
+        private void MenuActionFileNew(object sender, EventArgs e)
+        {
+            string name = GetNextName("File");
+            TabEditorState newState = AddFileTab(name);
+            tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(newState.Tab);
+            if (newState.Editor.CanFocus) newState.Editor.Focus();
+            UpdateTabState(newState);
+        }
+
+        private void MenuActionFileOpen(object sender, EventArgs e)
+        {
+            if (dlgOpenFile.ShowDialog() == DialogResult.OK)
+            {
+                string filePath = dlgOpenFile.FileName;
+                TabEditorState newState = AddFileTab(Path.GetFileName(filePath));
+                tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(newState.Tab);
+                if (!OpenFile(newState, filePath))
+                {
+                    // @TODO(final): Handle error when file could not be opened
+                    tcFiles.TabPages.Remove(newState.Tab);
+                }
+                else
+                {
+                    if (newState.Editor.CanFocus) newState.Editor.Focus();
+                }
             }
         }
 
-        private void UpdateFileState(IFileHandler fileHandler)
+        private bool OpenFile(TabEditorState tabState, string filePath)
         {
-            if (InvokeRequired)
-                this.Invoke(new Action(() => UpdateFileState(fileHandler)));
+            try
+            {
+                using (StreamReader reader = new StreamReader(filePath))
+                {
+                    string contents = reader.ReadToEnd();
+                    tabState.FileEncoding = reader.CurrentEncoding;
+                    tabState.Editor.Text = contents;
+                }
+            }
+            catch (IOException e)
+            {
+                return (false);
+            }
+            tabState.Name = Path.GetFileName(filePath);
+            tabState.FilePath = filePath;
+            tabState.IsChanged = false;
+            UpdateTabState(tabState);
+            return (true);
+        }
+
+        private bool SaveFile(TabEditorState tabState)
+        {
+            tabState.IsChanged = false;
+            UpdateTabState(tabState);
+            return (true);
+        }
+
+        private bool SaveFileAs(TabEditorState tabState, string filePath)
+        {
+            tabState.FilePath = filePath;
+            tabState.Name = Path.GetFileName(filePath);
+            bool result = SaveFile(tabState);
+            return (result);
+        }
+
+        private bool SaveWithConfirmation(TabEditorState tabState)
+        {
+            Debug.Assert(tabState.IsChanged);
+            string caption = $"File '{tabState.Name}' was changed";
+            string text = $"The file '{tabState.Name}' contains changes, do you want to save it first before continue?";
+            DialogResult r = MessageBox.Show(this, text, caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            if (r == DialogResult.Cancel)
+                return (false);
+            else if (r == DialogResult.No)
+                return (true);
             else
             {
-                Text = _viewModel.WindowTitle;
-                toolButtonFileSave.Enabled = fileHandler.IsChanged;
-                menuItemFileSave.Enabled = fileHandler.IsChanged;
+                if (string.IsNullOrEmpty(tabState.FilePath))
+                {
+                    if (dlgSaveFile.ShowDialog() == DialogResult.OK)
+                    {
+                        string filePath = dlgSaveFile.FileName;
+                        bool result = SaveFileAs(tabState, filePath);
+                        return (result);
+                    }
+                    else return (false);
+                }
+                else
+                {
+                    bool result = SaveFile(tabState);
+                    return (result);
+                }
             }
         }
 
-        private void tvTree_DoubleClick(object sender, EventArgs e)
+        private void MenuActionFileSaveAs(object sender, EventArgs e)
         {
-            if (tvTree.SelectedNode != null)
+            Debug.Assert(tcFiles.SelectedTab != null);
+            if (dlgSaveFile.ShowDialog() == DialogResult.OK)
             {
-                TreeNode treeNode = tvTree.SelectedNode;
-                Entity entity = (Entity)treeNode.Tag;
-                _viewModel.GoToPositionCommand.Execute(entity.LineInfo.Start);
+                string filePath = dlgSaveFile.FileName;
+                TabEditorState tabState = (TabEditorState)tcFiles.SelectedTab.Tag;
+                SaveFileAs(tabState, filePath);
+            }
+        }
+
+
+
+        private void MenuActionFileSave(object sender, EventArgs e)
+        {
+            Debug.Assert(tcFiles.SelectedTab != null);
+            TabEditorState tabState = (TabEditorState)tcFiles.SelectedTab.Tag;
+            SaveWithConfirmation(tabState);
+        }
+
+        private void MenuActionFileClose(object sender, EventArgs e)
+        {
+            Debug.Assert(tcFiles.SelectedTab != null);
+            TabPage tab = tcFiles.SelectedTab;
+            tcFiles.TabPages.Remove(tab);
+        }
+
+        private bool CloseTabs(IEnumerable<TabEditorState> tabStates)
+        {
+            foreach (TabEditorState tabState in tabStates)
+            {
+                if (tabState.IsChanged)
+                {
+                    if (!SaveWithConfirmation(tabState))
+                        return (false);
+                }
+                tcFiles.TabPages.Remove(tabState.Tab);
+            }
+            return (true);
+        }
+
+        private void MenuActionFileCloseAll(object sender, EventArgs e)
+        {
+            List<TabEditorState> tabsToClose = new List<TabEditorState>();
+            foreach (TabPage tab in tcFiles.TabPages)
+                tabsToClose.Add((TabEditorState)tab.Tag);
+            CloseTabs(tabsToClose);
+        }
+
+        private void MenuActionFileCloseAllButThis(object sender, EventArgs e)
+        {
+            List<TabEditorState> tabsToClose = new List<TabEditorState>();
+            foreach (TabPage tab in tcFiles.TabPages)
+            {
+                if (tab != tcFiles.SelectedTab)
+                    tabsToClose.Add((TabEditorState)tab.Tag);
+            }
+            CloseTabs(tabsToClose);
+        }
+
+        private IEnumerable<TabEditorState> GetChanges()
+        {
+            List<TabEditorState> result = new List<TabEditorState>();
+            foreach (TabPage tab in tcFiles.TabPages)
+            {
+                TabEditorState tabState = (TabEditorState)tab.Tag;
+                if (tabState.IsChanged)
+                    result.Add(tabState);
+            }
+            return (result);
+        }
+
+        private void UpdateTabState(TabEditorState tabState)
+        {
+            IEnumerable<TabEditorState> changes = GetChanges();
+            bool anyChanges = changes.Count() > 0;
+
+            miFileSave.Enabled = tabState != null && tabState.IsChanged;
+            miFileSaveAll.Enabled = anyChanges;
+            miFileClose.Enabled = tcFiles.SelectedTab != null;
+            miFileCloseAll.Enabled = tcFiles.TabCount > 0;
+
+            if (tabState != null)
+            {
+                string title = tabState.Name;
+                if (tabState.IsChanged) title += "*";
+                tabState.Tab.Text = title;
+            }
+        }
+
+        private void tcFiles_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                for (int i = 0; i < tcFiles.TabCount; ++i)
+                {
+                    Rectangle r = tcFiles.GetTabRect(i);
+                    if (r.Contains(e.Location))
+                    {
+                        cmsTabActions.Show(tcFiles, e.Location);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void tcFiles_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tcFiles.SelectedIndex == -1)
+                UpdateTabState(null);
+            else
+            {
+                TabPage tab = tcFiles.TabPages[tcFiles.SelectedIndex];
+                TabEditorState tabState = (TabEditorState)tab.Tag;
+                UpdateTabState(tabState);
             }
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            bool canClose = _viewModel.CanClose();
-            if (!canClose)
-                e.Cancel = true;
+            IEnumerable<TabEditorState> changes = GetChanges();
+            if (changes.Count() > 0)
+                e.Cancel = !CloseTabs(changes);
         }
 
-        private void menuItemHelpAbout_Click(object sender, EventArgs e)
+        private void MainForm_Load(object sender, EventArgs e)
         {
-            AboutForm form = new AboutForm();
-            form.ShowDialog(this);
-        }
-
-        private void searchSymbolsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SymbolSearchForm form = new SymbolSearchForm(_viewModel);
-            form.ShowDialog(this);
+            MenuActionFileNew(this, new EventArgs());
         }
     }
 }

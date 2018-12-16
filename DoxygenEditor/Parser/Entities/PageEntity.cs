@@ -4,6 +4,7 @@
     {
         public string PageId { get; }
         public string PageCaption { get; }
+        public override string DisplayName => PageCaption;
         public PageEntity(SequenceInfo lineInfo, string pageId, string pageCaption) : base(lineInfo)
         {
             PageId = pageId;

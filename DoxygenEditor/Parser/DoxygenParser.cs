@@ -1,5 +1,7 @@
 ﻿using DoxygenEditor.Parser.Entities;
+using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace DoxygenEditor.Parser
@@ -13,13 +15,20 @@ namespace DoxygenEditor.Parser
                 line.IncOffset();
             }
         }
-
-        private string ParseIdentifierString(ref LineState line)
+        private void SkipCharacters(ref LineState line, char[] untilChars)
         {
-            if (!line.IsEndOfLine && (char.IsLetter(line.CurrentChar) || line.CurrentChar == '_'))
+            while (!line.IsEndOfLine && (untilChars.Contains(line.CurrentChar)))
+            {
+                line.IncOffset();
+            }
+        }
+
+        private string ParseIdentifierString(ref LineState line, char[] additionalChars)
+        {
+            if (!line.IsEndOfLine && (char.IsLetter(line.CurrentChar) || additionalChars.Contains(line.CurrentChar)))
             {
                 string result = "";
-                while (!line.IsEndOfLine && (char.IsLetterOrDigit(line.CurrentChar) || line.CurrentChar == '_'))
+                while (!line.IsEndOfLine && (char.IsLetterOrDigit(line.CurrentChar) || additionalChars.Contains(line.CurrentChar)))
                 {
                     result += line.CurrentChar;
                     line.IncOffset();
@@ -28,12 +37,12 @@ namespace DoxygenEditor.Parser
             }
             return null;
         }
-        private Keyword ParseIdentifierKeyword(ref LineState line)
+        private Keyword ParseIdentifierKeyword(ref LineState line, char[] additionalChars)
         {
-            if (!line.IsEndOfLine && (char.IsLetter(line.CurrentChar) || line.CurrentChar == '_'))
+            if (!line.IsEndOfLine && (char.IsLetter(line.CurrentChar) || additionalChars.Contains(line.CurrentChar)))
             {
                 Keyword result = new Keyword() { Start = line.Offset };
-                string ident = ParseIdentifierString(ref line);
+                string ident = ParseIdentifierString(ref line, additionalChars);
                 result.Length = line.Offset - result.Start;
                 result.Value = ident;
                 return (result);
@@ -59,8 +68,17 @@ namespace DoxygenEditor.Parser
         {
             Debug.Assert(line.CurrentChar == '@');
             line.IncOffset();
-            Keyword result = ParseIdentifierKeyword(ref line);
+            Keyword result = ParseIdentifierKeyword(ref line, new[] { '_', '{', '}' });
             return (result);
+        }
+
+        private void ParseHeaderFile(ParseState state, SequenceInfo startInfo, ref LineState line, string pageCommand)
+        {
+            SkipWhitespaces(ref line);
+            Keyword headerFileKeyword = ParseRemainingKeyword(ref line);
+            string headerFile = headerFileKeyword.Value;
+            if (headerFile != null) headerFile = headerFile.Trim();
+            state.AddHeaderFile(headerFile);
         }
 
         private void ParsePage(ParseState state, SequenceInfo startInfo, ref LineState line, string pageCommand)
@@ -70,7 +88,7 @@ namespace DoxygenEditor.Parser
             if ("page".Equals(pageCommand))
             {
                 // Identifier
-                Keyword pageIdentKeyword = ParseIdentifierKeyword(ref line);
+                Keyword pageIdentKeyword = ParseIdentifierKeyword(ref line, new[] { '_' });
                 if (pageIdentKeyword == null)
                 {
                     state.AddMessage(ParseMessage.MessageType.Warning, line.Info, "Page requires a identifier!");
@@ -97,7 +115,7 @@ namespace DoxygenEditor.Parser
         {
             // Identifier
             SkipWhitespaces(ref line);
-            Keyword sectionIdentKeyword = ParseIdentifierKeyword(ref line);
+            Keyword sectionIdentKeyword = ParseIdentifierKeyword(ref line, new[] { '_' });
             if (sectionIdentKeyword == null) return;
             string sectionIdent = sectionIdentKeyword.Value;
 
@@ -120,6 +138,107 @@ namespace DoxygenEditor.Parser
                 sectionEntity = new SubSectionEntity(startInfo, sectionIdent, sectionCaption);
             }
             state.AddSection(sectionEntity);
+        }
+
+        private GroupEntity ParseDefGroup(SequenceInfo startInfo, ref LineState line, string command)
+        {
+            // Identifier
+            SkipWhitespaces(ref line);
+            Keyword identKeyword = ParseIdentifierKeyword(ref line, new[] { '_' });
+            if (identKeyword == null) return null;
+            string ident = identKeyword.Value;
+
+            // Caption
+            string caption = null;
+            if (!line.IsEndOfLine)
+            {
+                SkipWhitespaces(ref line);
+                Keyword captionKeyword = ParseRemainingKeyword(ref line);
+                if (captionKeyword != null)
+                    caption = captionKeyword.Value;
+            }
+            GroupEntity result = new GroupEntity(startInfo, ident, caption);
+            return (result);
+        }
+
+        enum ParseMode
+        {
+            None,
+            InsideDoxygenBlock,
+            InsideJavaDocBlock,
+        }
+
+        private void ParseJavaDocLine(ParseState parseState, LineState docLine)
+        {
+            SkipWhitespaces(ref docLine);
+            SkipCharacters(ref docLine, new[] { '*' });
+            SkipWhitespaces(ref docLine);
+            if (!docLine.IsEndOfLine)
+            {
+                if ('@'.Equals(docLine.CurrentChar))
+                {
+                    SequenceInfo startSequence = new SequenceInfo();
+                    startSequence.Start = docLine.Info.Start + docLine.Offset;
+                    startSequence.Line = docLine.Info.Line;
+                    startSequence.Length = 1;
+
+                    // Command
+                    Keyword keyword = ParseCommand(ref docLine);
+                    if (keyword != null)
+                    {
+                        if ("defgroup".Equals(keyword.Value))
+                        {
+                            GroupEntity groupEntity = ParseDefGroup(startSequence, ref docLine, keyword.Value);
+                            parseState.CurrentGroup = groupEntity;
+                        }
+                        else if ("{".Equals(keyword.Value))
+                        {
+                            if (parseState.CurrentGroup == null)
+                                throw new Exception("No 'defgroup' found!");
+                            while (parseState.Top != null)
+                                parseState.Pop();
+                            Entity top = parseState.Top;
+                            parseState.Push(parseState.CurrentGroup);
+
+                        }
+                        else if ("}".Equals(keyword.Value))
+                        {
+                            GroupEntity groupEntity = parseState.Top as GroupEntity;
+                            if (groupEntity == null)
+                                throw new Exception("Cannot close a non-opened group!");
+                            parseState.Pop();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ParseDoxygenLine(ParseState parseState)
+        {
+            LineState pageLine = parseState.CreateLineState();
+            SkipWhitespaces(ref pageLine);
+            if (!pageLine.IsEndOfLine)
+            {
+                if ('@'.Equals(pageLine.CurrentChar))
+                {
+                    SequenceInfo startSequence = new SequenceInfo();
+                    startSequence.Start = pageLine.Info.Start + pageLine.Offset;
+                    startSequence.Line = pageLine.Info.Line;
+                    startSequence.Length = 1;
+
+                    // Command
+                    Keyword keyword = ParseCommand(ref pageLine);
+                    if (keyword != null)
+                    {
+                        if ("mainpage".Equals(keyword.Value) || "page".Equals(keyword.Value))
+                            ParsePage(parseState, startSequence, ref pageLine, keyword.Value);
+                        else if ("section".Equals(keyword.Value) || "subsection".Equals(keyword.Value))
+                            ParseSection(parseState, startSequence, ref pageLine, keyword.Value);
+                        else if ("headerfile".Equals(keyword.Value))
+                            ParseHeaderFile(parseState, startSequence, ref pageLine, keyword.Value);
+                    }
+                }
+            }
         }
 
         public ParseState Parse(string sourceText)
@@ -158,46 +277,59 @@ namespace DoxygenEditor.Parser
             //
             Entity rootEntity = new RootEntity();
 
-            bool insideDoxygenComment = false;
+            ParseMode mode = ParseMode.None;
             while (result.LinePos < result.LineCount)
             {
                 SequenceInfo lineInfo = result.LineInfos[result.LinePos];
                 string line = sourceText.Substring(lineInfo.Start, lineInfo.Length);
-                if (!insideDoxygenComment)
+                if (mode == ParseMode.None)
                 {
                     if (line.TrimStart().StartsWith("/*!"))
-                        insideDoxygenComment = true;
-                    result.NextLine();
-                    continue;
-                }
-                if (line.TrimStart().StartsWith("*/"))
-                {
-                    insideDoxygenComment = false;
-                    result.NextLine();
-                    continue;
-                }
-                Debug.Assert(insideDoxygenComment == true);
-                LineState pageLine = result.GetCurrentLine();
-                SkipWhitespaces(ref pageLine);
-                if (!pageLine.IsEndOfLine)
-                {
-                    if ('@'.Equals(pageLine.CurrentChar))
                     {
-                        SequenceInfo startSequence = new SequenceInfo();
-                        startSequence.Start = pageLine.Info.Start + pageLine.Offset;
-                        startSequence.Line = pageLine.Info.Line;
-                        startSequence.Length = 1;
-
-                        // Command
-                        Keyword keyword = ParseCommand(ref pageLine);
-                        if (keyword != null)
-                        {
-                            if ("mainpage".Equals(keyword.Value) || "page".Equals(keyword.Value))
-                                ParsePage(result, startSequence, ref pageLine, keyword.Value);
-                            else if ("section".Equals(keyword.Value) || "subsection".Equals(keyword.Value))
-                                ParseSection(result, startSequence, ref pageLine, keyword.Value);
-                        }
+                        // Doxygen block starts
+                        mode = ParseMode.InsideDoxygenBlock;
+                        result.NextLine();
+                        continue;
                     }
+                    else if (line.TrimStart().StartsWith("/**"))
+                    {
+                        if (line.TrimEnd().EndsWith("*/"))
+                        {
+                            LineState docLine = result.CreateLineState();
+                            docLine.IncOffset(3);
+                            ParseJavaDocLine(result, docLine);
+                        }
+                        else
+                        {
+                            // Java-doc starts
+                            mode = ParseMode.InsideJavaDocBlock;
+                        }
+                        result.NextLine();
+                        continue;
+                    }
+                    else if (line.TrimStart().StartsWith("//!"))
+                    {
+                        // Single line documentation block
+                        result.NextLine();
+                        continue;
+                    }
+                }
+                if (mode == ParseMode.InsideDoxygenBlock || mode == ParseMode.InsideJavaDocBlock)
+                {
+                    // Either Java-doc or Doxygen block is finished?
+                    if (line.TrimStart().StartsWith("*/"))
+                    {
+                        mode = ParseMode.None;
+                        result.NextLine();
+                        continue;
+                    }
+                }
+                if (mode == ParseMode.InsideDoxygenBlock)
+                    ParseDoxygenLine(result);
+                else if (mode == ParseMode.InsideJavaDocBlock)
+                {
+                    LineState pageLine = result.CreateLineState();
+                    ParseJavaDocLine(result, pageLine);
                 }
                 result.NextLine();
             }

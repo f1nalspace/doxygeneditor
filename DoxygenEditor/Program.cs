@@ -15,6 +15,7 @@ namespace DoxygenEditor
         [STAThread]
         static void Main()
         {
+            IOCContainer.Default.Register(new RegistryConfigurationService());
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             MainForm mainForm = new MainForm();
