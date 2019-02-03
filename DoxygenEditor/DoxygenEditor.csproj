@@ -88,7 +88,7 @@
     <Compile Include="Lexers\Cpp\CppTokenTypeExtensions.cs" />
     <Compile Include="Lexers\LexerType.cs" />
     <Compile Include="Lexers\Cpp\CppLexer.cs" />
-    <Compile Include="Lexers\RexUtils.cs" />
+    <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
     <Compile Include="Natives\NativeMethods.cs" />
