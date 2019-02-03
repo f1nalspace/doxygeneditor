@@ -7,6 +7,8 @@ namespace DoxygenEditor.Lexers
         public int Index { get; private set; }
         public int Length { get; private set; }
         public bool IsComplete { get; }
+        public abstract bool IsEOF { get; }
+        public abstract bool IsValid { get; }
 
         public int End
         {

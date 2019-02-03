@@ -81,9 +81,13 @@
     <Compile Include="Lexers\BaseToken.cs" />
     <Compile Include="Lexers\Cpp\CppToken.cs" />
     <Compile Include="Lexers\Cpp\CppTokenType.cs" />
+    <Compile Include="Lexers\Doxygen\DoxygenLexer.cs" />
+    <Compile Include="Lexers\Doxygen\DoxygenToken.cs" />
+    <Compile Include="Lexers\Doxygen\DoxygenTokenType.cs" />
     <Compile Include="Lexers\SlidingTextBuffer.cs" />
     <Compile Include="Lexers\SourceBuffer.cs" />
     <Compile Include="Lexers\StringSourceBuffer.cs" />
+    <Compile Include="Lexers\SyntaxUtils.cs" />
     <Compile Include="Lexers\TokenTypeAttribute.cs" />
     <Compile Include="Lexers\Cpp\CppTokenTypeExtensions.cs" />
     <Compile Include="Lexers\LexerType.cs" />

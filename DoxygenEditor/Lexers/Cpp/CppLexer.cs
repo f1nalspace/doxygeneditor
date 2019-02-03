@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace DoxygenEditor.Lexers.Cpp
 {
-    class CppLexer : BaseLexer
+    class CppLexer : BaseLexer<CppToken>
     {
         // @TODO(final): Make primary-keywords configurable
         private static readonly HashSet<string> ReservedKeywords = new HashSet<string>{
@@ -127,37 +127,6 @@ namespace DoxygenEditor.Lexers.Cpp
 
         }
 
-        private bool IsAlpha(char c)
-        {
-            bool result = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-            return (result);
-        }
-        private bool IsNumeric(char c)
-        {
-            bool result = (c >= '0' && c <= '9');
-            return (result);
-        }
-        private bool IsHex(char c)
-        {
-            bool result = IsNumeric(c) || ((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'));
-            return (result);
-        }
-        private bool IsOctal(char c)
-        {
-            bool result = c >= '0' && c <= '7';
-            return (result);
-        }
-        private bool IsIdentStart(char c)
-        {
-            bool result = IsAlpha(c) || (c == '_');
-            return (result);
-        }
-        private bool IsIdent(char c)
-        {
-            bool result = IsAlpha(c) || IsNumeric(c) || (c == '_');
-            return (result);
-        }
-
         private CppTokenType GetTokenType()
         {
             foreach (CppTokenType type in Enum.GetValues(typeof(CppTokenType)))
@@ -258,19 +227,6 @@ namespace DoxygenEditor.Lexers.Cpp
             return new CppToken(tokenType, Buffer.LexemeStart, Buffer.LexemeWidth, true);
         }
 
-        private void SkipWhitespaces(bool ignoreLinebreak)
-        {
-            while (!Buffer.IsEOF && char.IsWhiteSpace(Buffer.PeekChar()))
-            {
-                if (ignoreLinebreak)
-                {
-                    if (Buffer.PeekChar() == '\n')
-                        break;
-                }
-                Buffer.AdvanceChar();
-            }
-        }
-
         private CppToken LexPreprocessorToken()
         {
             Debug.Assert(Buffer.PeekChar(0) == '#');
@@ -314,11 +270,11 @@ namespace DoxygenEditor.Lexers.Cpp
 
         private CppToken LexIdentToken()
         {
-            Debug.Assert(IsIdentStart(Buffer.PeekChar()));
+            Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.PeekChar()));
             Buffer.Start();
             while (!Buffer.IsEOF)
             {
-                if (IsIdent(Buffer.PeekChar()))
+                if (SyntaxUtils.IsIdent(Buffer.PeekChar()))
                     Buffer.AdvanceChar();
                 else
                     break;
@@ -383,12 +339,12 @@ namespace DoxygenEditor.Lexers.Cpp
                         case 'U':
                             {
                                 Buffer.AdvanceChar(2);
-                                if (IsHex(Buffer.PeekChar()))
+                                if (SyntaxUtils.IsHex(Buffer.PeekChar()))
                                 {
                                     int len = 0;
                                     while (!Buffer.IsEOF)
                                     {
-                                        if (!IsHex(Buffer.PeekChar()))
+                                        if (!SyntaxUtils.IsHex(Buffer.PeekChar()))
                                             break;
                                         else
                                         {
@@ -402,12 +358,12 @@ namespace DoxygenEditor.Lexers.Cpp
                             continue;
 
                         default:
-                            if (IsOctal(n))
+                            if (SyntaxUtils.IsOctal(n))
                             {
                                 Buffer.AdvanceChar();
                                 while (!Buffer.IsEOF)
                                 {
-                                    if (!IsOctal(Buffer.PeekChar()))
+                                    if (!SyntaxUtils.IsOctal(Buffer.PeekChar()))
                                         break;
                                     else
                                         Buffer.AdvanceChar();
@@ -425,7 +381,7 @@ namespace DoxygenEditor.Lexers.Cpp
 
         private CppToken LexNumberToken()
         {
-            Debug.Assert(IsNumeric(Buffer.PeekChar()) || Buffer.PeekChar() == '.');
+            Debug.Assert(SyntaxUtils.IsNumeric(Buffer.PeekChar()) || Buffer.PeekChar() == '.');
             Buffer.Start();
             bool dotSeen = false;
             bool allowDecimal = true;
@@ -440,7 +396,7 @@ namespace DoxygenEditor.Lexers.Cpp
                     Buffer.AdvanceChar(2);
                     type = CppTokenType.Hex;
                 }
-                else if (IsOctal(n))
+                else if (SyntaxUtils.IsOctal(n))
                 {
                     // Skip zero octal
                     Buffer.AdvanceChar();
@@ -477,17 +433,17 @@ namespace DoxygenEditor.Lexers.Cpp
                 }
                 if (type == CppTokenType.Integer)
                 {
-                    if (!IsNumeric(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsNumeric(Buffer.PeekChar()))
                         break;
                 }
                 else if (type == CppTokenType.Hex)
                 {
-                    if (!IsHex(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsHex(Buffer.PeekChar()))
                         break;
                 }
                 else if (type == CppTokenType.Octal)
                 {
-                    if (!IsOctal(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsOctal(Buffer.PeekChar()))
                         break;
                 }
                 else
@@ -498,7 +454,7 @@ namespace DoxygenEditor.Lexers.Cpp
             return (result);
         }
 
-        private CppToken LexNext()
+        protected override CppToken LexNext()
         {
             do
             {
@@ -607,13 +563,13 @@ namespace DoxygenEditor.Lexers.Cpp
                     case '.':
                         {
                             CppToken token;
-                            if (IsNumeric(Buffer.PeekChar()))
+                            if (SyntaxUtils.IsNumeric(Buffer.PeekChar()))
                                 token = LexNumberToken();
                             else
                             {
                                 Debug.Assert(Buffer.PeekChar() == '.');
                                 char n = Buffer.PeekChar(1);
-                                if (IsNumeric(n))
+                                if (SyntaxUtils.IsNumeric(n))
                                     token = LexNumberToken();
                                 else
                                     token = LexCharToken();
@@ -623,10 +579,10 @@ namespace DoxygenEditor.Lexers.Cpp
 
                     default:
                         {
-                            if (IsIdentStart(Buffer.PeekChar()))
+                            if (SyntaxUtils.IsIdentStart(Buffer.PeekChar()))
                                 goto case 'a';
 
-                            if (IsNumeric(Buffer.PeekChar()) || Buffer.PeekChar() == '.')
+                            if (SyntaxUtils.IsNumeric(Buffer.PeekChar()) || Buffer.PeekChar() == '.')
                                 goto case '0';
 
                             Buffer.AdvanceChar();
@@ -637,18 +593,6 @@ namespace DoxygenEditor.Lexers.Cpp
             return new CppToken(CppTokenType.EOF, 0, 0, false);
         }
 
-        public IEnumerable<CppToken> Tokenize()
-        {
-            List<CppToken> result = new List<CppToken>();
-            while (!Buffer.IsEOF)
-            {
-                CppToken token = LexNext();
-                if (token.Type == CppTokenType.EOF)
-                    break;
-                if (token.Type != CppTokenType.Invalid)
-                    result.Add(token);
-            }
-            return (result);
-        }
+
     }
 }

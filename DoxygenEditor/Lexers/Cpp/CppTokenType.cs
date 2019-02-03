@@ -2,7 +2,7 @@
 {
     public enum CppTokenType
     {
-        Invalid = 0,
+        Invalid = -1,
         EOF,
         MultiLineComment,
         MultiLineCommentDoc,
