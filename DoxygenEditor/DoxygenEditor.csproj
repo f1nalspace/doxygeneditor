@@ -74,6 +74,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
@@ -91,6 +92,7 @@
     <Compile Include="Lexers\LexerType.cs" />
     <Compile Include="Lexers\Cpp\CppLexer.cs" />
     <Compile Include="Lexers\RexUtils.cs" />
+    <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
     <Compile Include="Natives\NativeMethods.cs" />
     <Compile Include="Parsers\Entities\CommentEntity.cs" />

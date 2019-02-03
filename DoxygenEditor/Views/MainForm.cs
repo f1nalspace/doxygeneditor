@@ -31,6 +31,9 @@ namespace DoxygenEditor.Views
         private readonly ConfigurationModel _config;
         private readonly string _appName;
 
+        private static ErrorMessageModel _errorFileOpenMessage = new ErrorMessageModel($"Cannot open file '%FILEPATH%'!", $"File to open file '%FILENAME%'");
+        private static ErrorMessageModel _errorFileSaveMessage = new ErrorMessageModel($"Cannot save file '%FILEPATH%'!", $"File to save file '%FILENAME%'");
+
         public MainForm()
         {
             InitializeComponent();
@@ -59,17 +62,22 @@ namespace DoxygenEditor.Views
             NativeMethods.AddClipboardFormatListener(Handle);
         }
 
-        private void ShowError(Exception exception, string filePath)
+        private void ShowError(Exception exception, string text, string caption, string filePath)
         {
             string filename = !string.IsNullOrWhiteSpace(filePath) ? Path.GetFileName(filePath) : null;
             StringBuilder message = new StringBuilder();
-            message.AppendLine($"[{_appName}] Failed to open file '{filePath}'!");
+            message.AppendLine($"[{_appName}] {text}!");
             if (exception != null)
             {
                 message.AppendLine();
                 message.Append(exception.ToHumanReadable(filePath));
             }
-            MessageBox.Show(this, message.ToString(), $"Failed to open file '{filename}'", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, message.ToString(), caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        private void ShowError(Exception exception, ErrorMessageModel messageTemplate, string filePath)
+        {
+            Tuple<string, string> r = messageTemplate.ToFileError(filePath);
+            ShowError(exception, r.Item1, r.Item2, filePath);
         }
 
         protected override void WndProc(ref Message m)
@@ -685,10 +693,10 @@ namespace DoxygenEditor.Views
             EditorState newState = AddFileTab(Path.GetFileName(filePath));
             TabPage tab = (TabPage)newState.Tag;
             tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
-            Tuple<bool, Exception> openRes = OpenFile(newState, filePath);
+            Tuple<bool, Exception> openRes = IOOpenFile(newState, filePath);
             if (!openRes.Item1)
             {
-                ShowError(openRes.Item2, filePath);
+                ShowError(openRes.Item2, _errorFileOpenMessage, filePath);
                 RemoveFileTab(newState);
             }
             else
@@ -722,7 +730,7 @@ namespace DoxygenEditor.Views
         #endregion
 
         #region IO
-        private Tuple<bool, Exception> OpenFile(EditorState editorState, string filePath)
+        private Tuple<bool, Exception> IOOpenFile(EditorState editorState, string filePath)
         {
             try
             {
@@ -744,7 +752,7 @@ namespace DoxygenEditor.Views
             return new Tuple<bool, Exception>(true, null);
         }
 
-        private Tuple<bool, Exception> SaveFile(EditorState editorState)
+        private Tuple<bool, Exception> IOSaveFile(EditorState editorState)
         {
             try
             {
@@ -937,7 +945,7 @@ namespace DoxygenEditor.Views
             editorState.FilePath = filePath;
             editorState.Name = Path.GetFileName(filePath);
             RenamedInSymbolTree(editorState, editorState.Name);
-            Tuple<bool, Exception> result = SaveFile(editorState);
+            Tuple<bool, Exception> result = IOSaveFile(editorState);
             return (result);
         }
 
@@ -965,7 +973,9 @@ namespace DoxygenEditor.Views
                 }
                 else
                 {
-                    Tuple<bool, Exception> result = SaveFile(editorState);
+                    Tuple<bool, Exception> result = IOSaveFile(editorState);
+                    if (!result.Item1)
+                        ShowError(result.Item2, _errorFileSaveMessage, editorState.FilePath);
                     return (result);
                 }
             }
@@ -1000,7 +1010,9 @@ namespace DoxygenEditor.Views
             {
                 string filePath = dlgSaveFile.FileName;
                 EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
-                SaveFileAs(editorState, filePath);
+                Tuple<bool, Exception> r = SaveFileAs(editorState, filePath);
+                if (!r.Item1)
+                    ShowError(r.Item2, _errorFileSaveMessage, filePath);
             }
         }
         private void MenuActionFileSaveAll(object sender, EventArgs e)
