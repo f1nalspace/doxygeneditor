@@ -74,49 +74,53 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controls\ISearchReplaceControl.cs" />
-    <Compile Include="Controls\SearchReplaceControl.cs">
+    <Compile Include="Extensions\UIExtensions.cs" />
+    <Compile Include="Lexers\BaseLexer.cs" />
+    <Compile Include="Lexers\BaseToken.cs" />
+    <Compile Include="Lexers\Obsolete\CppScintillaLexer.cs" />
+    <Compile Include="Lexers\Cpp\CppToken.cs" />
+    <Compile Include="Lexers\Cpp\CppTokenType.cs" />
+    <Compile Include="Lexers\SlidingTextBuffer.cs" />
+    <Compile Include="Lexers\SourceBuffer.cs" />
+    <Compile Include="Lexers\StringSourceBuffer.cs" />
+    <Compile Include="Lexers\TokenTypeAttribute.cs" />
+    <Compile Include="Lexers\Cpp\CppTokenTypeExtensions.cs" />
+    <Compile Include="Lexers\Obsolete\DoxygenLexer.cs" />
+    <Compile Include="Lexers\Obsolete\HtmlScintillaLexer.cs" />
+    <Compile Include="Lexers\LexerType.cs" />
+    <Compile Include="Lexers\Cpp\CppLexer.cs" />
+    <Compile Include="Lexers\RexUtils.cs" />
+    <Compile Include="Models\SymbolItemModel.cs" />
+    <Compile Include="Natives\NativeMethods.cs" />
+    <Compile Include="Parsers\Entities\CommentEntity.cs" />
+    <Compile Include="Parsers\Entities\ParamEntity.cs" />
+    <Compile Include="Parsers\Entities\DeclarationEntity.cs" />
+    <Compile Include="Parsers\TextBuffer.cs" />
+    <Compile Include="Parsers\Token.cs" />
+    <Compile Include="Solid\IOCContainer.cs" />
+    <Compile Include="SearchReplace\SearchReplaceControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\SearchReplaceControl.Designer.cs">
+    <Compile Include="SearchReplace\SearchReplaceControl.Designer.cs">
       <DependentUpon>SearchReplaceControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="Editor\IFileHandler.cs" />
-    <Compile Include="Editor\ScintillaEditor.cs" />
-    <Compile Include="Editor\IEditor.cs" />
-    <Compile Include="Editor\IFileActions.cs" />
-    <Compile Include="Lexer\IDoxygenLexer.cs" />
     <Compile Include="Models\LogItemModel.cs" />
-    <Compile Include="MVVM\CommandUtils.cs" />
-    <Compile Include="MVVM\DelegateCommand.cs" />
-    <Compile Include="MVVM\PropertyManager.cs" />
-    <Compile Include="Parser\Entities\GroupEntity.cs" />
-    <Compile Include="Parser\Entities\JavaDocEntity.cs" />
-    <Compile Include="Parser\Entities\Entity.cs" />
-    <Compile Include="Parser\Entities\PageEntity.cs" />
-    <Compile Include="Parser\Entities\RootEntity.cs" />
-    <Compile Include="Parser\Entities\SectionEntity.cs" />
-    <Compile Include="Parser\Entities\SubSectionEntity.cs" />
-    <Compile Include="Parser\IDoxygenParser.cs" />
-    <Compile Include="Parser\LineState.cs" />
-    <Compile Include="Parser\ParseMessage.cs" />
-    <Compile Include="Parser\ParseState.cs" />
-    <Compile Include="Parser\SequenceInfo.cs" />
+    <Compile Include="Parsers\Entities\GroupEntity.cs" />
+    <Compile Include="Parsers\Entities\JavaDocEntity.cs" />
+    <Compile Include="Parsers\Entities\Entity.cs" />
+    <Compile Include="Parsers\Entities\PageEntity.cs" />
+    <Compile Include="Parsers\Entities\RootEntity.cs" />
+    <Compile Include="Parsers\Entities\SectionEntity.cs" />
+    <Compile Include="Parsers\Entities\SubSectionEntity.cs" />
+    <Compile Include="Parsers\LineBuffer.cs" />
+    <Compile Include="Parsers\ParseMessage.cs" />
+    <Compile Include="Parsers\ParseTree.cs" />
+    <Compile Include="Parsers\SequenceInfo.cs" />
+    <Compile Include="SearchReplace\SearchReplaceTypes.cs" />
     <Compile Include="Services\IConfigurationService.cs" />
     <Compile Include="Services\RegistryConfigurationService.cs" />
-    <Compile Include="Utils\ReflectionUtils.cs" />
     <Compile Include="Models\ConfigurationModel.cs" />
-    <Compile Include="ViewModels\MainViewModel.cs" />
-    <Compile Include="Services\IDialogService.cs" />
-    <Compile Include="Services\WinFormsDialogService.cs" />
-    <Compile Include="MVVM\DefaultIOCContainer.cs" />
-    <Compile Include="Lexer\DoxygenLexer.cs" />
-    <Compile Include="Parser\DoxygenParser.cs" />
-    <Compile Include="Editor\FileHandler.cs" />
-    <Compile Include="Services\IMessageBoxService.cs" />
-    <Compile Include="ViewModels\SearchReplaceViewModel.cs" />
-    <Compile Include="ViewModels\SymbolSearchResultItemViewModel.cs" />
-    <Compile Include="ViewModels\SymbolSearchViewModel.cs" />
+    <Compile Include="Parsers\DoxygenParser.cs" />
     <Compile Include="Models\TypeStringModel.cs" />
     <Compile Include="Views\AboutForm.cs">
       <SubType>Form</SubType>
@@ -130,26 +134,15 @@
     <Compile Include="Views\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Views\OldMainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Views\OldMainForm.Designer.cs">
-      <DependentUpon>OldMainForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MVVM\BindableBase.cs" />
-    <Compile Include="MVVM\IOCContainer.cs" />
-    <Compile Include="Extensions\UIExtensions.cs" />
-    <Compile Include="Services\WinFormsMessageBoxService.cs" />
-    <Compile Include="MVVM\ViewModelBase.cs" />
-    <Compile Include="Views\SymbolSearchForm.cs">
+    <Compile Include="SymbolSearch\SymbolSearchForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Views\SymbolSearchForm.Designer.cs">
+    <Compile Include="SymbolSearch\SymbolSearchForm.Designer.cs">
       <DependentUpon>SymbolSearchForm.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="Controls\SearchReplaceControl.resx">
+    <EmbeddedResource Include="SearchReplace\SearchReplaceControl.resx">
       <DependentUpon>SearchReplaceControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\AboutForm.resx">
@@ -157,10 +150,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Views\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\OldMainForm.resx">
-      <DependentUpon>OldMainForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -172,7 +161,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Views\SymbolSearchForm.resx">
+    <EmbeddedResource Include="SymbolSearch\SymbolSearchForm.resx">
       <DependentUpon>SymbolSearchForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
@@ -193,6 +182,20 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
+    <None Include="Resources\SelectAll_16x.png" />
+    <None Include="Resources\Paste_16x.png" />
+    <None Include="Resources\Copy_16x.png" />
+    <None Include="Resources\Cut_16x.png" />
+    <None Include="Resources\Exit_16x.png" />
+    <None Include="Resources\CloseDocument_16x.png" />
+    <None Include="Resources\CloseGroup_16x.png" />
+    <None Include="Resources\SaveAll_16x.png" />
+    <None Include="Resources\Redo_16x.png" />
+    <None Include="Resources\Undo_16x.png" />
+    <None Include="Resources\SaveAs_16x.png" />
+    <None Include="Resources\Save_16x.png" />
+    <None Include="Resources\OpenFile_16x.png" />
+    <None Include="Resources\NewFile_16x.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

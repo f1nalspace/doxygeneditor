@@ -4,7 +4,6 @@ namespace DoxygenEditor.Services
 {
     public interface IConfigurarionInstance : IDisposable
     {
-
     }
     public interface IConfigurationService
     {

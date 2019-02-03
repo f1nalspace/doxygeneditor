@@ -2,8 +2,6 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using System.Windows.Input;
-
 namespace DoxygenEditor.Extensions
 {
     static class UIExtensions
@@ -27,10 +25,9 @@ namespace DoxygenEditor.Extensions
         {
             box.SelectionStart = box.TextLength;
             box.SelectionLength = 0;
-
             box.SelectionColor = color;
             box.AppendText(text);
             box.SelectionColor = box.ForeColor;
-        }        
+        }
     }
 }

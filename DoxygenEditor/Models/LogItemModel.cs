@@ -1,4 +1,4 @@
-﻿using DoxygenEditor.Parser;
+﻿using DoxygenEditor.Parsers;
 
 namespace DoxygenEditor.Models
 {
