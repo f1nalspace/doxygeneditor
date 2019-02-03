@@ -1078,14 +1078,21 @@ namespace DoxygenEditor.Views
                 HashSet<Type> types = new HashSet<Type>();
                 foreach (Entity entity in allEntities)
                 {
-                    symbols.Add(new SymbolItemModel()
+                    Type t = entity.GetType();
+                    if (typeof(PageEntity).Equals(t) ||
+                        typeof(SectionEntity).Equals(t) ||
+                        typeof(SubSectionEntity).Equals(t) ||
+                        typeof(DeclarationEntity).Equals(t))
                     {
-                        Caption = entity.DisplayName,
-                        Id = entity.Id,
-                        TypeString = entity.GetType().Name,
-                        Position = entity.LineInfo.Start,
-                    });
-                    types.Add(entity.GetType());
+                        symbols.Add(new SymbolItemModel()
+                        {
+                            Caption = entity.DisplayName,
+                            Id = entity.Id,
+                            TypeString = entity.GetType().Name,
+                            Position = entity.LineInfo.Start,
+                        });
+                        types.Add(entity.GetType());
+                    }
                 }
                 SymbolSearchForm form = new SymbolSearchForm(symbols, types);
                 if (form.ShowDialog(this) == DialogResult.OK)

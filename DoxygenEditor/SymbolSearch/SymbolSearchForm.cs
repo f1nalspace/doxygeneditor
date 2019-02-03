@@ -44,15 +44,25 @@ namespace DoxygenEditor.SymbolSearch
                 RefreshSearchResults(_allItems);
             };
 
+            // @NOTE(final): Disable text and selected index changed event, so that we can call RefreshSearchResults initially - without triggering the timer
+            textBoxSearch.TextChanged -= textBoxSearch_TextChanged;
+            comboBoxSearchType.SelectedIndexChanged -= comboBoxSearchType_SelectedIndexChanged;
+
+            textBoxSearch.Text = "";
+
             comboBoxSearchType.BeginUpdate();
             comboBoxSearchType.Items.Clear();
             comboBoxSearchType.Items.Add(new TypeStringModel(null));
             foreach (var t in allSearchTypes)
                 comboBoxSearchType.Items.Add(new TypeStringModel(t));
             comboBoxSearchType.EndUpdate();
-
-            textBoxSearch.Text = "";
             comboBoxSearchType.SelectedIndex = 0;
+
+            RefreshSearchResults(allItems);
+
+            // Re-enable text and seleced index changed event
+            textBoxSearch.TextChanged += textBoxSearch_TextChanged;
+            comboBoxSearchType.SelectedIndexChanged += comboBoxSearchType_SelectedIndexChanged;
         }
 
         private void RefreshSearchResults(IEnumerable<SymbolItemModel> items)
