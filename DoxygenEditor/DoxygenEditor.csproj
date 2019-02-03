@@ -79,7 +79,6 @@
     <Compile Include="Extensions\UIExtensions.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
     <Compile Include="Lexers\BaseToken.cs" />
-    <Compile Include="Lexers\Obsolete\CppScintillaLexer.cs" />
     <Compile Include="Lexers\Cpp\CppToken.cs" />
     <Compile Include="Lexers\Cpp\CppTokenType.cs" />
     <Compile Include="Lexers\SlidingTextBuffer.cs" />
@@ -87,8 +86,6 @@
     <Compile Include="Lexers\StringSourceBuffer.cs" />
     <Compile Include="Lexers\TokenTypeAttribute.cs" />
     <Compile Include="Lexers\Cpp\CppTokenTypeExtensions.cs" />
-    <Compile Include="Lexers\Obsolete\DoxygenLexer.cs" />
-    <Compile Include="Lexers\Obsolete\HtmlScintillaLexer.cs" />
     <Compile Include="Lexers\LexerType.cs" />
     <Compile Include="Lexers\Cpp\CppLexer.cs" />
     <Compile Include="Lexers\RexUtils.cs" />
