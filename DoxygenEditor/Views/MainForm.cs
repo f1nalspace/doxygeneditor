@@ -1,4 +1,5 @@
-﻿using DoxygenEditor.Lexers;
+﻿using DoxygenEditor.Extensions;
+using DoxygenEditor.Lexers;
 using DoxygenEditor.Lexers.Cpp;
 using DoxygenEditor.Models;
 using DoxygenEditor.Natives;
@@ -16,6 +17,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -27,10 +29,14 @@ namespace DoxygenEditor.Views
     {
         private readonly IConfigurationService _configService;
         private readonly ConfigurationModel _config;
+        private readonly string _appName;
 
         public MainForm()
         {
             InitializeComponent();
+
+            FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+            _appName = verInfo.ProductName;
 
             _configService = IOCContainer.Get<IConfigurationService>();
             _config = new ConfigurationModel();
@@ -51,6 +57,19 @@ namespace DoxygenEditor.Views
                 else UpdateMenuSelection(null);
             };
             NativeMethods.AddClipboardFormatListener(Handle);
+        }
+
+        private void ShowError(Exception exception, string filePath)
+        {
+            string filename = !string.IsNullOrWhiteSpace(filePath) ? Path.GetFileName(filePath) : null;
+            StringBuilder message = new StringBuilder();
+            message.AppendLine($"[{_appName}] Failed to open file '{filePath}'!");
+            if (exception != null)
+            {
+                message.AppendLine();
+                message.Append(exception.ToHumanReadable(filePath));
+            }
+            MessageBox.Show(this, message.ToString(), $"Failed to open file '{filename}'", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         protected override void WndProc(ref Message m)
@@ -653,7 +672,15 @@ namespace DoxygenEditor.Views
             return (newState);
         }
 
-        public void OpenFileTab(string filePath)
+        private void RemoveFileTab(EditorState editorState)
+        {
+            editorState.Stop();
+            TabPage tab = (TabPage)editorState.Tag;
+            tcFiles.TabPages.Remove(tab);
+            RemoveFromSymbolTree(editorState);
+        }
+
+        private void OpenFileTab(string filePath)
         {
             EditorState newState = AddFileTab(Path.GetFileName(filePath));
             TabPage tab = (TabPage)newState.Tag;
@@ -661,8 +688,8 @@ namespace DoxygenEditor.Views
             Tuple<bool, Exception> openRes = OpenFile(newState, filePath);
             if (!openRes.Item1)
             {
-                // @TODO(final): Handle error when file could not be opened
-                tcFiles.TabPages.Remove(tab);
+                ShowError(openRes.Item2, filePath);
+                RemoveFileTab(newState);
             }
             else
             {
@@ -688,10 +715,7 @@ namespace DoxygenEditor.Views
                     if (!saveRes.Item1)
                         return (false);
                 }
-                editorState.Stop();
-                TabPage tab = (TabPage)editorState.Tag;
-                tcFiles.TabPages.Remove(tab);
-                RemoveFromSymbolTree(editorState);
+                RemoveFileTab(editorState);
             }
             return (true);
         }
