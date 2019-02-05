@@ -1,34 +1,45 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace DoxygenEditor.Lexers
 {
     abstract class BaseLexer<T> where T : BaseToken
     {
         internal readonly SlidingTextBuffer Buffer;
+        private readonly List<T> _tokens = new List<T>();
+        private IEnumerable<T> Tokens => _tokens;
 
         public BaseLexer(SourceBuffer source)
         {
             Buffer = new SlidingTextBuffer(source);
         }
 
-        protected abstract T LexNext();
+        protected bool PushToken(T token)
+        {
+            _tokens.Add(token);
+            return (true);
+        }
+
+        protected abstract bool LexNext();
 
         public IEnumerable<T> Tokenize()
         {
-            List<T> result = new List<T>();
+            _tokens.Clear();
             while (!Buffer.IsEOF)
             {
-                T token = LexNext();
-                if (token.IsEOF)
+                int p = Buffer.Position;
+                bool r = LexNext();
+                if (!r)
                     break;
-                if (token.IsValid)
-                    result.Add(token);
+                else
+                    Debug.Assert(Buffer.Position > p);
             }
-            return (result);
+            return (_tokens);
         }
 
-        protected void SkipWhitespaces(bool ignoreLinebreak)
+        protected int SkipWhitespaces(bool ignoreLinebreak)
         {
+            int result = 0;
             while (!Buffer.IsEOF && char.IsWhiteSpace(Buffer.PeekChar()))
             {
                 if (ignoreLinebreak)
@@ -37,7 +48,9 @@ namespace DoxygenEditor.Lexers
                         break;
                 }
                 Buffer.AdvanceChar();
+                ++result;
             }
+            return (result);
         }
     }
 }

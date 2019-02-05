@@ -1,6 +1,7 @@
 ﻿using DoxygenEditor.Extensions;
 using DoxygenEditor.Lexers;
 using DoxygenEditor.Lexers.Cpp;
+using DoxygenEditor.Lexers.Doxygen;
 using DoxygenEditor.Models;
 using DoxygenEditor.Natives;
 using DoxygenEditor.Parsers;
@@ -113,7 +114,7 @@ namespace DoxygenEditor.Views
             private System.Windows.Forms.Timer _textChangedTimer;
             private BackgroundWorker _parseWorker;
             private ParseTree _tree;
-            private readonly List<Lexers.Cpp.CppToken> _cppTokens = new List<Lexers.Cpp.CppToken>();
+            private readonly List<BaseToken> _tokens = new List<BaseToken>();
             public ParseTree Tree { get { return _tree; } }
 
             public object Tag { get; set; }
@@ -122,6 +123,11 @@ namespace DoxygenEditor.Views
             public bool IsChanged { get; set; }
             public Encoding FileEncoding { get; set; }
             public Panel Container { get { return _containerPanel; } }
+            public bool IsShowWhitespace
+            {
+                get { return _editor.ViewWhitespace != WhitespaceMode.Invisible; }
+                set { _editor.ViewWhitespace = value ? WhitespaceMode.VisibleAlways : WhitespaceMode.Invisible; }
+            }
 
             public delegate void ParseEventHandler(object sender, ParseTree tree);
             public event EventHandler TabUpdating;
@@ -173,25 +179,12 @@ namespace DoxygenEditor.Views
                 {
                     Interlocked.Increment(ref _parseCounter);
                     string text = (string)e.Argument;
-
-                    Stopwatch timer = Stopwatch.StartNew();
-                    ParseTree tree = _doxyParser.Parse(text);
-                    timer.Stop();
-                    Debug.WriteLine($"Doxygen parse took {timer.ElapsedMilliseconds} ms");
-                    e.Result = tree;
-
-                    timer.Start();
-                    CppLexer lexer = new CppLexer(new StringSourceBuffer(text));
-                    var newTokens = lexer.Tokenize();
-                    timer.Stop();
-                    Debug.WriteLine($"Cpp lexing took {timer.ElapsedMilliseconds} ms");
-                    _cppTokens.AddRange(newTokens);
+                    Tokenize(text);
+                    Parse(text);
                 };
                 _parseWorker.RunWorkerCompleted += (s, e) =>
                 {
-                    if (_tree != null) _tree.Dispose();
-                    _tree = (ParseTree)e.Result;
-                    _editor.Colorize(0, Math.Max(0, _editor.TextLength - 1));
+                    _editor.Colorize(0, Math.Max(0, _editor.TextLength));
                     ParseComplete?.Invoke(this, _tree);
                 };
             }
@@ -297,14 +290,6 @@ namespace DoxygenEditor.Views
             {
                 var line = _editor.Lines[lineIndex];
                 GoToPosition(line.Position);
-            }
-
-            public void SetShowWhitespaces(bool value)
-            {
-                if (value)
-                    _editor.ViewWhitespace = WhitespaceMode.VisibleAlways;
-                else
-                    _editor.ViewWhitespace = WhitespaceMode.Invisible;
             }
 
             private Match GetSearchMatch(string text, string searchText, int matchStart, SearchDirection direction, bool matchCase, bool wholeWord, bool isRegex, bool wrap)
@@ -418,6 +403,58 @@ namespace DoxygenEditor.Views
                 }
             }
 
+            private void Tokenize(string text)
+            {
+                Stopwatch timer = new Stopwatch();
+
+                // Clear all tokens
+                Debug.Assert(_tokens.Count == 0);
+
+                // C++ lexing
+                timer.Start();
+                CppLexer cppLexer = new CppLexer(new StringSourceBuffer(text));
+                var newCppTokens = cppLexer.Tokenize();
+                _tokens.AddRange(newCppTokens);
+                timer.Stop();
+                Debug.WriteLine($"Cpp lexing took {timer.ElapsedMilliseconds} ms");
+
+                // Doxygen lexing
+                timer.Start();
+                foreach (CppToken cppToken in newCppTokens)
+                {
+                    if (cppToken.Type == CppTokenType.MultiLineCommentDoc)
+                    {
+                        DoxygenLexer doxyLexer = new DoxygenLexer(new StringSourceBuffer(text, cppToken.Index, cppToken.Length));
+                        var newDoxyTokens = doxyLexer.Tokenize();
+                        foreach (DoxygenToken doxyToken in newDoxyTokens)
+                        {
+                            if (doxyToken.Type == DoxygenTokenType.CodeBlock)
+                            {
+                                cppLexer = new CppLexer(new StringSourceBuffer(text, doxyToken.Index, doxyToken.Length));
+                                var codeCppTokens = cppLexer.Tokenize();
+                                _tokens.AddRange(codeCppTokens);
+                            }
+                        }
+                        _tokens.AddRange(newDoxyTokens.Where(t => t.Type != DoxygenTokenType.CodeBlock));
+                    }
+                }
+                timer.Stop();
+                Debug.WriteLine($"Doxy lexing took {timer.ElapsedMilliseconds} ms");
+            }
+
+            private void Parse(string text)
+            {
+                // @TODO(final): Parse from doxygen tokens instead
+
+                // Doxygen parsing
+                Stopwatch timer = Stopwatch.StartNew();
+                ParseTree tree = _doxyParser.Parse(text);
+                if (_tree != null) _tree.Dispose();
+                _tree = tree;
+                timer.Stop();
+                Debug.WriteLine($"Doxygen parse took {timer.ElapsedMilliseconds} ms");
+            }
+
             private void SetupEditor(Scintilla editor)
             {
                 editor.Dock = DockStyle.Fill;
@@ -430,6 +467,7 @@ namespace DoxygenEditor.Views
                 editor.TabWidth = editor.IndentWidth = 4;
                 editor.Margins[0].Width = 16;
                 editor.ViewWhitespace = ScintillaNET.WhitespaceMode.Invisible;
+                editor.SetWhitespaceForeColor(true, Color.LightGray);
                 editor.UseTabs = true;
 
                 Font editorFont = new Font(FontFamily.GenericMonospace, 14.0f, FontStyle.Regular);
@@ -476,6 +514,29 @@ namespace DoxygenEditor.Views
                     { CppTokenType.Octal, cppNumberStyle },
                 };
 
+                int doxygenTextStyle = styleIndex++;
+                int doxygenBlockStyle = styleIndex++;
+                int doxygenCommandStyle = styleIndex++;
+                int doxygenIdentStyle = styleIndex++;
+                int doxygenCaptionStyle = styleIndex++;
+                int doxygenCodeTypeType = styleIndex++;
+                editor.Styles[doxygenTextStyle].ForeColor = Color.Black;
+                editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
+                editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
+                editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
+                editor.Styles[doxygenCaptionStyle].ForeColor = Color.Green;
+                editor.Styles[doxygenCodeTypeType].ForeColor = Color.Orange;
+
+                Dictionary<DoxygenTokenType, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenType, int>() {
+                    { DoxygenTokenType.Text, doxygenTextStyle },
+                    { DoxygenTokenType.BlockStart, doxygenBlockStyle },
+                    { DoxygenTokenType.BlockEnd, doxygenBlockStyle },
+                    { DoxygenTokenType.Command, doxygenCommandStyle },
+                    { DoxygenTokenType.Ident, doxygenIdentStyle },
+                    { DoxygenTokenType.Caption, doxygenCaptionStyle },
+                    { DoxygenTokenType.CodeType, doxygenCodeTypeType },
+                };
+
                 editor.TextChanged += (s, e) =>
                 {
                     Scintilla thisEditor = (Scintilla)s;
@@ -488,7 +549,7 @@ namespace DoxygenEditor.Views
                         _maxLineNumberCharLength = maxLineNumberCharLength;
                     }
 
-                    _cppTokens.Clear();
+                    _tokens.Clear();
 
                     IsChanged = true;
                     TabUpdating?.Invoke(this, new EventArgs());
@@ -506,38 +567,41 @@ namespace DoxygenEditor.Views
                     int startPos = Math.Min(thisEditor.Lines[startLine].Position, thisEditor.TextLength - 1);
                     int endPos = Math.Min(thisEditor.Lines[endLine].Position + Math.Max(0, thisEditor.Lines[endLine].Length - 1), thisEditor.TextLength - 1);
                     int length = (endPos - startPos) + 1;
-                    if (!_parseWorker.IsBusy && _cppTokens.Count > 0)
+                    if (!_parseWorker.IsBusy && _tokens.Count > 0)
                     {
                         Stopwatch timer = Stopwatch.StartNew();
 
                         thisEditor.StartStyling(startPos);
                         thisEditor.SetStyling(length, 0);
 
-                        var rangeToken = new Lexers.Cpp.CppToken(CppTokenType.Invalid, startPos, length, false);
-                        var intersectingTokens = _cppTokens.Where(r => r.InterectsWith(rangeToken));
+                        var rangeToken = new InvalidToken(startPos, length);
+                        var intersectingTokens = _tokens.Where(r => r.InterectsWith(rangeToken));
                         foreach (var token in intersectingTokens)
                         {
-                            if (cppTokenTypeToStyleDict.ContainsKey(token.Type))
+                            if (typeof(CppToken).Equals(token.GetType()))
                             {
-                                int style = cppTokenTypeToStyleDict[token.Type];
-                                thisEditor.StartStyling(token.Index);
-                                thisEditor.SetStyling(token.Length, style);
+                                CppToken cppToken = (CppToken)token;
+                                if (cppTokenTypeToStyleDict.ContainsKey(cppToken.Type))
+                                {
+                                    int style = cppTokenTypeToStyleDict[cppToken.Type];
+                                    thisEditor.StartStyling(token.Index);
+                                    thisEditor.SetStyling(token.Length, style);
+                                }
+                            }
+                            else if (typeof(DoxygenToken).Equals(token.GetType()))
+                            {
+                                DoxygenToken doxygenToken = (DoxygenToken)token;
+                                if (doxygenTokenTypeToStyleDict.ContainsKey(doxygenToken.Type))
+                                {
+                                    int style = doxygenTokenTypeToStyleDict[doxygenToken.Type];
+                                    thisEditor.StartStyling(token.Index);
+                                    thisEditor.SetStyling(token.Length, style);
+                                }
                             }
                         }
                         timer.Stop();
                         Debug.WriteLine($"Styling ({startPos} to {endPos}) took: {timer.Elapsed.TotalMilliseconds} ms");
                     }
-
-#if false
-                    // Use Cpp as default lexer
-                    CppLexer.Lex(thisEditor, startPos, endPos);
-
-                    // Use doxygen as second lexer
-                    DoxygenLexer.Lex(thisEditor, startPos, endPos);
-
-                    // Switch back to container
-                    thisEditor.Lexer = Lexer.Container;
-#endif
 
 
                 };
@@ -587,9 +651,9 @@ namespace DoxygenEditor.Views
                 };
             }
         }
-        #endregion
+#endregion
 
-        #region Tabs
+#region Tabs
         private readonly Regex _rexIndexFromName = new Regex("(?<index>[0-9]+)$", RegexOptions.Compiled);
         private string GetNextTabName(string prefix)
         {
@@ -662,6 +726,7 @@ namespace DoxygenEditor.Views
         {
             TabPage newTab = new TabPage() { Text = name };
             EditorState newState = new EditorState(this) { Name = name, Tag = newTab };
+            newState.IsShowWhitespace = miViewShowWhitespaces.Checked;
             newState.TabUpdating += (s, e) => UpdateTabState((EditorState)s);
             newState.ParseComplete += (object s, ParseTree tree) =>
             {
@@ -727,9 +792,9 @@ namespace DoxygenEditor.Views
             }
             return (true);
         }
-        #endregion
+#endregion
 
-        #region IO
+#region IO
         private Tuple<bool, Exception> IOOpenFile(EditorState editorState, string filePath)
         {
             try
@@ -770,7 +835,7 @@ namespace DoxygenEditor.Views
                 return new Tuple<bool, Exception>(false, e);
             }
         }
-        #endregion
+#endregion
 
         private void tcFiles_MouseClick(object sender, MouseEventArgs e)
         {
@@ -819,7 +884,7 @@ namespace DoxygenEditor.Views
                 MenuActionFileNew(this, new EventArgs());
         }
 
-        #region Symbols
+#region Symbols
         private void tvTree_DoubleClick(object sender, EventArgs e)
         {
             if (tvTree.SelectedNode != null && tcFiles.SelectedIndex > -1)
@@ -937,9 +1002,9 @@ namespace DoxygenEditor.Views
             if (newSelectedNode != null)
                 newSelectedNode.Expand();
         }
-        #endregion
+#endregion
 
-        #region Menu
+#region Menu
         private Tuple<bool, Exception> SaveFileAs(EditorState editorState, string filePath)
         {
             editorState.FilePath = filePath;
@@ -1139,6 +1204,18 @@ namespace DoxygenEditor.Views
             }
         }
 
+        private void MenuActionViewShowWhitespaces(object sender, EventArgs e)
+        {
+            ToolStripMenuItem item = (ToolStripMenuItem)sender;
+            bool enabled = !item.Checked;
+            foreach (TabPage tab in tcFiles.TabPages)
+            {
+                EditorState editorState = (EditorState)tab.Tag;
+                editorState.IsShowWhitespace = enabled;
+            }
+            item.Checked = enabled;
+        }
+
         private void UpdateMenuSelection(EditorState editorState)
         {
             miEditCut.Enabled = editorState != null && editorState.CanCut();
@@ -1151,9 +1228,9 @@ namespace DoxygenEditor.Views
             miEditRedo.Enabled = editorState != null && editorState.CanRedo();
             miEditPaste.Enabled = editorState != null && editorState.CanPaste();
         }
-        #endregion
+#endregion
 
-        #region Issues
+#region Issues
         enum IssueType
         {
             Error,
@@ -1237,6 +1314,6 @@ namespace DoxygenEditor.Views
                 }
             }
         }
-        #endregion
+#endregion
     }
 }

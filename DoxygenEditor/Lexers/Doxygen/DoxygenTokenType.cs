@@ -4,8 +4,13 @@
     {
         Invalid = -1,
         EOF,
-        Ident,
+        BlockStart,
+        BlockEnd,
         Command,
+        Ident,
+        Caption,
         Text,
+        CodeType,
+        CodeBlock,
     }
 }

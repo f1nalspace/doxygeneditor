@@ -55,8 +55,8 @@ namespace DoxygenEditor.Lexers
         public SlidingTextBuffer(SourceBuffer source)
         {
             _source = source;
-            _sourceEnd = source.Length;
-            _base = 0;
+            _sourceEnd = source.Basis + source.Length;
+            _base = source.Basis;
             _offset = 0;
             _bufferCount = 0;
             _buffer = new char[DefaultBufferLength];
@@ -147,6 +147,23 @@ namespace DoxygenEditor.Lexers
                 result = InvalidCharacter;
             else
                 result = _buffer[_offset];
+            this.Reset(position);
+            return (result);
+        }
+
+        public int Compare(int delta, string match)
+        {
+            int result = 0;
+            int position = this.Position;
+            int matchLen = match.Length;
+            AdvanceChar(delta + match.Length);
+            if (_offset >= _bufferCount && !this.GetMoreChars())
+                return (-1);
+            else
+            {
+                string part = new string(_buffer, _offset - matchLen, match.Length);
+                result = string.Compare(match, part);
+            }
             this.Reset(position);
             return (result);
         }

@@ -84,6 +84,10 @@
     <Compile Include="Lexers\Doxygen\DoxygenLexer.cs" />
     <Compile Include="Lexers\Doxygen\DoxygenToken.cs" />
     <Compile Include="Lexers\Doxygen\DoxygenTokenType.cs" />
+    <Compile Include="Lexers\Html\HtmlLexer.cs" />
+    <Compile Include="Lexers\Html\HtmlToken.cs" />
+    <Compile Include="Lexers\Html\HtmlTokenType.cs" />
+    <Compile Include="Lexers\InvalidToken.cs" />
     <Compile Include="Lexers\SlidingTextBuffer.cs" />
     <Compile Include="Lexers\SourceBuffer.cs" />
     <Compile Include="Lexers\StringSourceBuffer.cs" />

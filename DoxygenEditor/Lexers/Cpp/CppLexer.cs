@@ -454,7 +454,7 @@ namespace DoxygenEditor.Lexers.Cpp
             return (result);
         }
 
-        protected override CppToken LexNext()
+        protected override bool LexNext()
         {
             do
             {
@@ -463,7 +463,7 @@ namespace DoxygenEditor.Lexers.Cpp
                 {
                     case SlidingTextBuffer.InvalidCharacter:
                         {
-                            return new CppToken(CppTokenType.Invalid, 0, 0, false);
+                            return(PushToken(new CppToken(CppTokenType.Invalid, 0, 0, false)));
                         }
 
                     case '/':
@@ -476,20 +476,20 @@ namespace DoxygenEditor.Lexers.Cpp
                                 token = LexSingleLineComment(true);
                             else
                                 token = LexCharToken();
-                            return (token);
+                            return (PushToken(token));
                         }
 
                     case '#':
                         {
                             CppToken token = LexPreprocessorToken();
-                            return (token);
+                            return (PushToken(token));
                         }
 
                     case '"':
                     case '\'':
                         {
                             CppToken token = LexStringToken();
-                            return (token);
+                            return (PushToken(token));
                         }
 
                     case 'a':
@@ -547,7 +547,7 @@ namespace DoxygenEditor.Lexers.Cpp
                     case '_':
                         {
                             CppToken token = LexIdentToken();
-                            return (token);
+                            return (PushToken(token));
                         }
 
                     case '0':
@@ -574,7 +574,7 @@ namespace DoxygenEditor.Lexers.Cpp
                                 else
                                     token = LexCharToken();
                             }
-                            return (token);
+                            return (PushToken(token));
                         }
 
                     default:
@@ -590,7 +590,7 @@ namespace DoxygenEditor.Lexers.Cpp
                         break;
                 }
             } while (!Buffer.IsEOF);
-            return new CppToken(CppTokenType.EOF, 0, 0, false);
+            return(false);
         }
 
 

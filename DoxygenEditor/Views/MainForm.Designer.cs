@@ -72,9 +72,11 @@ namespace DoxygenEditor.Views
             this.tcBottom = new System.Windows.Forms.TabControl();
             this.tpIssues = new System.Windows.Forms.TabPage();
             this.lvIssues = new System.Windows.Forms.ListView();
+            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.imglstIcons = new System.Windows.Forms.ImageList(this.components);
             this.dlgOpenFile = new System.Windows.Forms.OpenFileDialog();
             this.cmsTabActions = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -83,8 +85,6 @@ namespace DoxygenEditor.Views
             this.miCurrentTabCloseAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miCurrentTabCloseAllButThis = new System.Windows.Forms.ToolStripMenuItem();
             this.dlgSaveFile = new System.Windows.Forms.SaveFileDialog();
-            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.scMainAndLog)).BeginInit();
@@ -344,9 +344,12 @@ namespace DoxygenEditor.Views
             // 
             // miViewShowWhitespaces
             // 
+            this.miViewShowWhitespaces.Checked = true;
+            this.miViewShowWhitespaces.CheckState = System.Windows.Forms.CheckState.Checked;
             this.miViewShowWhitespaces.Name = "miViewShowWhitespaces";
             this.miViewShowWhitespaces.Size = new System.Drawing.Size(207, 26);
             this.miViewShowWhitespaces.Text = "Show Whitespaces";
+            this.miViewShowWhitespaces.Click += new System.EventHandler(this.MenuActionViewShowWhitespaces);
             // 
             // toolStrip1
             // 
@@ -493,6 +496,11 @@ namespace DoxygenEditor.Views
             this.lvIssues.View = System.Windows.Forms.View.Details;
             this.lvIssues.DoubleClick += new System.EventHandler(this.lvIssues_DoubleClick);
             // 
+            // columnHeader1
+            // 
+            this.columnHeader1.Text = "Message";
+            this.columnHeader1.Width = 200;
+            // 
             // columnHeader2
             // 
             this.columnHeader2.Text = "Symbol";
@@ -507,6 +515,11 @@ namespace DoxygenEditor.Views
             // 
             this.columnHeader4.Text = "Group";
             this.columnHeader4.Width = 100;
+            // 
+            // columnHeader5
+            // 
+            this.columnHeader5.Text = "File";
+            this.columnHeader5.Width = 100;
             // 
             // imglstIcons
             // 
@@ -570,16 +583,6 @@ namespace DoxygenEditor.Views
             this.dlgSaveFile.Filter = "Doxygen files (*.docs)|*.docs|C Header file (*.h)|*.h";
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
-            // 
-            // columnHeader1
-            // 
-            this.columnHeader1.Text = "Message";
-            this.columnHeader1.Width = 200;
-            // 
-            // columnHeader5
-            // 
-            this.columnHeader5.Text = "File";
-            this.columnHeader5.Width = 100;
             // 
             // MainForm
             // 
