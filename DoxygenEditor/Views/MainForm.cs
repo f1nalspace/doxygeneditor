@@ -200,12 +200,12 @@ namespace DoxygenEditor.Views
 
             public bool CanUndo()
             {
-                bool result = _editor.Focused && _editor.CanUndo;
+                bool result = _editor.CanUndo;
                 return (result);
             }
             public bool CanRedo()
             {
-                bool result = _editor.Focused && _editor.CanRedo;
+                bool result = _editor.CanRedo;
                 return (result);
             }
             public void Undo()
@@ -219,17 +219,17 @@ namespace DoxygenEditor.Views
 
             public bool CanCut()
             {
-                bool result = _editor.Focused && (_editor.SelectionStart < _editor.SelectionEnd);
+                bool result = (_editor.SelectionStart < _editor.SelectionEnd);
                 return (result);
             }
             public bool CanCopy()
             {
-                bool result = _editor.Focused && (_editor.SelectionStart < _editor.SelectionEnd);
+                bool result = (_editor.SelectionStart < _editor.SelectionEnd);
                 return (result);
             }
             public bool CanPaste()
             {
-                bool result = _editor.Focused && _editor.CanPaste;
+                bool result = _editor.CanPaste;
                 return (result);
             }
             public void Cut()
@@ -426,6 +426,7 @@ namespace DoxygenEditor.Views
                     {
                         DoxygenLexer doxyLexer = new DoxygenLexer(new StringSourceBuffer(text, cppToken.Index, cppToken.Length));
                         var newDoxyTokens = doxyLexer.Tokenize();
+                        _tokens.AddRange(newDoxyTokens);
                         foreach (DoxygenToken doxyToken in newDoxyTokens)
                         {
                             if (doxyToken.Type == DoxygenTokenType.CodeBlock)
@@ -435,7 +436,6 @@ namespace DoxygenEditor.Views
                                 _tokens.AddRange(codeCppTokens);
                             }
                         }
-                        _tokens.AddRange(newDoxyTokens.Where(t => t.Type != DoxygenTokenType.CodeBlock));
                     }
                 }
                 timer.Stop();
@@ -493,7 +493,7 @@ namespace DoxygenEditor.Views
                 editor.Styles[cppMultiLineCommentDocStyle].ForeColor = Color.Purple;
                 editor.Styles[cppSingleLineCommentStyle].ForeColor = Color.DarkGreen;
                 editor.Styles[cppSingleLineCommentDocStyle].ForeColor = Color.DarkTurquoise;
-                editor.Styles[cppPreprocessorStyle].ForeColor = Color.Red;
+                editor.Styles[cppPreprocessorStyle].ForeColor = Color.DarkSlateGray;
                 editor.Styles[cppReservedKeywordStyle].ForeColor = Color.Blue;
                 editor.Styles[cppTypeKeywordStyle].ForeColor = Color.Blue;
                 editor.Styles[cppStringStyle].ForeColor = Color.Green;
@@ -519,13 +519,15 @@ namespace DoxygenEditor.Views
                 int doxygenCommandStyle = styleIndex++;
                 int doxygenIdentStyle = styleIndex++;
                 int doxygenCaptionStyle = styleIndex++;
-                int doxygenCodeTypeType = styleIndex++;
+                int doxygenCodeBlockStyle = styleIndex++;
+                int doxygenCodeTypeStyle = styleIndex++;
                 editor.Styles[doxygenTextStyle].ForeColor = Color.Black;
                 editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
                 editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
                 editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
                 editor.Styles[doxygenCaptionStyle].ForeColor = Color.Green;
-                editor.Styles[doxygenCodeTypeType].ForeColor = Color.Orange;
+                editor.Styles[doxygenCodeBlockStyle].ForeColor = Color.Black;
+                editor.Styles[doxygenCodeTypeStyle].ForeColor = Color.Orange;
 
                 Dictionary<DoxygenTokenType, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenType, int>() {
                     { DoxygenTokenType.Text, doxygenTextStyle },
@@ -534,7 +536,8 @@ namespace DoxygenEditor.Views
                     { DoxygenTokenType.Command, doxygenCommandStyle },
                     { DoxygenTokenType.Ident, doxygenIdentStyle },
                     { DoxygenTokenType.Caption, doxygenCaptionStyle },
-                    { DoxygenTokenType.CodeType, doxygenCodeTypeType },
+                    { DoxygenTokenType.CodeBlock, doxygenCodeBlockStyle },
+                    { DoxygenTokenType.CodeType, doxygenCodeTypeStyle },
                 };
 
                 editor.TextChanged += (s, e) =>

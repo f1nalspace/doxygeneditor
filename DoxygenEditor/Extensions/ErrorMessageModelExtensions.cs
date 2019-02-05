@@ -9,8 +9,8 @@ namespace DoxygenEditor.Extensions
         public static Tuple<string, string> ToFileError(this ErrorMessageModel err, string filePath)
         {
             string fileName = !string.IsNullOrWhiteSpace(filePath) ? Path.GetFileName(filePath) : null;
-            string text = err.Caption.Replace("%FILEPATH%", filePath);
-            string caption = err.Text.Replace("%FILENAME%", fileName);
+            string text = err.Caption.Replace("%FILENAME%", fileName).Replace("%FILEPATH%", filePath);
+            string caption = err.Text.Replace("%FILENAME%", fileName).Replace("%FILEPATH%", filePath);
             Tuple<string, string> result = new Tuple<string, string>(text, caption);
             return (result);
         }
