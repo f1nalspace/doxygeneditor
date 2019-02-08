@@ -1,19 +1,14 @@
-﻿using DoxygenEditor.Extensions;
-using DoxygenEditor.Lexers;
-using DoxygenEditor.Lexers.Cpp;
-using DoxygenEditor.Lexers.Doxygen;
-using DoxygenEditor.Models;
-using DoxygenEditor.Natives;
-using DoxygenEditor.Parsers;
-using DoxygenEditor.Parsers.Entities;
-using DoxygenEditor.SearchReplace;
-using DoxygenEditor.Services;
-using DoxygenEditor.Solid;
-using DoxygenEditor.SymbolSearch;
-using ScintillaNET;
+﻿using TSP.DoxygenEditor.Editor;
+using TSP.DoxygenEditor.Extensions;
+using TSP.DoxygenEditor.Models;
+using TSP.DoxygenEditor.Natives;
+using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.SearchReplace;
+using TSP.DoxygenEditor.Services;
+using TSP.DoxygenEditor.Solid;
+using TSP.DoxygenEditor.SymbolSearch;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -21,10 +16,12 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Windows.Forms;
+using TSP.DoxygenEditor.Lexers;
+using TSP.DoxygenEditor.Parsers.Doxygen;
+using TSP.DoxygenEditor.Lexers.Doxygen;
 
-namespace DoxygenEditor.Views
+namespace TSP.DoxygenEditor.Views
 {
     public partial class MainForm : Form
     {
@@ -101,562 +98,11 @@ namespace DoxygenEditor.Views
         private System.Windows.Forms.Timer TextSelectedTimer { get; }
         private SearchReplaceControl _searchControl;
 
-        private static int _parseCounter = 0;
-
-        class EditorState
-        {
-            private readonly IWin32Window _window;
-            private Panel _containerPanel;
-            private SearchReplaceControl _searchControl;
-            private readonly Scintilla _editor;
-            private int _maxLineNumberCharLength;
-            private readonly DoxygenParser _doxyParser;
-            private System.Windows.Forms.Timer _textChangedTimer;
-            private BackgroundWorker _parseWorker;
-            private ParseTree _tree;
-            private readonly List<BaseToken> _tokens = new List<BaseToken>();
-            public ParseTree Tree { get { return _tree; } }
-
-            public object Tag { get; set; }
-            public string FilePath { get; set; }
-            public string Name { get; set; }
-            public bool IsChanged { get; set; }
-            public Encoding FileEncoding { get; set; }
-            public Panel Container { get { return _containerPanel; } }
-            public bool IsShowWhitespace
-            {
-                get { return _editor.ViewWhitespace != WhitespaceMode.Invisible; }
-                set { _editor.ViewWhitespace = value ? WhitespaceMode.VisibleAlways : WhitespaceMode.Invisible; }
-            }
-
-            public delegate void ParseEventHandler(object sender, ParseTree tree);
-            public event EventHandler TabUpdating;
-            public event ParseEventHandler ParseComplete;
-
-            public EditorState(IWin32Window window)
-            {
-                FilePath = null;
-                Name = null;
-                IsChanged = false;
-                FileEncoding = Encoding.UTF8;
-
-                _window = window;
-
-                _editor = new Scintilla();
-                SetupEditor(_editor);
-
-                _containerPanel = new Panel();
-                _containerPanel.Dock = DockStyle.Fill;
-                _containerPanel.Controls.Add(_editor);
-
-                _searchControl = new SearchReplaceControl();
-                _searchControl.Dock = DockStyle.Top;
-                _containerPanel.Controls.Add(_searchControl);
-
-                _searchControl.Search += (s, direction) =>
-                {
-                    SearchText(_window, _searchControl.SearchText, direction, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap);
-                };
-                _searchControl.Replace += (s, mode) =>
-                {
-                    ReplaceText(_window, _searchControl.SearchText, _searchControl.ReplaceText, mode, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap);
-                };
-                _searchControl.Hide();
-
-                _maxLineNumberCharLength = 0;
-                _doxyParser = new DoxygenParser();
-                _textChangedTimer = new System.Windows.Forms.Timer() { Enabled = false, Interval = 250 };
-                _textChangedTimer.Tick += (s, e) =>
-                {
-                    if (!_parseWorker.IsBusy)
-                    {
-                        _textChangedTimer.Enabled = false;
-                        _parseWorker.RunWorkerAsync(_editor.Text);
-                    }
-                };
-                _parseWorker = new BackgroundWorker();
-                _parseWorker.DoWork += (s, e) =>
-                {
-                    Interlocked.Increment(ref _parseCounter);
-                    string text = (string)e.Argument;
-                    Tokenize(text);
-                    Parse(text);
-                };
-                _parseWorker.RunWorkerCompleted += (s, e) =>
-                {
-                    _editor.Colorize(0, Math.Max(0, _editor.TextLength));
-                    ParseComplete?.Invoke(this, _tree);
-                };
-            }
-
-            public void ShowSearch()
-            {
-                _searchControl.ShowSearchOnly(true);
-            }
-            public void ShowReplace()
-            {
-                _searchControl.ShowSearchAndReplace(true);
-            }
-
-            public bool CanUndo()
-            {
-                bool result = _editor.CanUndo;
-                return (result);
-            }
-            public bool CanRedo()
-            {
-                bool result = _editor.CanRedo;
-                return (result);
-            }
-            public void Undo()
-            {
-                _editor.Undo();
-            }
-            public void Redo()
-            {
-                _editor.Redo();
-            }
-
-            public bool CanCut()
-            {
-                bool result = (_editor.SelectionStart < _editor.SelectionEnd);
-                return (result);
-            }
-            public bool CanCopy()
-            {
-                bool result = (_editor.SelectionStart < _editor.SelectionEnd);
-                return (result);
-            }
-            public bool CanPaste()
-            {
-                bool result = _editor.CanPaste;
-                return (result);
-            }
-            public void Cut()
-            {
-                _editor.Cut();
-            }
-            public void Copy()
-            {
-                _editor.Copy();
-            }
-            public void Paste()
-            {
-                _editor.Paste();
-            }
-            public void SelectAll()
-            {
-                _editor.SelectAll();
-            }
-
-            public void GoToPosition(int position)
-            {
-                int line = _editor.LineFromPosition(position);
-                _editor.GotoPosition(position);
-                int firstVisible = _editor.FirstVisibleLine;
-                if (line > firstVisible)
-                {
-                    int delta = firstVisible - line;
-                    _editor.LineScroll(-delta, 0);
-                }
-                _editor.Focus();
-            }
-
-            public void Clear()
-            {
-                _editor.ClearAll();
-            }
-
-            public void SetText(string text)
-            {
-                _editor.ClearAll();
-                _editor.Text = text;
-                _editor.EmptyUndoBuffer();
-            }
-
-            public void SetFocus()
-            {
-                if (_editor.CanFocus)
-                    _editor.Focus();
-            }
-
-            public string GetText()
-            {
-                string result = _editor.Text;
-                return (result);
-            }
-
-            public void GoToLine(int lineIndex)
-            {
-                var line = _editor.Lines[lineIndex];
-                GoToPosition(line.Position);
-            }
-
-            private Match GetSearchMatch(string text, string searchText, int matchStart, SearchDirection direction, bool matchCase, bool wholeWord, bool isRegex, bool wrap)
-            {
-                Debug.Assert(text != null);
-                string rexPattern;
-                if (!isRegex)
-                {
-                    string searchTextEscaped = Regex.Escape(searchText);
-                    rexPattern = searchTextEscaped;
-                }
-                else
-                    rexPattern = searchText;
-                if (wholeWord)
-                    rexPattern = $"\\b({rexPattern})\\b";
-                RegexOptions rexOptions = RegexOptions.Compiled;
-                if (!matchCase)
-                    rexOptions |= RegexOptions.IgnoreCase;
-                if (direction == SearchDirection.Prev)
-                    rexOptions |= RegexOptions.RightToLeft;
-                Regex rex = new Regex(rexPattern, rexOptions);
-                Match match = rex.Match(text, matchStart);
-                return (match);
-            }
-
-            private bool SearchText(IWin32Window window, string searchText, SearchDirection direction, bool matchCase, bool wholeWord, bool isRegex, bool wrap)
-            {
-                Debug.Assert(searchText != null);
-                string text = _editor.Text;
-                if (!string.IsNullOrEmpty(text))
-                {
-                    int selectionStart = _editor.SelectionStart;
-                    int selectionLength = 0;
-                    if (_editor.SelectionStart < _editor.SelectionEnd)
-                    {
-                        selectionLength = _editor.SelectionEnd - _editor.SelectionStart;
-                        if (direction == SearchDirection.Next)
-                            selectionStart += selectionLength;
-                    }
-                    Match match = GetSearchMatch(text, searchText, selectionStart, direction, matchCase, wholeWord, isRegex, wrap);
-                    if (!match.Success && wrap)
-                    {
-                        if (direction == SearchDirection.Next)
-                            match = GetSearchMatch(text, searchText, 0, direction, matchCase, wholeWord, isRegex, wrap);
-                        else
-                            match = GetSearchMatch(text, searchText, text.Length - 1, direction, matchCase, wholeWord, isRegex, wrap);
-                    }
-                    if (match.Success)
-                    {
-                        _editor.SelectionStart = match.Index;
-                        _editor.SelectionEnd = match.Index + match.Length;
-                        _editor.ScrollCaret();
-                        _editor.Focus();
-                        return (true);
-                    }
-                    else
-                    {
-                        // No match found
-                        MessageBox.Show(window, $"No match for '{searchText}' found.", "No match", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    }
-                }
-                return (false);
-            }
-
-            public void Stop()
-            {
-                _textChangedTimer.Enabled = false;
-                if (_parseWorker.IsBusy)
-                    _parseWorker.CancelAsync();
-            }
-
-            public void Start()
-            {
-                Debug.Assert(!_parseWorker.IsBusy);
-                _parseWorker.RunWorkerAsync(_editor.Text);
-            }
-
-            private void ReplaceText(IWin32Window window, string searchText, string replacementText, ReplaceMode mode, bool matchCase, bool wholeWord, bool isRegex, bool wrap)
-            {
-                if (searchText != null && replacementText != null)
-                {
-                    int replacementLength = replacementText.Length;
-                    if (mode == ReplaceMode.Next)
-                    {
-                        if (_editor.SelectionStart == _editor.SelectionEnd)
-                            SearchText(window, searchText, SearchDirection.Next, matchCase, wholeWord, isRegex, wrap);
-                        if (_editor.SelectionStart < _editor.SelectionEnd)
-                        {
-                            int selStart = _editor.SelectionStart;
-                            _editor.ReplaceSelection(replacementText);
-                            _editor.ClearSelections();
-                            _editor.GotoPosition(selStart + replacementLength);
-                            _editor.Focus();
-                        }
-                    }
-                    else
-                    {
-                        Match match;
-                        int searchStart = 0;
-                        string text = _editor.Text;
-                        while ((match = GetSearchMatch(text, searchText, searchStart, SearchDirection.Next, matchCase, wholeWord, isRegex, false)) != null)
-                        {
-                            if (!match.Success)
-                                break;
-                            text = text.Insert(match.Index + match.Length, replacementText);
-                            text = text.Remove(match.Index, match.Length);
-                            searchStart = match.Index + replacementLength;
-                        }
-                        _editor.Text = text;
-                    }
-                }
-            }
-
-            private void Tokenize(string text)
-            {
-                Stopwatch timer = new Stopwatch();
-
-                // Clear all tokens
-                Debug.Assert(_tokens.Count == 0);
-
-                // C++ lexing
-                timer.Start();
-                CppLexer cppLexer = new CppLexer(new StringSourceBuffer(text));
-                var newCppTokens = cppLexer.Tokenize();
-                _tokens.AddRange(newCppTokens);
-                timer.Stop();
-                Debug.WriteLine($"Cpp lexing took {timer.ElapsedMilliseconds} ms");
-
-                // Doxygen lexing
-                timer.Start();
-                foreach (CppToken cppToken in newCppTokens)
-                {
-                    if (cppToken.Type == CppTokenType.MultiLineCommentDoc)
-                    {
-                        DoxygenLexer doxyLexer = new DoxygenLexer(new StringSourceBuffer(text, cppToken.Index, cppToken.Length));
-                        var newDoxyTokens = doxyLexer.Tokenize();
-                        _tokens.AddRange(newDoxyTokens);
-                        foreach (DoxygenToken doxyToken in newDoxyTokens)
-                        {
-                            if (doxyToken.Type == DoxygenTokenType.CodeBlock)
-                            {
-                                cppLexer = new CppLexer(new StringSourceBuffer(text, doxyToken.Index, doxyToken.Length));
-                                var codeCppTokens = cppLexer.Tokenize();
-                                _tokens.AddRange(codeCppTokens);
-                            }
-                        }
-                    }
-                }
-                timer.Stop();
-                Debug.WriteLine($"Doxy lexing took {timer.ElapsedMilliseconds} ms");
-            }
-
-            private void Parse(string text)
-            {
-                // @TODO(final): Parse from doxygen tokens instead
-
-                // Doxygen parsing
-                Stopwatch timer = Stopwatch.StartNew();
-                ParseTree tree = _doxyParser.Parse(text);
-                if (_tree != null) _tree.Dispose();
-                _tree = tree;
-                timer.Stop();
-                Debug.WriteLine($"Doxygen parse took {timer.ElapsedMilliseconds} ms");
-            }
-
-            private void SetupEditor(Scintilla editor)
-            {
-                editor.Dock = DockStyle.Fill;
-
-                editor.WrapMode = ScintillaNET.WrapMode.None;
-                editor.IndentationGuides = ScintillaNET.IndentView.LookBoth;
-                editor.CaretLineVisible = true;
-                editor.CaretLineBackColorAlpha = 50;
-                editor.CaretLineBackColor = Color.CornflowerBlue;
-                editor.TabWidth = editor.IndentWidth = 4;
-                editor.Margins[0].Width = 16;
-                editor.ViewWhitespace = ScintillaNET.WhitespaceMode.Invisible;
-                editor.SetWhitespaceForeColor(true, Color.LightGray);
-                editor.UseTabs = true;
-
-                Font editorFont = new Font(FontFamily.GenericMonospace, 14.0f, FontStyle.Regular);
-                editor.StyleResetDefault();
-                editor.Styles[Style.Default].Font = editorFont.Name;
-                editor.Styles[Style.Default].Size = (int)editorFont.SizeInPoints;
-                editor.StyleClearAll();
-                editor.Lexer = Lexer.Container;
-
-                int styleIndex = 1;
-
-                int cppMultiLineCommentStyle = styleIndex++;
-                int cppMultiLineCommentDocStyle = styleIndex++;
-                int cppSingleLineCommentStyle = styleIndex++;
-                int cppSingleLineCommentDocStyle = styleIndex++;
-                int cppPreprocessorStyle = styleIndex++;
-                int cppReservedKeywordStyle = styleIndex++;
-                int cppTypeKeywordStyle = styleIndex++;
-                int cppStringStyle = styleIndex++;
-                int cppNumberStyle = styleIndex++;
-
-                editor.Styles[cppMultiLineCommentStyle].ForeColor = Color.Green;
-                editor.Styles[cppMultiLineCommentDocStyle].ForeColor = Color.Purple;
-                editor.Styles[cppSingleLineCommentStyle].ForeColor = Color.DarkGreen;
-                editor.Styles[cppSingleLineCommentDocStyle].ForeColor = Color.DarkTurquoise;
-                editor.Styles[cppPreprocessorStyle].ForeColor = Color.DarkSlateGray;
-                editor.Styles[cppReservedKeywordStyle].ForeColor = Color.Blue;
-                editor.Styles[cppTypeKeywordStyle].ForeColor = Color.Blue;
-                editor.Styles[cppStringStyle].ForeColor = Color.Green;
-                editor.Styles[cppNumberStyle].ForeColor = Color.Red;
-
-                Dictionary<CppTokenType, int> cppTokenTypeToStyleDict = new Dictionary<CppTokenType, int>() {
-                    { CppTokenType.MultiLineComment, cppMultiLineCommentStyle },
-                    { CppTokenType.MultiLineCommentDoc, cppMultiLineCommentDocStyle },
-                    { CppTokenType.SingleLineComment, cppSingleLineCommentStyle },
-                    { CppTokenType.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
-                    { CppTokenType.Preprocessor, cppPreprocessorStyle },
-                    { CppTokenType.ReservedKeyword, cppReservedKeywordStyle },
-                    { CppTokenType.TypeKeyword, cppTypeKeywordStyle },
-                    { CppTokenType.String, cppStringStyle },
-                    { CppTokenType.Integer, cppNumberStyle },
-                    { CppTokenType.Decimal, cppNumberStyle },
-                    { CppTokenType.Hex, cppNumberStyle },
-                    { CppTokenType.Octal, cppNumberStyle },
-                };
-
-                int doxygenTextStyle = styleIndex++;
-                int doxygenBlockStyle = styleIndex++;
-                int doxygenCommandStyle = styleIndex++;
-                int doxygenIdentStyle = styleIndex++;
-                int doxygenCaptionStyle = styleIndex++;
-                int doxygenCodeBlockStyle = styleIndex++;
-                int doxygenCodeTypeStyle = styleIndex++;
-                editor.Styles[doxygenTextStyle].ForeColor = Color.Black;
-                editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
-                editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
-                editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
-                editor.Styles[doxygenCaptionStyle].ForeColor = Color.Green;
-                editor.Styles[doxygenCodeBlockStyle].ForeColor = Color.Black;
-                editor.Styles[doxygenCodeTypeStyle].ForeColor = Color.Orange;
-
-                Dictionary<DoxygenTokenType, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenType, int>() {
-                    { DoxygenTokenType.Text, doxygenTextStyle },
-                    { DoxygenTokenType.BlockStart, doxygenBlockStyle },
-                    { DoxygenTokenType.BlockEnd, doxygenBlockStyle },
-                    { DoxygenTokenType.Command, doxygenCommandStyle },
-                    { DoxygenTokenType.Ident, doxygenIdentStyle },
-                    { DoxygenTokenType.Caption, doxygenCaptionStyle },
-                    { DoxygenTokenType.CodeBlock, doxygenCodeBlockStyle },
-                    { DoxygenTokenType.CodeType, doxygenCodeTypeStyle },
-                };
-
-                editor.TextChanged += (s, e) =>
-                {
-                    Scintilla thisEditor = (Scintilla)s;
-
-                    // Autofit left-margin to fit-in line count number
-                    int maxLineNumberCharLength = thisEditor.Lines.Count.ToString().Length;
-                    if (maxLineNumberCharLength != _maxLineNumberCharLength)
-                    {
-                        thisEditor.Margins[0].Width = thisEditor.TextWidth(Style.LineNumber, new string('9', maxLineNumberCharLength + 1));
-                        _maxLineNumberCharLength = maxLineNumberCharLength;
-                    }
-
-                    _tokens.Clear();
-
-                    IsChanged = true;
-                    TabUpdating?.Invoke(this, new EventArgs());
-
-                    _textChangedTimer.Stop();
-                    _textChangedTimer.Start();
-                };
-
-                editor.StyleNeeded += (s, e) =>
-                {
-                    Scintilla thisEditor = (Scintilla)s;
-                    EditorState editorState = (EditorState)thisEditor.Parent.Tag;
-                    int startLine = thisEditor.LineFromPosition(thisEditor.GetEndStyled());
-                    int endLine = thisEditor.LineFromPosition(e.Position);
-                    int startPos = Math.Min(thisEditor.Lines[startLine].Position, thisEditor.TextLength - 1);
-                    int endPos = Math.Min(thisEditor.Lines[endLine].Position + Math.Max(0, thisEditor.Lines[endLine].Length - 1), thisEditor.TextLength - 1);
-                    int length = (endPos - startPos) + 1;
-                    if (!_parseWorker.IsBusy && _tokens.Count > 0)
-                    {
-                        Stopwatch timer = Stopwatch.StartNew();
-
-                        thisEditor.StartStyling(startPos);
-                        thisEditor.SetStyling(length, 0);
-
-                        var rangeToken = new InvalidToken(startPos, length);
-                        var intersectingTokens = _tokens.Where(r => r.InterectsWith(rangeToken));
-                        foreach (var token in intersectingTokens)
-                        {
-                            if (typeof(CppToken).Equals(token.GetType()))
-                            {
-                                CppToken cppToken = (CppToken)token;
-                                if (cppTokenTypeToStyleDict.ContainsKey(cppToken.Type))
-                                {
-                                    int style = cppTokenTypeToStyleDict[cppToken.Type];
-                                    thisEditor.StartStyling(token.Index);
-                                    thisEditor.SetStyling(token.Length, style);
-                                }
-                            }
-                            else if (typeof(DoxygenToken).Equals(token.GetType()))
-                            {
-                                DoxygenToken doxygenToken = (DoxygenToken)token;
-                                if (doxygenTokenTypeToStyleDict.ContainsKey(doxygenToken.Type))
-                                {
-                                    int style = doxygenTokenTypeToStyleDict[doxygenToken.Type];
-                                    thisEditor.StartStyling(token.Index);
-                                    thisEditor.SetStyling(token.Length, style);
-                                }
-                            }
-                        }
-                        timer.Stop();
-                        Debug.WriteLine($"Styling ({startPos} to {endPos}) took: {timer.Elapsed.TotalMilliseconds} ms");
-                    }
 
 
-                };
+        #endregion
 
-                editor.KeyDown += (s, e) =>
-                {
-                    if (e.Control && (!e.Alt && !e.Shift))
-                    {
-                        e.SuppressKeyPress = true;
-                        if (e.KeyCode == Keys.Home || e.KeyCode == Keys.Up)
-                            GoToPosition(0);
-                        else if (e.KeyCode == Keys.End || e.KeyCode == Keys.Down)
-                            GoToPosition(_editor.TextLength);
-                    }
-                    else if (!e.Alt && !e.Shift)
-                    {
-                        if (e.KeyCode == Keys.F3)
-                        {
-                            if (_searchControl.IsShown())
-                                SearchText(_window, _searchControl.SearchText, SearchDirection.Next, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap);
-                        }
-                        else if (e.KeyCode == Keys.Escape)
-                        {
-                            if (_searchControl.IsShown())
-                                _searchControl.HideSearchReplace();
-                        }
-                    }
-                };
-
-                editor.InsertCheck += (s, e) =>
-                {
-                    if ((e.Text.EndsWith("\n")))
-                    {
-                        var curLine = _editor.LineFromPosition(e.Position);
-                        var curLineText = _editor.Lines[curLine].Text;
-                        StringBuilder addon = new StringBuilder();
-                        for (int i = 0; i < curLineText.Length; ++i)
-                        {
-                            char c = curLineText[i];
-                            if ((c != '\n') && char.IsWhiteSpace(c))
-                                addon.Append(c);
-                            else
-                                break;
-                        }
-                        e.Text += addon.ToString();
-                    }
-                };
-            }
-        }
-#endregion
-
-#region Tabs
+        #region Tabs
         private readonly Regex _rexIndexFromName = new Regex("(?<index>[0-9]+)$", RegexOptions.Compiled);
         private string GetNextTabName(string prefix)
         {
@@ -731,11 +177,10 @@ namespace DoxygenEditor.Views
             EditorState newState = new EditorState(this) { Name = name, Tag = newTab };
             newState.IsShowWhitespace = miViewShowWhitespaces.Checked;
             newState.TabUpdating += (s, e) => UpdateTabState((EditorState)s);
-            newState.ParseComplete += (object s, ParseTree tree) =>
+            newState.ParseComplete += (object s, bool allDone) =>
             {
-                Debug.Assert(tree == newState.Tree);
-                RebuildSymbolTree(newState, tree);
-                if (Interlocked.Decrement(ref _parseCounter) == 0)
+                RebuildSymbolTree(newState, newState.DoxyTree);
+                if (allDone)
                 {
                     IEnumerable<EditorState> states = GetAllEditorStates();
                     RefreshIssues(states);
@@ -795,9 +240,9 @@ namespace DoxygenEditor.Views
             }
             return (true);
         }
-#endregion
+        #endregion
 
-#region IO
+        #region IO
         private Tuple<bool, Exception> IOOpenFile(EditorState editorState, string filePath)
         {
             try
@@ -838,7 +283,7 @@ namespace DoxygenEditor.Views
                 return new Tuple<bool, Exception>(false, e);
             }
         }
-#endregion
+        #endregion
 
         private void tcFiles_MouseClick(object sender, MouseEventArgs e)
         {
@@ -887,18 +332,32 @@ namespace DoxygenEditor.Views
                 MenuActionFileNew(this, new EventArgs());
         }
 
-#region Symbols
+        #region Symbols
         private void tvTree_DoubleClick(object sender, EventArgs e)
         {
             if (tvTree.SelectedNode != null && tcFiles.SelectedIndex > -1)
             {
-                TabPage selectedTab = tcFiles.TabPages[tcFiles.SelectedIndex];
-                EditorState editorState = (EditorState)selectedTab.Tag;
-                TreeNode treeNode = tvTree.SelectedNode;
-                if (treeNode.Level > 0)
+                TreeNode selectedNode = tvTree.SelectedNode;
+                if (selectedNode.Level > 0)
                 {
-                    Entity entity = (Entity)tvTree.SelectedNode.Tag;
-                    editorState.GoToPosition(entity.LineInfo.Start);
+                    TreeNode parentNode = selectedNode.Parent;
+                    while (parentNode != null)
+                    {
+                        if (parentNode.Parent != null)
+                            parentNode = parentNode.Parent;
+                        else
+                            break;
+                    }
+
+                    if (parentNode != null)
+                    {
+                        EditorState editorState = (EditorState)parentNode.Tag;
+                        TabPage tab = (TabPage)editorState.Tag;
+                        tcFiles.SelectedTab = tab;
+                        tcFiles.Focus();
+                        DoxygenNode entityNode = (DoxygenNode)selectedNode.Tag;
+                        editorState.GoToPosition(entityNode.Entity.Range.Index);
+                    }
                 }
             }
         }
@@ -949,40 +408,44 @@ namespace DoxygenEditor.Views
             tvTree.EndUpdate();
         }
 
-        private static HashSet<Type> AllowedTreeEntities = new HashSet<Type>()
+        private static HashSet<DoxygenEntityType> AllowedDoxyEntities = new HashSet<DoxygenEntityType>()
         {
-            typeof(PageEntity),
-            typeof(SectionEntity),
-            typeof(SubSectionEntity),
+            DoxygenEntityType.Page,
+            DoxygenEntityType.Section,
+            DoxygenEntityType.SubSection,
+            DoxygenEntityType.SubSubSection,
         };
 
-        private List<TreeNode> BuildSymbolTree(Entity rootEntity, TreeNode rootNode, Entity selectedEntity)
+        private List<TreeNode> BuildSymbolTree(BaseNode rootEntityNode, TreeNode rootTreeNode, BaseNode selectedEntityNode)
         {
             List<TreeNode> result = new List<TreeNode>();
-            foreach (Entity entity in rootEntity.Children)
+            foreach (BaseNode childEntityNode in rootEntityNode.Children)
             {
-                Type entityType = entity.GetType();
-                if (!AllowedTreeEntities.Contains(entityType))
-                    continue;
-                TreeNode node = new TreeNode(entity.DisplayName);
-                node.Tag = entity;
-                rootNode.Nodes.Add(node);
-                if (selectedEntity != null)
+                if (typeof(DoxygenNode).Equals(childEntityNode.GetType()))
                 {
-                    if (selectedEntity.CompareTo(entity) == 0)
-                        result.Add(node);
+                    DoxygenEntity entity = (DoxygenEntity)childEntityNode.Entity;
+                    if (!AllowedDoxyEntities.Contains(entity.Type))
+                        continue;
+                    TreeNode node = new TreeNode(entity.DisplayName);
+                    node.Tag = childEntityNode;
+                    rootTreeNode.Nodes.Add(node);
+                    if (selectedEntityNode != null)
+                    {
+                        if (selectedEntityNode.Entity.CompareTo(childEntityNode.Entity) == 0)
+                            result.Add(node);
+                    }
+                    if (childEntityNode.ShowChildren)
+                        result.AddRange(BuildSymbolTree(childEntityNode, node, selectedEntityNode));
                 }
-                if (node.Level < 2)
-                    result.AddRange(BuildSymbolTree(entity, node, selectedEntity));
             }
             return (result);
         }
 
-        private void RebuildSymbolTree(object tag, ParseTree tree)
+        private void RebuildSymbolTree(object tag, BaseTree doxyTree)
         {
-            Entity lastEntity = null;
+            DoxygenNode lastEntity = null;
             if (tvTree.SelectedNode != null)
-                lastEntity = tvTree.SelectedNode.Tag as Entity;
+                lastEntity = tvTree.SelectedNode.Tag as DoxygenNode;
 
             TreeNode newSelectedNode = null;
 
@@ -993,9 +456,9 @@ namespace DoxygenEditor.Views
             tvTree.BeginUpdate();
             rootNode.Nodes.Clear();
 
-            if (tree != null)
+            if (doxyTree != null)
             {
-                List<TreeNode> selNodes = BuildSymbolTree(tree.RootEntity, rootNode, lastEntity);
+                List<TreeNode> selNodes = BuildSymbolTree(doxyTree, rootNode, lastEntity);
                 if (selNodes.Count == 1)
                     newSelectedNode = selNodes.First();
             }
@@ -1005,9 +468,9 @@ namespace DoxygenEditor.Views
             if (newSelectedNode != null)
                 newSelectedNode.Expand();
         }
-#endregion
+        #endregion
 
-#region Menu
+        #region Menu
         private Tuple<bool, Exception> SaveFileAs(EditorState editorState, string filePath)
         {
             editorState.FilePath = filePath;
@@ -1175,11 +638,13 @@ namespace DoxygenEditor.Views
         {
             Debug.Assert(tcFiles.SelectedTab != null);
             EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
-            if (editorState.Tree != null)
+            if (editorState.DoxyTree != null)
             {
-                IEnumerable<Entity> allEntities = editorState.Tree.GetAllEntities();
                 List<SymbolItemModel> symbols = new List<SymbolItemModel>();
                 HashSet<Type> types = new HashSet<Type>();
+
+#if false
+                IEnumerable<Entity> allEntities = editorState.DoxyTree.GetAllEntities();
                 foreach (Entity entity in allEntities)
                 {
                     Type t = entity.GetType();
@@ -1198,6 +663,8 @@ namespace DoxygenEditor.Views
                         types.Add(entity.GetType());
                     }
                 }
+#endif
+
                 SymbolSearchForm form = new SymbolSearchForm(symbols, types);
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
@@ -1219,6 +686,12 @@ namespace DoxygenEditor.Views
             item.Checked = enabled;
         }
 
+        private void MenuActionHelpAbout(object sender, EventArgs e)
+        {
+            AboutForm form = new AboutForm();
+            form.ShowDialog(this);
+        }
+
         private void UpdateMenuSelection(EditorState editorState)
         {
             miEditCut.Enabled = editorState != null && editorState.CanCut();
@@ -1231,9 +704,9 @@ namespace DoxygenEditor.Views
             miEditRedo.Enabled = editorState != null && editorState.CanRedo();
             miEditPaste.Enabled = editorState != null && editorState.CanPaste();
         }
-#endregion
+        #endregion
 
-#region Issues
+        #region Issues
         enum IssueType
         {
             Error,
@@ -1243,8 +716,8 @@ namespace DoxygenEditor.Views
         struct IssueTag
         {
             public EditorState State { get; }
-            public Entity Entity { get; }
-            public IssueTag(EditorState state, Entity entity)
+            public BaseEntity Entity { get; }
+            public IssueTag(EditorState state, BaseEntity entity)
             {
                 State = state;
                 Entity = entity;
@@ -1262,8 +735,9 @@ namespace DoxygenEditor.Views
             lvIssues.Items.Add(newItem);
         }
         private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
-        private void AddIssuesFromEntity(IEnumerable<EditorState> states, EditorState state, Entity entity, string fileName, string groupName)
+        private void AddIssuesFromEntity(IEnumerable<EditorState> states, EditorState state, BaseNode entityNode, string fileName, string groupName)
         {
+#if false
             if (typeof(CommentEntity).Equals(entity.GetType()))
             {
                 CommentEntity comment = (CommentEntity)entity;
@@ -1275,6 +749,7 @@ namespace DoxygenEditor.Views
                         AddIssue(new IssueTag(state, decl), IssueType.Warning, "Missing documentation", decl.DisplayName, decl.DeclarationType.ToString(), groupName, fileName);
                 }
             }
+#endif
         }
         private void RefreshIssues(IEnumerable<EditorState> states)
         {
@@ -1282,23 +757,16 @@ namespace DoxygenEditor.Views
             lvIssues.Items.Clear();
             foreach (EditorState state in states)
             {
-                foreach (Entity childEntity in state.Tree.RootEntity.Children)
+                if (state.DoxyTree != null)
                 {
-                    if (typeof(GroupEntity).Equals(childEntity.GetType()))
+                    foreach (BaseNode childNode in state.DoxyTree.Children)
                     {
-                        GroupEntity group = (GroupEntity)childEntity;
-                        foreach (var groupChild in childEntity.Children)
-                        {
-                            AddIssuesFromEntity(states, state, groupChild, state.Name, group.GroupCaption);
-                        }
-                    }
-                    else
-                    {
-                        AddIssuesFromEntity(states, state, childEntity, state.Name, "Root");
+                        AddIssuesFromEntity(states, state, childNode, state.Name, "Root");
                     }
                 }
             }
             lvIssues.EndUpdate();
+            tpIssues.Text = $"Issues [{lvIssues.Items.Count}]";
         }
 
         private void lvIssues_DoubleClick(object sender, EventArgs e)
@@ -1309,14 +777,14 @@ namespace DoxygenEditor.Views
                 if (item.Tag != null)
                 {
                     IssueTag tag = (IssueTag)item.Tag;
-                    Entity entity = tag.Entity;
+                    BaseEntity entity = tag.Entity;
                     EditorState state = tag.State;
                     TabPage tab = (TabPage)state.Tag;
                     tcFiles.SelectedTab = tab;
-                    state.GoToPosition(entity.LineInfo.Start);
+                    state.GoToPosition(entity.Range.Index);
                 }
             }
         }
-#endregion
+        #endregion
     }
 }

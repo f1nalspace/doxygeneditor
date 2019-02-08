@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace DoxygenEditor.Natives
+namespace TSP.DoxygenEditor.Natives
 {
     static class NativeMethods
     {

@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-namespace DoxygenEditor.Extensions
+namespace TSP.DoxygenEditor.Extensions
 {
     static class UIExtensions
     {

@@ -1,4 +1,4 @@
-﻿namespace DoxygenEditor.SymbolSearch
+﻿namespace TSP.DoxygenEditor.SymbolSearch
 {
     partial class SymbolSearchForm
     {

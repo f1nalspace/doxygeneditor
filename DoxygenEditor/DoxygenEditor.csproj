@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{70A53966-525E-4F6D-AA1C-229B428F2A98}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>DoxygenEditor</RootNamespace>
+    <RootNamespace>TSP.DoxygenEditor</RootNamespace>
     <AssemblyName>DoxygenEditor</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -57,6 +57,9 @@
   <PropertyGroup>
     <ApplicationIcon>doxygeneditor.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>TSP.DoxygenEditor.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ScintillaNET, Version=3.6.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\jacobslusser.ScintillaNET.3.6.3\lib\net40\ScintillaNET.dll</HintPath>
@@ -74,8 +77,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Editor\EditorState.cs" />
+    <Compile Include="Editor\EditorStyler.cs" />
     <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
+    <Compile Include="Extensions\LinkedListExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
     <Compile Include="Lexers\BaseToken.cs" />
@@ -88,23 +94,31 @@
     <Compile Include="Lexers\Html\HtmlToken.cs" />
     <Compile Include="Lexers\Html\HtmlTokenType.cs" />
     <Compile Include="Lexers\InvalidToken.cs" />
-    <Compile Include="Lexers\SlidingTextBuffer.cs" />
-    <Compile Include="Lexers\SourceBuffer.cs" />
-    <Compile Include="Lexers\StringSourceBuffer.cs" />
-    <Compile Include="Lexers\SyntaxUtils.cs" />
-    <Compile Include="Lexers\TokenTypeAttribute.cs" />
+    <Compile Include="Lists\LinkedListStream.cs" />
+    <Compile Include="Parsers\BaseEntity.cs" />
+    <Compile Include="Parsers\BaseNode.cs" />
+    <Compile Include="Parsers\BaseTree.cs" />
+    <Compile Include="Parsers\Doxygen\DoxygenEntity.cs" />
+    <Compile Include="Parsers\Doxygen\DoxygenEntityType.cs" />
+    <Compile Include="Parsers\Doxygen\DoxygenNode.cs" />
+    <Compile Include="Parsers\Doxygen\DoxygenTree.cs" />
+    <Compile Include="TextAnalysis\SlidingTextBuffer.cs" />
+    <Compile Include="TextAnalysis\SourceBuffer.cs" />
+    <Compile Include="TextAnalysis\StringSourceBuffer.cs" />
+    <Compile Include="TextAnalysis\TextRange.cs" />
+    <Compile Include="Utils\SyntaxUtils.cs" />
+    <Compile Include="Lexers\TokenTextAttribute.cs" />
     <Compile Include="Lexers\Cpp\CppTokenTypeExtensions.cs" />
-    <Compile Include="Lexers\LexerType.cs" />
     <Compile Include="Lexers\Cpp\CppLexer.cs" />
     <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
     <Compile Include="Natives\NativeMethods.cs" />
-    <Compile Include="Parsers\Entities\CommentEntity.cs" />
-    <Compile Include="Parsers\Entities\ParamEntity.cs" />
-    <Compile Include="Parsers\Entities\DeclarationEntity.cs" />
-    <Compile Include="Parsers\TextBuffer.cs" />
-    <Compile Include="Parsers\Token.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\CommentEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\ParamEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\DeclarationEntity.cs" />
+    <Compile Include="Parsers\Obsolete\TextBuffer.cs" />
+    <Compile Include="Parsers\Obsolete\Token.cs" />
     <Compile Include="Solid\IOCContainer.cs" />
     <Compile Include="SearchReplace\SearchReplaceControl.cs">
       <SubType>UserControl</SubType>
@@ -113,22 +127,22 @@
       <DependentUpon>SearchReplaceControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\LogItemModel.cs" />
-    <Compile Include="Parsers\Entities\GroupEntity.cs" />
-    <Compile Include="Parsers\Entities\JavaDocEntity.cs" />
-    <Compile Include="Parsers\Entities\Entity.cs" />
-    <Compile Include="Parsers\Entities\PageEntity.cs" />
-    <Compile Include="Parsers\Entities\RootEntity.cs" />
-    <Compile Include="Parsers\Entities\SectionEntity.cs" />
-    <Compile Include="Parsers\Entities\SubSectionEntity.cs" />
-    <Compile Include="Parsers\LineBuffer.cs" />
-    <Compile Include="Parsers\ParseMessage.cs" />
-    <Compile Include="Parsers\ParseTree.cs" />
-    <Compile Include="Parsers\SequenceInfo.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\GroupEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\JavaDocEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\Entity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\PageEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\RootEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\SectionEntity.cs" />
+    <Compile Include="Parsers\Obsolete\Entities\SubSectionEntity.cs" />
+    <Compile Include="Parsers\Obsolete\LineBuffer.cs" />
+    <Compile Include="Parsers\Obsolete\ParseMessage.cs" />
+    <Compile Include="Parsers\Obsolete\ParseTree.cs" />
+    <Compile Include="Parsers\Obsolete\SequenceInfo.cs" />
     <Compile Include="SearchReplace\SearchReplaceTypes.cs" />
     <Compile Include="Services\IConfigurationService.cs" />
     <Compile Include="Services\RegistryConfigurationService.cs" />
     <Compile Include="Models\ConfigurationModel.cs" />
-    <Compile Include="Parsers\DoxygenParser.cs" />
+    <Compile Include="Parsers\Obsolete\DoxygenParser.cs" />
     <Compile Include="Models\TypeStringModel.cs" />
     <Compile Include="Views\AboutForm.cs">
       <SubType>Form</SubType>
@@ -190,6 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
+    <None Include="Resources\LICENSE.txt" />
     <None Include="Resources\SelectAll_16x.png" />
     <None Include="Resources\Paste_16x.png" />
     <None Include="Resources\Copy_16x.png" />

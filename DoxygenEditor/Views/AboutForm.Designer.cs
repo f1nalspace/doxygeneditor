@@ -1,4 +1,4 @@
-﻿namespace DoxygenEditor.Views
+﻿namespace TSP.DoxygenEditor.Views
 {
     partial class AboutForm
     {
@@ -31,8 +31,8 @@
             this.panBottom = new System.Windows.Forms.Panel();
             this.btnOk = new System.Windows.Forms.Button();
             this.panClient = new System.Windows.Forms.Panel();
+            this.tbLicense = new System.Windows.Forms.TextBox();
             this.labelDescription = new System.Windows.Forms.Label();
-            this.labelCopyright = new System.Windows.Forms.Label();
             this.labelAppVersion = new System.Windows.Forms.Label();
             this.labelAppName = new System.Windows.Forms.Label();
             this.panBottom.SuspendLayout();
@@ -43,15 +43,15 @@
             // 
             this.panBottom.Controls.Add(this.btnOk);
             this.panBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panBottom.Location = new System.Drawing.Point(0, 172);
+            this.panBottom.Location = new System.Drawing.Point(0, 328);
             this.panBottom.Name = "panBottom";
-            this.panBottom.Size = new System.Drawing.Size(613, 36);
+            this.panBottom.Size = new System.Drawing.Size(732, 36);
             this.panBottom.TabIndex = 0;
             // 
             // btnOk
             // 
             this.btnOk.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnOk.Location = new System.Drawing.Point(269, 6);
+            this.btnOk.Location = new System.Drawing.Point(329, 6);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(75, 23);
             this.btnOk.TabIndex = 0;
@@ -61,41 +61,47 @@
             // 
             // panClient
             // 
+            this.panClient.Controls.Add(this.tbLicense);
             this.panClient.Controls.Add(this.labelDescription);
-            this.panClient.Controls.Add(this.labelCopyright);
             this.panClient.Controls.Add(this.labelAppVersion);
             this.panClient.Controls.Add(this.labelAppName);
             this.panClient.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panClient.Location = new System.Drawing.Point(0, 0);
             this.panClient.Name = "panClient";
-            this.panClient.Size = new System.Drawing.Size(613, 172);
+            this.panClient.Size = new System.Drawing.Size(732, 328);
             this.panClient.TabIndex = 1;
+            // 
+            // tbLicense
+            // 
+            this.tbLicense.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbLicense.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.tbLicense.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F);
+            this.tbLicense.Location = new System.Drawing.Point(3, 137);
+            this.tbLicense.Multiline = true;
+            this.tbLicense.Name = "tbLicense";
+            this.tbLicense.ReadOnly = true;
+            this.tbLicense.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.tbLicense.Size = new System.Drawing.Size(726, 188);
+            this.tbLicense.TabIndex = 4;
+            this.tbLicense.WordWrap = false;
             // 
             // labelDescription
             // 
             this.labelDescription.AutoSize = true;
             this.labelDescription.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelDescription.Location = new System.Drawing.Point(12, 98);
+            this.labelDescription.Location = new System.Drawing.Point(8, 98);
             this.labelDescription.Name = "labelDescription";
             this.labelDescription.Size = new System.Drawing.Size(117, 21);
             this.labelDescription.TabIndex = 3;
             this.labelDescription.Text = "[Description]";
             // 
-            // labelCopyright
-            // 
-            this.labelCopyright.AutoSize = true;
-            this.labelCopyright.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCopyright.Location = new System.Drawing.Point(12, 133);
-            this.labelCopyright.Name = "labelCopyright";
-            this.labelCopyright.Size = new System.Drawing.Size(104, 21);
-            this.labelCopyright.TabIndex = 2;
-            this.labelCopyright.Text = "[Copyright]";
-            // 
             // labelAppVersion
             // 
             this.labelAppVersion.AutoSize = true;
             this.labelAppVersion.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelAppVersion.Location = new System.Drawing.Point(12, 63);
+            this.labelAppVersion.Location = new System.Drawing.Point(7, 62);
             this.labelAppVersion.Name = "labelAppVersion";
             this.labelAppVersion.Size = new System.Drawing.Size(118, 21);
             this.labelAppVersion.TabIndex = 1;
@@ -105,7 +111,7 @@
             // 
             this.labelAppName.AutoSize = true;
             this.labelAppName.Font = new System.Drawing.Font("Lucida Sans Unicode", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelAppName.Location = new System.Drawing.Point(10, 13);
+            this.labelAppName.Location = new System.Drawing.Point(5, 15);
             this.labelAppName.Name = "labelAppName";
             this.labelAppName.Size = new System.Drawing.Size(166, 34);
             this.labelAppName.TabIndex = 0;
@@ -115,7 +121,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(613, 208);
+            this.ClientSize = new System.Drawing.Size(732, 364);
             this.Controls.Add(this.panClient);
             this.Controls.Add(this.panBottom);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -138,7 +144,7 @@
         private System.Windows.Forms.Button btnOk;
         private System.Windows.Forms.Label labelAppName;
         private System.Windows.Forms.Label labelAppVersion;
-        private System.Windows.Forms.Label labelCopyright;
         private System.Windows.Forms.Label labelDescription;
+        private System.Windows.Forms.TextBox tbLicense;
     }
 }

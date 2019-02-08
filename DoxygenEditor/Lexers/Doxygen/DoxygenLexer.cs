@@ -1,14 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using TSP.DoxygenEditor.TextAnalysis;
+using TSP.DoxygenEditor.Utils;
 
-namespace DoxygenEditor.Lexers.Doxygen
+namespace TSP.DoxygenEditor.Lexers.Doxygen
 {
     class DoxygenLexer : BaseLexer<DoxygenToken>
     {
         private static HashSet<string> _identCommands = new HashSet<string>()
         {
             "page",
+            "cond",
             "subpage",
             "ref",
             "section",
@@ -46,6 +48,16 @@ namespace DoxygenEditor.Lexers.Doxygen
             bool result = c == '@' || c == '\\';
             return (result);
         }
+        private bool IsCommandIdentStart(char c)
+        {
+            bool result = SyntaxUtils.IsIdentStart(c) || c == '{' || c == '}';
+            return (result);
+        }
+        private bool IsCommandIdent(char c)
+        {
+            bool result = SyntaxUtils.IsIdent(c);
+            return (result);
+        }
 
         public DoxygenLexer(SourceBuffer source) : base(source)
         {
@@ -57,21 +69,6 @@ namespace DoxygenEditor.Lexers.Doxygen
             Buffer.Start();
             Buffer.NextChar();
             DoxygenToken result = new DoxygenToken(DoxygenTokenType.Text, Buffer.LexemeStart, Buffer.LexemeWidth, true);
-            return (result);
-        }
-
-        private DoxygenToken LexIdentToken(DoxygenTokenType type)
-        {
-            Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.PeekChar()));
-            Buffer.Start();
-            while (!Buffer.IsEOF)
-            {
-                if (SyntaxUtils.IsIdent(Buffer.PeekChar()))
-                    Buffer.AdvanceChar();
-                else
-                    break;
-            }
-            DoxygenToken result = new DoxygenToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
             return (result);
         }
 
@@ -116,22 +113,37 @@ namespace DoxygenEditor.Lexers.Doxygen
         private void LexCommandTokens()
         {
             Debug.Assert(Buffer.PeekChar() == '@' || Buffer.PeekChar() == '\\');
+            Debug.Assert(IsCommandIdentStart(Buffer.PeekChar(1)));
 
             // Command
             Buffer.Start();
             Buffer.NextChar();
-            while (!Buffer.IsEOF)
+
+            DoxygenTokenType type = DoxygenTokenType.Command;
+            if (Buffer.PeekChar() == '{' || Buffer.PeekChar() == '}')
             {
-                if (SyntaxUtils.IsIdent(Buffer.PeekChar()))
-                    Buffer.AdvanceChar();
-                else
-                    break;
+                // Special case for { } command
+                type = DoxygenTokenType.GroupStart;
+                if (Buffer.PeekChar() == '}')
+                    type = DoxygenTokenType.GroupEnd;
+                Buffer.NextChar();
+            }
+            else
+            {
+                // Normal case
+                while (!Buffer.IsEOF)
+                {
+                    if (IsCommandIdent(Buffer.PeekChar()))
+                        Buffer.AdvanceChar();
+                    else
+                        break;
+                }
             }
 
             int commandStart = Buffer.LexemeStart;
             int commandLen = Buffer.LexemeWidth;
             string command = Buffer.GetText(commandStart + 1, commandLen - 1);
-            DoxygenToken commandToken = new DoxygenToken(DoxygenTokenType.Command, Buffer.LexemeStart, Buffer.LexemeWidth, true);
+            DoxygenToken commandToken = new DoxygenToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
             PushToken(commandToken);
 
             if ("code".Equals(command))
@@ -142,7 +154,7 @@ namespace DoxygenEditor.Lexers.Doxygen
 
             if (_identCommands.Contains(command))
             {
-                SkipWhitespaces(false);
+                SkipWhitespaces();
                 if (SyntaxUtils.IsIdentStart(Buffer.PeekChar()))
                 {
                     Buffer.Start();
@@ -213,14 +225,15 @@ namespace DoxygenEditor.Lexers.Doxygen
         protected override bool LexNext()
         {
             bool insideBlock = false;
+            bool isJavaBlockStyle = false;
             do
             {
-                SkipWhitespaces(false);
+                SkipWhitespaces();
                 switch (Buffer.PeekChar())
                 {
                     case SlidingTextBuffer.InvalidCharacter:
                         {
-                            return (PushToken(new DoxygenToken(DoxygenTokenType.Invalid, 0, 0, false)));
+                            return (PushToken(new DoxygenToken(Buffer.IsEOF ? DoxygenTokenType.EOF : DoxygenTokenType.Invalid, 0, 0, false)));
                         }
 
                     case '/':
@@ -235,6 +248,22 @@ namespace DoxygenEditor.Lexers.Doxygen
                                     Buffer.Start();
                                     Buffer.AdvanceChar(3);
                                     insideBlock = true;
+                                    isJavaBlockStyle = n2 == '*';
+                                    PushToken(new DoxygenToken(DoxygenTokenType.BlockStart, Buffer.LexemeStart, Buffer.LexemeWidth, true));
+                                    StartText();
+                                    continue;
+                                }
+                            }
+                            else if (n == '/')
+                            {
+                                char n2 = Buffer.PeekChar(2);
+                                if (n2 == '!' || n2 == '/')
+                                {
+                                    Debug.Assert(!insideBlock);
+                                    Buffer.Start();
+                                    Buffer.AdvanceChar(3);
+                                    insideBlock = true;
+                                    isJavaBlockStyle = false;
                                     PushToken(new DoxygenToken(DoxygenTokenType.BlockStart, Buffer.LexemeStart, Buffer.LexemeWidth, true));
                                     StartText();
                                     continue;
@@ -247,13 +276,26 @@ namespace DoxygenEditor.Lexers.Doxygen
                     case '*':
                         {
                             char n = Buffer.PeekChar(1);
-                            if (n == '/' && insideBlock)
+                            if (insideBlock)
                             {
-                                PushText();
-                                Buffer.Start();
-                                Buffer.AdvanceChar(2);
-                                insideBlock = false;
-                                return (PushToken(new DoxygenToken(DoxygenTokenType.BlockEnd, Buffer.LexemeStart, Buffer.LexemeWidth, true)));
+                                if (n == '/')
+                                {
+                                    PushText();
+                                    Buffer.Start();
+                                    Buffer.AdvanceChar(2);
+                                    insideBlock = false;
+                                    return (PushToken(new DoxygenToken(DoxygenTokenType.BlockEnd, Buffer.LexemeStart, Buffer.LexemeWidth, true)));
+                                }
+                                else if (isJavaBlockStyle)
+                                {
+                                    // Push single star token (java doc style)
+                                    PushText();
+                                    Buffer.Start();
+                                    Buffer.AdvanceChar();
+                                    PushToken(new DoxygenToken(DoxygenTokenType.BlockChars, Buffer.LexemeStart, Buffer.LexemeWidth, true));
+                                    StartText();
+                                    continue;
+                                }
                             }
                             Buffer.NextChar();
                         }
@@ -263,7 +305,7 @@ namespace DoxygenEditor.Lexers.Doxygen
                     case '\\':
                         {
                             char n = Buffer.PeekChar(1);
-                            if (insideBlock && SyntaxUtils.IsIdentStart(n))
+                            if (insideBlock && IsCommandIdentStart(n))
                             {
                                 PushText();
                                 LexCommandTokens();

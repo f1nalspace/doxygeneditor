@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace DoxygenEditor.Services
+namespace TSP.DoxygenEditor.Services
 {
     class RegistryConfigurationInstance : IConfigurarionInstance
     {

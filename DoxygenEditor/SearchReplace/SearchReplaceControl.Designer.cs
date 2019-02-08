@@ -1,4 +1,4 @@
-﻿namespace DoxygenEditor.SearchReplace
+﻿namespace TSP.DoxygenEditor.SearchReplace
 {
     partial class SearchReplaceControl
     {

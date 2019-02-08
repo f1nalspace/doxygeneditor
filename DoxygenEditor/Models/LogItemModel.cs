@@ -1,8 +1,9 @@
-﻿using DoxygenEditor.Parsers;
+﻿using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.TextAnalysis;
 
-namespace DoxygenEditor.Models
+namespace TSP.DoxygenEditor.Models
 {
-    public class LogItemModel
+    class LogItemModel
     {
         public enum IconType
         {
@@ -13,14 +14,14 @@ namespace DoxygenEditor.Models
         public IconType Icon { get; }
         public string Name { get; }
         public string Source { get; }
-        public SequenceInfo LineInfo { get; }
+        public TextRange Range { get; }
 
-        public LogItemModel(IconType icon, string name, string source, SequenceInfo lineInfo)
+        public LogItemModel(IconType icon, string name, string source, TextRange range)
         {
             Icon = icon;
             Name = name;
             Source = source;
-            LineInfo = LineInfo;
+            Range = range;
         }
     }
 }

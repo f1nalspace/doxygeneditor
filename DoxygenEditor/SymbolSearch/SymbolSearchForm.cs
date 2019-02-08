@@ -1,11 +1,11 @@
-﻿using DoxygenEditor.Models;
-using DoxygenEditor.Parsers.Entities;
-using DoxygenEditor.SearchReplace;
+﻿using TSP.DoxygenEditor.Models;
+using TSP.DoxygenEditor.Parsers.Obsolete.Entities;
+using TSP.DoxygenEditor.SearchReplace;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace DoxygenEditor.SymbolSearch
+namespace TSP.DoxygenEditor.SymbolSearch
 {
     public partial class SymbolSearchForm : Form
     {

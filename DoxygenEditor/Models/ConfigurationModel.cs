@@ -1,7 +1,7 @@
-﻿using DoxygenEditor.Services;
+﻿using TSP.DoxygenEditor.Services;
 using System.Collections.Generic;
 
-namespace DoxygenEditor.Models
+namespace TSP.DoxygenEditor.Models
 {
     public class ConfigurationModel
     {

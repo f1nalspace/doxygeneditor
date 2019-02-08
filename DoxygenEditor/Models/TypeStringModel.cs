@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DoxygenEditor.Models
+namespace TSP.DoxygenEditor.Models
 {
     public class TypeStringModel
     {

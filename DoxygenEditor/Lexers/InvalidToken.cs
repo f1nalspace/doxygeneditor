@@ -1,4 +1,4 @@
-﻿namespace DoxygenEditor.Lexers
+﻿namespace TSP.DoxygenEditor.Lexers
 {
     class InvalidToken : BaseToken
     {

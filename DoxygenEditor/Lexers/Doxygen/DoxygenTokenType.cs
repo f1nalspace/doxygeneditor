@@ -1,4 +1,4 @@
-﻿namespace DoxygenEditor.Lexers.Doxygen
+﻿namespace TSP.DoxygenEditor.Lexers.Doxygen
 {
     public enum DoxygenTokenType
     {
@@ -6,6 +6,9 @@
         EOF,
         BlockStart,
         BlockEnd,
+        BlockChars,
+        GroupStart,
+        GroupEnd,
         Command,
         Ident,
         Caption,

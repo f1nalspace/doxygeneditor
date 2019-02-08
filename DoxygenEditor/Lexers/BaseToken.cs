@@ -1,35 +1,20 @@
 ﻿using System;
+using TSP.DoxygenEditor.TextAnalysis;
 
-namespace DoxygenEditor.Lexers
+namespace TSP.DoxygenEditor.Lexers
 {
-    public abstract class BaseToken
+    abstract class BaseToken : TextRange
     {
-        public int Index { get; private set; }
-        public int Length { get; private set; }
         public bool IsComplete { get; }
         public abstract bool IsEOF { get; }
         public abstract bool IsValid { get; }
-
-        public int End
+        public BaseToken(int index, int length, bool isComplete) : base(index, length)
         {
-            get
-            {
-                int result = Index + Math.Max(0, Length - 1);
-                return (result);
-            }
-        }
-
-        public BaseToken(int index, int length, bool isComplete)
-        {
-            Index = index;
-            Length = length;
             IsComplete = isComplete;
         }
-
-        public bool InterectsWith(BaseToken other)
+        public override string ToString()
         {
-            bool result = (Index <= other.End) && (End >= other.Index);
-            return (result);
+            return $"{GetType()}, {base.ToString()}";
         }
     }
 }

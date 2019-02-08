@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DoxygenEditor.Services
+namespace TSP.DoxygenEditor.Services
 {
     public interface IConfigurarionInstance : IDisposable
     {

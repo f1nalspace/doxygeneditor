@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Windows.Forms;
 
-namespace DoxygenEditor.Views
+namespace TSP.DoxygenEditor.Views
 {
     public partial class AboutForm : Form
     {
@@ -20,7 +20,9 @@ namespace DoxygenEditor.Views
             labelAppName.Text = appName;
             labelAppVersion.Text = $"Version {appVersion}";
             labelDescription.Text = appDescription;
-            labelCopyright.Text = appCopyright;
+            string licenseText = DoxygenEditor.Properties.Resources.LICENSE;
+            licenseText = licenseText.Replace("\n", Environment.NewLine);
+            tbLicense.Text = licenseText;
         }
 
         private void btnOk_Click(object sender, EventArgs e)

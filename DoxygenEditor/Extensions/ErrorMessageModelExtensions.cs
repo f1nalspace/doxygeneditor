@@ -1,8 +1,8 @@
-﻿using DoxygenEditor.Models;
+﻿using TSP.DoxygenEditor.Models;
 using System;
 using System.IO;
 
-namespace DoxygenEditor.Extensions
+namespace TSP.DoxygenEditor.Extensions
 {
     static class ErrorMessageModelExtensions
     {

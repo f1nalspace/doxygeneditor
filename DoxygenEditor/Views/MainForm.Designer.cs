@@ -1,6 +1,6 @@
-﻿using DoxygenEditor.Natives;
+﻿using TSP.DoxygenEditor.Natives;
 
-namespace DoxygenEditor.Views
+namespace TSP.DoxygenEditor.Views
 {
     partial class MainForm
     {
@@ -85,6 +85,8 @@ namespace DoxygenEditor.Views
             this.miCurrentTabCloseAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miCurrentTabCloseAllButThis = new System.Windows.Forms.ToolStripMenuItem();
             this.dlgSaveFile = new System.Windows.Forms.SaveFileDialog();
+            this.miHelp = new System.Windows.Forms.ToolStripMenuItem();
+            this.miHelpAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.scMainAndLog)).BeginInit();
@@ -106,7 +108,8 @@ namespace DoxygenEditor.Views
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miFile,
             this.miEdit,
-            this.miView});
+            this.miView,
+            this.miHelp});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(5, 2, 0, 2);
@@ -132,7 +135,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileNew
             // 
-            this.miFileNew.Image = global::DoxygenEditor.Properties.Resources.NewFile_16x;
+            this.miFileNew.Image = global::TSP.DoxygenEditor.Properties.Resources.NewFile_16x;
             this.miFileNew.Name = "miFileNew";
             this.miFileNew.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
             this.miFileNew.Size = new System.Drawing.Size(225, 26);
@@ -141,7 +144,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileOpen
             // 
-            this.miFileOpen.Image = global::DoxygenEditor.Properties.Resources.OpenFile_16x;
+            this.miFileOpen.Image = global::TSP.DoxygenEditor.Properties.Resources.OpenFile_16x;
             this.miFileOpen.Name = "miFileOpen";
             this.miFileOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
             this.miFileOpen.Size = new System.Drawing.Size(225, 26);
@@ -150,7 +153,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileSave
             // 
-            this.miFileSave.Image = global::DoxygenEditor.Properties.Resources.Save_16x;
+            this.miFileSave.Image = global::TSP.DoxygenEditor.Properties.Resources.Save_16x;
             this.miFileSave.Name = "miFileSave";
             this.miFileSave.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
             this.miFileSave.Size = new System.Drawing.Size(225, 26);
@@ -159,7 +162,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileSaveAs
             // 
-            this.miFileSaveAs.Image = global::DoxygenEditor.Properties.Resources.SaveAs_16x;
+            this.miFileSaveAs.Image = global::TSP.DoxygenEditor.Properties.Resources.SaveAs_16x;
             this.miFileSaveAs.Name = "miFileSaveAs";
             this.miFileSaveAs.Size = new System.Drawing.Size(225, 26);
             this.miFileSaveAs.Text = "Save as...";
@@ -167,7 +170,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileSaveAll
             // 
-            this.miFileSaveAll.Image = global::DoxygenEditor.Properties.Resources.SaveAll_16x;
+            this.miFileSaveAll.Image = global::TSP.DoxygenEditor.Properties.Resources.SaveAll_16x;
             this.miFileSaveAll.Name = "miFileSaveAll";
             this.miFileSaveAll.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.S)));
@@ -177,7 +180,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileClose
             // 
-            this.miFileClose.Image = global::DoxygenEditor.Properties.Resources.CloseDocument_16x;
+            this.miFileClose.Image = global::TSP.DoxygenEditor.Properties.Resources.CloseDocument_16x;
             this.miFileClose.Name = "miFileClose";
             this.miFileClose.Size = new System.Drawing.Size(225, 26);
             this.miFileClose.Text = "Close";
@@ -185,7 +188,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileCloseAll
             // 
-            this.miFileCloseAll.Image = global::DoxygenEditor.Properties.Resources.CloseGroup_16x;
+            this.miFileCloseAll.Image = global::TSP.DoxygenEditor.Properties.Resources.CloseGroup_16x;
             this.miFileCloseAll.Name = "miFileCloseAll";
             this.miFileCloseAll.Size = new System.Drawing.Size(225, 26);
             this.miFileCloseAll.Text = "Close all";
@@ -198,7 +201,7 @@ namespace DoxygenEditor.Views
             // 
             // miFileExit
             // 
-            this.miFileExit.Image = global::DoxygenEditor.Properties.Resources.Exit_16x;
+            this.miFileExit.Image = global::TSP.DoxygenEditor.Properties.Resources.Exit_16x;
             this.miFileExit.Name = "miFileExit";
             this.miFileExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
             this.miFileExit.Size = new System.Drawing.Size(225, 26);
@@ -249,7 +252,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditFindAndReplaceQuickFind
             // 
-            this.miEditFindAndReplaceQuickFind.Image = global::DoxygenEditor.Properties.Resources.QuickFind_16x;
+            this.miEditFindAndReplaceQuickFind.Image = global::TSP.DoxygenEditor.Properties.Resources.QuickFind_16x;
             this.miEditFindAndReplaceQuickFind.Name = "miEditFindAndReplaceQuickFind";
             this.miEditFindAndReplaceQuickFind.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
             this.miEditFindAndReplaceQuickFind.Size = new System.Drawing.Size(231, 26);
@@ -258,7 +261,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditFindAndReplaceQuickReplace
             // 
-            this.miEditFindAndReplaceQuickReplace.Image = global::DoxygenEditor.Properties.Resources.QuickReplace_16x;
+            this.miEditFindAndReplaceQuickReplace.Image = global::TSP.DoxygenEditor.Properties.Resources.QuickReplace_16x;
             this.miEditFindAndReplaceQuickReplace.Name = "miEditFindAndReplaceQuickReplace";
             this.miEditFindAndReplaceQuickReplace.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.H)));
             this.miEditFindAndReplaceQuickReplace.Size = new System.Drawing.Size(231, 26);
@@ -272,7 +275,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditUndo
             // 
-            this.miEditUndo.Image = global::DoxygenEditor.Properties.Resources.Undo_16x;
+            this.miEditUndo.Image = global::TSP.DoxygenEditor.Properties.Resources.Undo_16x;
             this.miEditUndo.Name = "miEditUndo";
             this.miEditUndo.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Z)));
             this.miEditUndo.Size = new System.Drawing.Size(200, 26);
@@ -281,7 +284,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditRedo
             // 
-            this.miEditRedo.Image = global::DoxygenEditor.Properties.Resources.Redo_16x;
+            this.miEditRedo.Image = global::TSP.DoxygenEditor.Properties.Resources.Redo_16x;
             this.miEditRedo.Name = "miEditRedo";
             this.miEditRedo.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y)));
             this.miEditRedo.Size = new System.Drawing.Size(200, 26);
@@ -295,7 +298,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditCut
             // 
-            this.miEditCut.Image = global::DoxygenEditor.Properties.Resources.Cut_16x;
+            this.miEditCut.Image = global::TSP.DoxygenEditor.Properties.Resources.Cut_16x;
             this.miEditCut.Name = "miEditCut";
             this.miEditCut.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
             this.miEditCut.Size = new System.Drawing.Size(200, 26);
@@ -304,7 +307,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditCopy
             // 
-            this.miEditCopy.Image = global::DoxygenEditor.Properties.Resources.Copy_16x;
+            this.miEditCopy.Image = global::TSP.DoxygenEditor.Properties.Resources.Copy_16x;
             this.miEditCopy.Name = "miEditCopy";
             this.miEditCopy.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
             this.miEditCopy.Size = new System.Drawing.Size(200, 26);
@@ -313,7 +316,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditPaste
             // 
-            this.miEditPaste.Image = global::DoxygenEditor.Properties.Resources.Paste_16x;
+            this.miEditPaste.Image = global::TSP.DoxygenEditor.Properties.Resources.Paste_16x;
             this.miEditPaste.Name = "miEditPaste";
             this.miEditPaste.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
             this.miEditPaste.Size = new System.Drawing.Size(200, 26);
@@ -327,7 +330,7 @@ namespace DoxygenEditor.Views
             // 
             // miEditSelectAll
             // 
-            this.miEditSelectAll.Image = global::DoxygenEditor.Properties.Resources.SelectAll_16x;
+            this.miEditSelectAll.Image = global::TSP.DoxygenEditor.Properties.Resources.SelectAll_16x;
             this.miEditSelectAll.Name = "miEditSelectAll";
             this.miEditSelectAll.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
             this.miEditSelectAll.Size = new System.Drawing.Size(200, 26);
@@ -366,7 +369,7 @@ namespace DoxygenEditor.Views
             // tbtnFileNew
             // 
             this.tbtnFileNew.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tbtnFileNew.Image = global::DoxygenEditor.Properties.Resources.NewFile_16x;
+            this.tbtnFileNew.Image = global::TSP.DoxygenEditor.Properties.Resources.NewFile_16x;
             this.tbtnFileNew.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbtnFileNew.Name = "tbtnFileNew";
             this.tbtnFileNew.Size = new System.Drawing.Size(28, 28);
@@ -584,6 +587,21 @@ namespace DoxygenEditor.Views
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
             // 
+            // miHelp
+            // 
+            this.miHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miHelpAbout});
+            this.miHelp.Name = "miHelp";
+            this.miHelp.Size = new System.Drawing.Size(53, 24);
+            this.miHelp.Text = "Help";
+            // 
+            // miHelpAbout
+            // 
+            this.miHelpAbout.Name = "miHelpAbout";
+            this.miHelpAbout.Size = new System.Drawing.Size(181, 26);
+            this.miHelpAbout.Text = "About...";
+            this.miHelpAbout.Click += new System.EventHandler(this.MenuActionHelpAbout);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -675,5 +693,7 @@ namespace DoxygenEditor.Views
         private System.Windows.Forms.ImageList imglstIcons;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader5;
+        private System.Windows.Forms.ToolStripMenuItem miHelp;
+        private System.Windows.Forms.ToolStripMenuItem miHelpAbout;
     }
 }

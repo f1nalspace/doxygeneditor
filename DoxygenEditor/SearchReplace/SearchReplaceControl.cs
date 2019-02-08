@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace DoxygenEditor.SearchReplace
+namespace TSP.DoxygenEditor.SearchReplace
 {
     public partial class SearchReplaceControl : UserControl
     {

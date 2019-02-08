@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using TSP.DoxygenEditor.Lists;
+using TSP.DoxygenEditor.TextAnalysis;
 
-namespace DoxygenEditor.Lexers
+namespace TSP.DoxygenEditor.Lexers
 {
-    abstract class BaseLexer<T> where T : BaseToken
+    abstract class BaseLexer<T> : IDisposable where T : BaseToken
     {
         internal readonly SlidingTextBuffer Buffer;
         private readonly List<T> _tokens = new List<T>();
@@ -20,7 +23,33 @@ namespace DoxygenEditor.Lexers
             return (true);
         }
 
+        protected void ReplaceTokens(T startToken, T endToken, IEnumerable<T> newTokens)
+        {
+            int startIndex = _tokens.IndexOf(startToken);
+            int endIndex = _tokens.IndexOf(endToken);
+
+            Debug.Assert(startIndex <= endIndex);
+            if (startIndex == endIndex)
+                _tokens.RemoveAt(startIndex);
+            else
+            {
+                int count = endIndex - startIndex;
+                _tokens.RemoveRange(startIndex, count);
+            }
+            _tokens.InsertRange(startIndex, newTokens);
+        }
+
         protected abstract bool LexNext();
+
+#if DEBUG
+        private void RefreshDebugValues()
+        {
+            foreach (T token in _tokens)
+            {
+                token.DebugValue = Buffer.Source.GetText(token.Index, token.Length);
+            }
+        }
+#endif
 
         public IEnumerable<T> Tokenize()
         {
@@ -34,15 +63,20 @@ namespace DoxygenEditor.Lexers
                 else
                     Debug.Assert(Buffer.Position > p);
             }
+
+#if DEBUG
+            RefreshDebugValues();
+#endif
+
             return (_tokens);
         }
 
-        protected int SkipWhitespaces(bool ignoreLinebreak)
+        protected int SkipWhitespaces(bool stopOnLinebreak = false)
         {
             int result = 0;
             while (!Buffer.IsEOF && char.IsWhiteSpace(Buffer.PeekChar()))
             {
-                if (ignoreLinebreak)
+                if (stopOnLinebreak)
                 {
                     if (Buffer.PeekChar() == '\n')
                         break;
@@ -51,6 +85,25 @@ namespace DoxygenEditor.Lexers
                 ++result;
             }
             return (result);
+        }
+
+        protected int SkipUntil(char c)
+        {
+            int result = 0;
+            while (!Buffer.IsEOF)
+            {
+                if (Buffer.PeekChar() == c)
+                    break;
+                Buffer.AdvanceChar();
+                ++result;
+            }
+            return (result);
+        }
+
+        public void Dispose()
+        {
+            Buffer.Dispose();
+            _tokens.Clear();
         }
     }
 }

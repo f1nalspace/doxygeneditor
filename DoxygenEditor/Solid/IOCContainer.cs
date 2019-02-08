@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DoxygenEditor.Solid
+namespace TSP.DoxygenEditor.Solid
 {
     public static class IOCContainer
     {

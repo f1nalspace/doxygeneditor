@@ -1,6 +1,6 @@
-﻿namespace DoxygenEditor.Lexers.Cpp
+﻿namespace TSP.DoxygenEditor.Lexers.Cpp
 {
-    public class CppToken : BaseToken
+    class CppToken : BaseToken
     {
         public CppTokenType Type { get; }
 
@@ -10,6 +10,15 @@
         public CppToken(CppTokenType type, int index, int length, bool isComplete) : base(index, length, isComplete)
         {
             Type = type;
+        }
+
+        public override string ToString()
+        {
+#if DEBUG
+            return $"{base.ToString()}, {Type} = {DebugValue}";
+#else
+            return $"{base.ToString()}, {Type}";
+#endif
         }
     }
 }

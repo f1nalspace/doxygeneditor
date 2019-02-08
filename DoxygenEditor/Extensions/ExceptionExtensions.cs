@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace DoxygenEditor.Extensions
+namespace TSP.DoxygenEditor.Extensions
 {
     static class ExceptionExtensions
     {

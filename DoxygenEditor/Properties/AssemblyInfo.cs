@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("DoxygenEditor")]
-[assembly: AssemblyDescription("A simple UI-editor for editing doxygen documentation files")]
+[assembly: AssemblyDescription("A visual editor for authoring/validating doxygen documentation files")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Doxygen Editor")]

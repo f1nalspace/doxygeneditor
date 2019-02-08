@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace DoxygenEditor.Lexers.Cpp
+namespace TSP.DoxygenEditor.Lexers.Cpp
 {
     public static class CppTokenTypeExtensions
     {

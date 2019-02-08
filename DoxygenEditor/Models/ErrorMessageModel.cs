@@ -1,4 +1,4 @@
-﻿namespace DoxygenEditor.Models
+﻿namespace TSP.DoxygenEditor.Models
 {
     public class ErrorMessageModel
     {

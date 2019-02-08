@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace DoxygenEditor.Properties {
+namespace TSP.DoxygenEditor.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace DoxygenEditor.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("DoxygenEditor.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TSP.DoxygenEditor.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -107,6 +107,26 @@ namespace DoxygenEditor.Properties {
             get {
                 object obj = ResourceManager.GetObject("Exit_16x", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to MIT License
+        ///
+        ///Copyright (c) 2018 Torsten Spaete
+        ///
+        ///Permission is hereby granted, free of charge, to any person obtaining a copy
+        ///of this software and associated documentation files (the &quot;Software&quot;), to deal
+        ///in the Software without restriction, including without limitation the rights
+        ///to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        ///copies of the Software, and to permit persons to whom the Software is
+        ///furnished to do so, subject to the following conditions:
+        ///
+        ///The above copyright notice and [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string LICENSE {
+            get {
+                return ResourceManager.GetString("LICENSE", resourceCulture);
             }
         }
         
