@@ -16,7 +16,9 @@
         Integer,
         Hex,
         Octal,
-        Decimal,
+        Binary,
+        Float,
+        Double,
 
         [TokenText("typedef")]
         Typedef,

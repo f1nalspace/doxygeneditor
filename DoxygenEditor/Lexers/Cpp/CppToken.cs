@@ -2,7 +2,7 @@
 {
     class CppToken : BaseToken
     {
-        public CppTokenType Type { get; }
+        public CppTokenType Type { get; internal set; }
 
         public override bool IsEOF => Type == CppTokenType.EOF;
         public override bool IsValid => Type != CppTokenType.Invalid;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using TSP.DoxygenEditor.Lists;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Utils;
@@ -139,8 +140,61 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
 
         }
 
-        private CppTokenType GetTokenType(string source)
+        private CppTokenType GetTokenType(char c)
         {
+            switch (c)
+            {
+                case '(':
+                    return CppTokenType.LeftParenthsis;
+                case ')':
+                    return CppTokenType.RightParenthsis;
+                case '[':
+                    return CppTokenType.LeftSquareBracket;
+                case ']':
+                    return CppTokenType.RightSquareBracket;
+                case '{':
+                    return CppTokenType.LeftCurlyBrace;
+                case '}':
+                    return CppTokenType.RightCurlyBrace;
+                case ';':
+                    return CppTokenType.Semicolon;
+                case ',':
+                    return CppTokenType.Comma;
+                case '?':
+                    return CppTokenType.OpTernaryIf;
+                case ':':
+                    return CppTokenType.OpTernaryElse;
+                case '~':
+                    return CppTokenType.OpNot;
+                case '%':
+                    return CppTokenType.OpMod;
+                case '!':
+                    return CppTokenType.OpNeg;
+                case '<':
+                    return CppTokenType.OpLess;
+                case '>':
+                    return CppTokenType.OpGreater;
+                case '=':
+                    return CppTokenType.OpEquals;
+                case '*':
+                    return CppTokenType.OpMul;
+                case '/':
+                    return CppTokenType.OpDiv;
+                case '+':
+                    return CppTokenType.OpPlus;
+                case '-':
+                    return CppTokenType.OpMinus;
+                case '|':
+                    return CppTokenType.OpOr;
+                case '&':
+                    return CppTokenType.OpAnd;
+
+                default:
+                    return CppTokenType.Invalid;
+            }
+
+            // @SPEED(final): String matching on enum+attribute is really slow, compared to a simple switch
+#if false
             foreach (CppTokenType type in Enum.GetValues(typeof(CppTokenType)))
             {
                 if (type.HasText())
@@ -153,6 +207,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 }
             }
             return (CppTokenType.Invalid);
+#endif
         }
 
         private CppToken LexSingleLineComment(bool init)
@@ -223,7 +278,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
         {
             if (Buffer.IsEOF)
                 return new CppToken(CppTokenType.EOF, Buffer.Position, 0, true);
-            CppTokenType tokenType = GetTokenType("" + Buffer.PeekChar());
+            CppTokenType tokenType = GetTokenType(Buffer.PeekChar());
             if (tokenType.HasText())
             {
                 string typeText = tokenType.ToText();
@@ -275,36 +330,34 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             return (result);
         }
 
-        private CppToken LexIdentToken()
+        private CppToken LexIdent()
         {
             Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.PeekChar()));
             Buffer.Start();
+            StringBuilder identBuffer = new StringBuilder();
             while (!Buffer.IsEOF)
             {
-                if (SyntaxUtils.IsIdent(Buffer.PeekChar()))
+                char c = Buffer.PeekChar();
+                if (SyntaxUtils.IsIdent(c))
+                {
+                    identBuffer.Append(c);
                     Buffer.AdvanceChar();
+                }
                 else
                     break;
             }
+
+            CppTokenType type = CppTokenType.Identifier;
             int identStart = Buffer.LexemeStart;
             int identLength = Buffer.LexemeWidth;
-            string identString = Buffer.GetText(identStart, identLength);
+            string identString = identBuffer.ToString();
 
-            CppTokenType type;
             if (ReservedKeywords.Contains(identString))
                 type = CppTokenType.ReservedKeyword;
             else if (TypeKeywords.Contains(identString) || GlobalClassKeywords.Contains(identString))
                 type = CppTokenType.TypeKeyword;
             else
                 type = CppTokenType.Identifier;
-
-            if (type == CppTokenType.ReservedKeyword)
-            {
-                CppTokenType newTokenType = GetTokenType(identString);
-                if (newTokenType != CppTokenType.Invalid)
-                    type = newTokenType;
-            }
-
             CppToken result = new CppToken(type, identStart, identLength, true);
             return (result);
         }
@@ -399,6 +452,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             Buffer.Start();
             bool dotSeen = false;
             bool allowDecimal = true;
+            bool allowLongSuffix = false;
             CppTokenType type;
             if (Buffer.PeekChar() == '0')
             {
@@ -410,6 +464,12 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     Buffer.AdvanceChar(2);
                     type = CppTokenType.Hex;
                 }
+                else if (n == 'b' || n == 'B')
+                {
+                    // Skip 0b or 0B
+                    Buffer.AdvanceChar(2);
+                    type = CppTokenType.Binary;
+                }
                 else if (SyntaxUtils.IsOctal(n))
                 {
                     // Skip zero octal
@@ -418,13 +478,16 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     allowDecimal = false;
                 }
                 else
+                {
                     type = CppTokenType.Integer;
+                    allowLongSuffix = true;
+                }
             }
             else if (Buffer.PeekChar() == '.')
             {
-                // 0. decimal number
+                // .0-9+ decimal number
                 Buffer.AdvanceChar();
-                type = CppTokenType.Decimal;
+                type = CppTokenType.Double;
                 dotSeen = true;
             }
             else
@@ -439,13 +502,14 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     if (!dotSeen && allowDecimal)
                     {
                         dotSeen = true;
+                        type = CppTokenType.Double;
                         Buffer.AdvanceChar();
                         continue;
                     }
                     else
                         break;
                 }
-                if (type == CppTokenType.Integer)
+                if (type == CppTokenType.Integer || type == CppTokenType.Double)
                 {
                     if (!SyntaxUtils.IsNumeric(Buffer.PeekChar()))
                         break;
@@ -460,10 +524,63 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     if (!SyntaxUtils.IsOctal(Buffer.PeekChar()))
                         break;
                 }
+                else if (type == CppTokenType.Binary)
+                {
+                    if (!SyntaxUtils.IsBinary(Buffer.PeekChar()))
+                        break;
+                }
                 else
                     throw new Exception($"Unsupported token type '{type}' for a number!");
                 Buffer.AdvanceChar();
             }
+
+            bool allowExpontial = (type == CppTokenType.Double);
+            bool allowFloatSuffix = (type == CppTokenType.Double);
+            if (allowLongSuffix)
+            {
+                bool notUnsignedSeen = false;
+                while (!Buffer.IsEOF)
+                {
+                    char n = Buffer.PeekChar();
+                    if ((n == 'u' || n == 'U') && !notUnsignedSeen)
+                    {
+                        notUnsignedSeen = true;
+                        Buffer.AdvanceChar();
+                    }
+                    else if (n == 'l' || n == 'L')
+                    {
+                        Buffer.AdvanceChar();
+                    }
+                    else break;
+                }
+            }
+
+            if (allowExpontial)
+            {
+                char[] n = new char[3] { Buffer.PeekChar(0), Buffer.PeekChar(1), Buffer.PeekChar(2) };
+                if (n[0] == 'e' || n[0] == 'E' && n[1] == '+' || n[1] == '-' && SyntaxUtils.IsNumeric(n[2]))
+                {
+                    Buffer.AdvanceChar(2);
+                    while (!Buffer.IsEOF)
+                    {
+                        if (SyntaxUtils.IsNumeric(Buffer.PeekChar()))
+                            Buffer.AdvanceChar();
+                        else
+                            break;
+                    }
+                }
+            }
+
+            if (allowFloatSuffix)
+            {
+                Debug.Assert(type == CppTokenType.Double);
+                if (Buffer.PeekChar() == 'f')
+                {
+                    type = CppTokenType.Float;
+                    Buffer.AdvanceChar();
+                }
+            }
+
             CppToken result = new CppToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
             return (result);
         }
@@ -560,7 +677,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     case 'Z':
                     case '_':
                         {
-                            CppToken token = LexIdentToken();
+                            CppToken token = LexIdent();
                             return PushToken(token);
                         }
 
