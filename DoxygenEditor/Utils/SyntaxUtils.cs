@@ -22,6 +22,11 @@
             bool result = c >= '0' && c <= '7';
             return (result);
         }
+        public static bool IsBinary(char c)
+        {
+            bool result = c >= '0' && c <= '1';
+            return (result);
+        }
         public static bool IsIdentStart(char c)
         {
             bool result = IsAlpha(c) || (c == '_');
