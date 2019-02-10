@@ -20,6 +20,7 @@ using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Parsers.Doxygen;
 using TSP.DoxygenEditor.Extensions;
 using TSP.DoxygenEditor.Lists;
+using System.Collections.Concurrent;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -334,11 +335,20 @@ namespace TSP.DoxygenEditor.Editor
                 _tokens.AddRange(newTokens);
         }
 
-        class TokenTimingStats
+        class TokenizerTimingStats
         {
             public long CppDuration = 0;
             public long DoxyDuration = 0;
             public long HtmlDuration = 0;
+
+            public static TokenizerTimingStats operator +(TokenizerTimingStats a, TokenizerTimingStats b)
+            {
+                TokenizerTimingStats result = new TokenizerTimingStats();
+                result.CppDuration = a.CppDuration + b.CppDuration;
+                result.DoxyDuration = a.DoxyDuration + b.DoxyDuration;
+                result.HtmlDuration = a.HtmlDuration + b.HtmlDuration;
+                return (result);
+            }
         }
 
         class DescendedIntComparer : IComparer<int>
@@ -352,20 +362,19 @@ namespace TSP.DoxygenEditor.Editor
 
         class TokenizeResult
         {
-            private readonly Dictionary<BaseToken, TokenizeResult> _map = new Dictionary<BaseToken, TokenizeResult>();
-            public Dictionary<BaseToken, TokenizeResult> Map { get { return _map; } }
+            public Dictionary<BaseToken, TokenizeResult> Map { get; } = new Dictionary<BaseToken, TokenizeResult>();
             public IEnumerable<BaseToken> Tokens { get; }
             public BaseToken RootToken { get; }
-            public TokenTimingStats Stats { get; }
+            public TokenizerTimingStats Stats { get; }
             public TokenizeResult(BaseToken rootToken, IEnumerable<BaseToken> tokens)
             {
                 RootToken = rootToken;
                 Tokens = tokens;
-                Stats = new TokenTimingStats();
+                Stats = new TokenizerTimingStats();
             }
             public void AddToMap(BaseToken token, TokenizeResult result)
             {
-                _map.Add(token, result);
+                Map.Add(token, result);
             }
         }
 
@@ -439,11 +448,15 @@ namespace TSP.DoxygenEditor.Editor
             foreach (var result in results)
             {
                 int index = outTokens.IndexOf(result.RootToken);
-                Debug.Assert(index != -1);
-                outTokens.InsertRange(index + 1, result.Tokens);
-                foreach (var p in result.Map)
+                if (index == -1)
+                    outTokens.AddRange(result.Tokens);
+                else
                 {
-                    ExpandTokenResults(new[] { p.Value }, outTokens);
+                    outTokens.InsertRange(index + 1, result.Tokens);
+                    foreach (var p in result.Map)
+                    {
+                        ExpandTokenResults(new[] { p.Value }, outTokens);
+                    }
                 }
             }
         }
@@ -458,13 +471,12 @@ namespace TSP.DoxygenEditor.Editor
             Stopwatch totalLexTimer = Stopwatch.StartNew();
 
             // C++ lexing
-            TokenTimingStats stats = new TokenTimingStats();
+            TokenizerTimingStats stats = new TokenizerTimingStats();
             var cppRes = TokenizeCpp(null, text, 0, text.Length);
-            _tokens.AddRange(cppRes.Tokens);
 
             // Doxy lexing
-            List<TokenizeResult> tokenResults = new List<TokenizeResult>();
-            object forTokensLock = new object();
+            ConcurrentStack<TokenizeResult> tokenResults = new ConcurrentStack<TokenizeResult>();
+            tokenResults.Push(cppRes);
             Parallel.ForEach(cppRes.Tokens,
                 // Local init
                 () => new List<TokenizeResult>(),
@@ -482,18 +494,16 @@ namespace TSP.DoxygenEditor.Editor
                 // Local finally
                 (local) =>
                 {
-                    lock (forTokensLock)
-                    {
-                        foreach (var res in local)
-                            tokenResults.Add(res);
-                    }
+                    foreach (var res in local)
+                        tokenResults.Push(res);
                 }
             );
+            foreach (var tokenResult in tokenResults)
+                stats += tokenResult.Stats;
             totalLexTimer.Stop();
             Debug.WriteLine($"Lexing done (Total: {totalLexTimer.ElapsedMilliseconds} ms, C++: {stats.CppDuration} ms, Doxygen: {stats.DoxyDuration} ms, Html: {stats.HtmlDuration} ms)");
 
             timer.Restart();
-            List<TokenizeResult> expandedTokenResults = new List<TokenizeResult>();
             ExpandTokenResults(tokenResults, _tokens);
             timer.Stop();
             Debug.WriteLine($"Expand done, took {timer.ElapsedMilliseconds} ms");
@@ -556,8 +566,8 @@ namespace TSP.DoxygenEditor.Editor
             {
                 Scintilla thisEditor = (Scintilla)s;
 
-                // Autofit left-margin to fit-in line count number
-                int maxLineNumberCharLength = thisEditor.Lines.Count.ToString().Length;
+            // Autofit left-margin to fit-in line count number
+            int maxLineNumberCharLength = thisEditor.Lines.Count.ToString().Length;
                 if (maxLineNumberCharLength != _maxLineNumberCharLength)
                 {
                     thisEditor.Margins[0].Width = thisEditor.TextWidth(Style.LineNumber, new string('9', maxLineNumberCharLength + 1));

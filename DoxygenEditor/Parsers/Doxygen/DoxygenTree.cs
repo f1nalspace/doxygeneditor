@@ -118,6 +118,7 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
                 else
                 {
                     BaseNode parentNode = Root;
+                    Debug.Assert(parentNode != null);
                     Add(new DoxygenNode(parentNode, parentNode.Level + 1, newEntity));
                 }
                 return (true);
@@ -151,8 +152,10 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
                 {
                     case DoxygenTokenType.Command:
                         return ParseCommand(stream);
+
                     case DoxygenTokenType.BlockEnd:
-                        return ParseSourceDeclaration(stream);
+                            return ParseSourceDeclaration(stream);
+
                     default:
                         break;
                 }

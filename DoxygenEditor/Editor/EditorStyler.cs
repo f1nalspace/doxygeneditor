@@ -38,9 +38,11 @@ namespace TSP.DoxygenEditor.Editor
 
             { CppTokenType.String, cppStringStyle },
             { CppTokenType.Integer, cppNumberStyle },
-            { CppTokenType.Decimal, cppNumberStyle },
+            { CppTokenType.Float, cppNumberStyle },
+            { CppTokenType.Double, cppNumberStyle },
             { CppTokenType.Hex, cppNumberStyle },
             { CppTokenType.Octal, cppNumberStyle },
+            { CppTokenType.Binary, cppNumberStyle },
 
             { CppTokenType.Typedef, cppReservedKeywordStyle },
             { CppTokenType.Struct, cppReservedKeywordStyle },

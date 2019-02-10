@@ -14,7 +14,7 @@
         GroupBegin,
         GroupEnd,
 
-        SourceDeclaration,
+        SourceDeclaration = 300,
 
         SubPage = 500,
         Ref,
