@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Utils;
 
@@ -10,12 +12,15 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
         private static HashSet<string> _identCommands = new HashSet<string>()
         {
             "page",
-            "cond",
-            "subpage",
-            "ref",
             "section",
             "subsection",
             "subsubsection",
+            "defgroup", 
+
+            "cond",
+            "subpage",
+            "ref",
+            "param",
         };
 
         enum CaptionMode
@@ -36,11 +41,14 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
         private static Dictionary<string, CaptionCommandSetting> _captionCommands = new Dictionary<string, CaptionCommandSetting>()
         {
             {"page", new CaptionCommandSetting() },
-            {"subpage", new CaptionCommandSetting(CaptionMode.Literal) },
-            {"ref", new CaptionCommandSetting(CaptionMode.Literal) },
+            {"defgroup", new CaptionCommandSetting(CaptionMode.Literal) },
             {"section", new CaptionCommandSetting() },
             {"subsection", new CaptionCommandSetting() },
             {"subsubsection", new CaptionCommandSetting() },
+
+            {"subpage", new CaptionCommandSetting(CaptionMode.Literal) },
+            {"ref", new CaptionCommandSetting(CaptionMode.Literal) },
+            {"param", new CaptionCommandSetting(CaptionMode.Literal) },
         };
 
         private bool IsCommandBegin(char c)
@@ -118,6 +126,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
             // Command
             Buffer.Start();
             Buffer.NextChar();
+            StringBuilder commandString = new StringBuilder();
 
             DoxygenTokenType type = DoxygenTokenType.Command;
             if (Buffer.PeekChar() == '{' || Buffer.PeekChar() == '}')
@@ -126,6 +135,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                 type = DoxygenTokenType.GroupStart;
                 if (Buffer.PeekChar() == '}')
                     type = DoxygenTokenType.GroupEnd;
+                commandString.Append(Buffer.PeekChar());
                 Buffer.NextChar();
             }
             else
@@ -134,7 +144,10 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                 while (!Buffer.IsEOF)
                 {
                     if (IsCommandIdent(Buffer.PeekChar()))
+                    {
+                        commandString.Append(Buffer.PeekChar());
                         Buffer.AdvanceChar();
+                    }
                     else
                         break;
                 }
@@ -142,7 +155,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
 
             int commandStart = Buffer.LexemeStart;
             int commandLen = Buffer.LexemeWidth;
-            string command = Buffer.GetText(commandStart + 1, commandLen - 1);
+            string command = commandString.ToString();
             DoxygenToken commandToken = new DoxygenToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
             PushToken(commandToken);
 
@@ -222,33 +235,37 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
             }
         }
 
+        [Flags]
+        enum BlockFlags
+        {
+            None = 0,
+            InsideBlock = 1 << 0,
+            SingleLine = 1 << 1,
+            JavaDoc = 1 << 2,
+        }
+
         protected override bool LexNext()
         {
-            bool insideBlock = false;
-            bool isJavaBlockStyle = false;
+            BlockFlags flags = BlockFlags.None;
             do
             {
                 SkipWhitespaces();
                 switch (Buffer.PeekChar())
                 {
-                    case SlidingTextBuffer.InvalidCharacter:
-                        {
-                            return (PushToken(new DoxygenToken(Buffer.IsEOF ? DoxygenTokenType.EOF : DoxygenTokenType.Invalid, 0, 0, false)));
-                        }
-
                     case '/':
                         {
                             char n = Buffer.PeekChar(1);
                             if (n == '*')
                             {
+                                // Multi line
                                 char n2 = Buffer.PeekChar(2);
                                 if (n2 == '!' || n2 == '*')
                                 {
-                                    Debug.Assert(!insideBlock);
+                                    Debug.Assert(!flags.HasFlag(BlockFlags.InsideBlock));
                                     Buffer.Start();
                                     Buffer.AdvanceChar(3);
-                                    insideBlock = true;
-                                    isJavaBlockStyle = n2 == '*';
+                                    flags = BlockFlags.InsideBlock;
+                                    if (n2 == '*') flags |= BlockFlags.JavaDoc;
                                     PushToken(new DoxygenToken(DoxygenTokenType.BlockStart, Buffer.LexemeStart, Buffer.LexemeWidth, true));
                                     StartText();
                                     continue;
@@ -256,14 +273,14 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                             }
                             else if (n == '/')
                             {
+                                // Single line
                                 char n2 = Buffer.PeekChar(2);
                                 if (n2 == '!' || n2 == '/')
                                 {
-                                    Debug.Assert(!insideBlock);
+                                    Debug.Assert(!flags.HasFlag(BlockFlags.InsideBlock));
                                     Buffer.Start();
                                     Buffer.AdvanceChar(3);
-                                    insideBlock = true;
-                                    isJavaBlockStyle = false;
+                                    flags = BlockFlags.InsideBlock | BlockFlags.SingleLine;
                                     PushToken(new DoxygenToken(DoxygenTokenType.BlockStart, Buffer.LexemeStart, Buffer.LexemeWidth, true));
                                     StartText();
                                     continue;
@@ -273,20 +290,31 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                         }
                         break;
 
+                    case '\n':
+                        {
+                            if (flags.HasFlag(BlockFlags.InsideBlock) && flags.HasFlag(BlockFlags.SingleLine))
+                            {
+                                PushText();
+                                flags = BlockFlags.None;
+                                return (PushToken(new DoxygenToken(DoxygenTokenType.BlockEnd, Buffer.Position, 0, true)));
+                            }
+                            Buffer.NextChar();
+                        } break;
+
                     case '*':
                         {
                             char n = Buffer.PeekChar(1);
-                            if (insideBlock)
+                            if (flags.HasFlag(BlockFlags.InsideBlock))
                             {
                                 if (n == '/')
                                 {
                                     PushText();
                                     Buffer.Start();
                                     Buffer.AdvanceChar(2);
-                                    insideBlock = false;
+                                    flags = BlockFlags.None;
                                     return (PushToken(new DoxygenToken(DoxygenTokenType.BlockEnd, Buffer.LexemeStart, Buffer.LexemeWidth, true)));
                                 }
-                                else if (isJavaBlockStyle)
+                                else if (flags.HasFlag(BlockFlags.JavaDoc))
                                 {
                                     // Push single star token (java doc style)
                                     PushText();
@@ -305,7 +333,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                     case '\\':
                         {
                             char n = Buffer.PeekChar(1);
-                            if (insideBlock && IsCommandIdentStart(n))
+                            if (flags.HasFlag(BlockFlags.InsideBlock) && IsCommandIdentStart(n))
                             {
                                 PushText();
                                 LexCommandTokens();
@@ -316,6 +344,11 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                         }
                         break;
 
+                    case SlidingTextBuffer.InvalidCharacter:
+                        {
+                            return PushToken(new DoxygenToken(Buffer.IsEOF ? DoxygenTokenType.EOF : DoxygenTokenType.Invalid, 0, 0, false));
+                        }
+
                     default:
                         {
                             Buffer.NextChar();
@@ -323,7 +356,6 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                         }
                 }
             } while (!Buffer.IsEOF);
-            PushText();
             return (false);
         }
     }

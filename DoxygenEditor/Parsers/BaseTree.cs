@@ -13,7 +13,7 @@ namespace TSP.DoxygenEditor.Parsers
 
         private readonly Stack<BaseNode> _stack = new Stack<BaseNode>();
 
-        public BaseTree() : base(null, -1, null)
+        public BaseTree() : base(null, null)
         {
         }
 

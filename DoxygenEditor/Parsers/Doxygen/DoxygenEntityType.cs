@@ -4,19 +4,18 @@
     {
         None = 0,
 
-        Page = 10,
+        Block = 1,
+        Group = 2,
 
-        Section = 50,
+        Page = 50,
+
+        Section = 100,
         SubSection,
         SubSubSection,
 
-        GroupDefinition = 100,
-        GroupBegin,
-        GroupEnd,
-
         SourceDeclaration = 300,
 
-        SubPage = 500,
+        SubPage = 1000,
         Ref,
     }
 }

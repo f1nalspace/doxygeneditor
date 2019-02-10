@@ -32,10 +32,10 @@ namespace TSP.DoxygenEditor.Parsers
             }
         }
 
-        public BaseNode(BaseNode parent, int level, BaseEntity entity)
+        public BaseNode(BaseNode parent, BaseEntity entity)
         {
             Parent = parent;
-            Level = level;
+            Level = parent != null ? parent.Level + 1 : 0;
             Entity = entity;
         }
 

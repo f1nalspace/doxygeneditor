@@ -31,7 +31,7 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
             }
         }
 
-        public static HashSet<DoxygenEntityType> AllowedChildren = new HashSet<DoxygenEntityType>()
+        public static HashSet<DoxygenEntityType> ShowChildrensSet = new HashSet<DoxygenEntityType>()
         {
             DoxygenEntityType.Page,
             DoxygenEntityType.Section,
@@ -52,6 +52,28 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
             { "subpage", new CommandRule(DoxygenEntityType.SubPage, isPush: false, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
             { "ref", new CommandRule(DoxygenEntityType.Ref, isPush: false, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
         };
+
+        private void PushEntity(DoxygenEntity newEntity)
+        {
+            BaseNode parentNode = Root;
+            while (parentNode != null)
+            {
+                DoxygenNode doxyParentNode = parentNode as DoxygenNode;
+                if (doxyParentNode == null)
+                    break;
+                DoxygenEntity parentEntity = (DoxygenEntity)doxyParentNode.Entity;
+                int typeDiff = (int)newEntity.Type - (int)parentEntity.Type;
+                if (typeDiff <= 0)
+                {
+                    Pop();
+                    parentNode = parentNode.Parent;
+                    if (typeDiff == 0)
+                        break;
+                }
+                else break;
+            }
+            Push(new DoxygenNode(parentNode, newEntity));
+        }
 
         private bool ParseCommand(LinkedListStream<BaseToken> stream)
         {
@@ -95,31 +117,14 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
 
                 if (config.IsPush)
                 {
-                    BaseNode parentNode = Root;
-                    while (parentNode != null)
-                    {
-                        DoxygenNode doxyParentNode = parentNode as DoxygenNode;
-                        if (doxyParentNode == null)
-                            break;
-                        DoxygenEntity parentEntity = (DoxygenEntity)doxyParentNode.Entity;
-                        int typeDiff = (int)newEntity.Type - (int)parentEntity.Type;
-                        if (typeDiff <= 0)
-                        {
-                            Pop();
-                            parentNode = parentNode.Parent;
-                            if (typeDiff == 0)
-                                break;
-                        }
-                        else break;
-                    }
-                    int newLevel = parentNode != null ? parentNode.Level + 1 : 0;
-                    Push(new DoxygenNode(parentNode, newLevel, newEntity));
+                    PushEntity(newEntity);
                 }
                 else
                 {
+                    // @FIXME(final): Root is null on a @ref element, which should not happen in any case
                     BaseNode parentNode = Root;
                     Debug.Assert(parentNode != null);
-                    Add(new DoxygenNode(parentNode, parentNode.Level + 1, newEntity));
+                    Add(new DoxygenNode(parentNode, newEntity));
                 }
                 return (true);
             }
@@ -153,8 +158,28 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
                     case DoxygenTokenType.Command:
                         return ParseCommand(stream);
 
+#if false
+                    case DoxygenTokenType.BlockStart:
+                        {
+                            LinkedListNode<BaseToken> n = stream.CurrentNode;
+                            DoxygenEntity blockEntity = new DoxygenEntity(DoxygenEntityType.Block, null, doxyToken);
+                            DoxygenNode newNode = new DoxygenNode(Root, blockEntity);
+                            PushEntity(blockEntity);
+                            stream.Next();
+                            return (true);
+                        }
+#endif
+
                     case DoxygenTokenType.BlockEnd:
+                        {
+#if false
+                            DoxygenNode n = (DoxygenNode)Root;
+                            Debug.Assert(n != null);
+                            DoxygenEntity e = (DoxygenEntity)n.Entity;
+                            Pop();
+#endif
                             return ParseSourceDeclaration(stream);
+                        }
 
                     default:
                         break;
