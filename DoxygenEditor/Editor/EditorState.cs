@@ -10,17 +10,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Parsers.Doxygen;
 using TSP.DoxygenEditor.Extensions;
 using TSP.DoxygenEditor.Lists;
-using System.Collections.Concurrent;
+using TSP.DoxygenEditor.Parsers.Cpp;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -35,9 +33,11 @@ namespace TSP.DoxygenEditor.Editor
         private System.Windows.Forms.Timer _textChangedTimer;
         private BackgroundWorker _parseWorker;
         private BaseTree _doxyTree;
+        private BaseTree _cppTree;
         private readonly List<BaseToken> _tokens = new List<BaseToken>();
         private readonly EditorStyler _styler = new EditorStyler();
         public BaseTree DoxyTree { get { return _doxyTree; } }
+        public BaseTree CppTree { get { return _cppTree; } }
         public object Tag { get; set; }
         public string FilePath { get; set; }
         public string Name { get; set; }
@@ -97,6 +97,7 @@ namespace TSP.DoxygenEditor.Editor
             _parseWorker = new BackgroundWorker();
             _parseWorker.DoWork += (s, e) =>
             {
+                // @TODO(final): Support for continuous tokenization, so only changes are applied
                 Interlocked.Increment(ref _parseCounter);
                 string text = (string)e.Argument;
                 Tokenize(text);
@@ -104,7 +105,8 @@ namespace TSP.DoxygenEditor.Editor
             };
             _parseWorker.RunWorkerCompleted += (s, e) =>
             {
-                _editor.Colorize(0, _editor.TextLength - 1);
+                // @TODO(final): Dont colorize everything, just re-colorize the changes -> See "Support for continuous tokenization"
+                _editor.Colorize(0, _editor.TextLength);
                 bool allDone = Interlocked.Decrement(ref _parseCounter) == 0;
                 ParseComplete?.Invoke(this, allDone);
             };
@@ -337,9 +339,10 @@ namespace TSP.DoxygenEditor.Editor
 
         class TokenizerTimingStats
         {
-            public long CppDuration = 0;
-            public long DoxyDuration = 0;
-            public long HtmlDuration = 0;
+            public TimeSpan CppDuration = new TimeSpan();
+            public TimeSpan DoxyDuration = new TimeSpan();
+            public TimeSpan HtmlDuration = new TimeSpan();
+            public TimeSpan InsertDuration = new TimeSpan();
 
             public static TokenizerTimingStats operator +(TokenizerTimingStats a, TokenizerTimingStats b)
             {
@@ -347,38 +350,42 @@ namespace TSP.DoxygenEditor.Editor
                 result.CppDuration = a.CppDuration + b.CppDuration;
                 result.DoxyDuration = a.DoxyDuration + b.DoxyDuration;
                 result.HtmlDuration = a.HtmlDuration + b.HtmlDuration;
+                result.InsertDuration = a.InsertDuration + b.InsertDuration;
                 return (result);
-            }
-        }
-
-        class DescendedIntComparer : IComparer<int>
-        {
-            public int Compare(int x, int y)
-            {
-                int delta = y - x;
-                return (delta);
             }
         }
 
         class TokenizeResult
         {
-            public Dictionary<BaseToken, TokenizeResult> Map { get; } = new Dictionary<BaseToken, TokenizeResult>();
-            public IEnumerable<BaseToken> Tokens { get; }
+            private readonly List<BaseToken> _tokens = new List<BaseToken>();
+            public IEnumerable<BaseToken> Tokens => _tokens;
             public BaseToken RootToken { get; }
             public TokenizerTimingStats Stats { get; }
-            public TokenizeResult(BaseToken rootToken, IEnumerable<BaseToken> tokens)
+            public TokenizeResult(BaseToken rootToken)
             {
                 RootToken = rootToken;
-                Tokens = tokens;
                 Stats = new TokenizerTimingStats();
             }
-            public void AddToMap(BaseToken token, TokenizeResult result)
+
+            public void AddTokens(IEnumerable<BaseToken> inTokens)
             {
-                Map.Add(token, result);
+                Stopwatch w = Stopwatch.StartNew();
+                _tokens.AddRange(inTokens);
+                w.Stop();
+                Stats.InsertDuration += w.Elapsed;
+            }
+
+            public void InsertTokens(BaseToken rootToken, IEnumerable<BaseToken> inTokens)
+            {
+                Stopwatch w = Stopwatch.StartNew();
+                int index = _tokens.IndexOf(rootToken) + 1;
+                _tokens.InsertRange(index, inTokens);
+                w.Stop();
+                Stats.InsertDuration += w.Elapsed;
             }
         }
 
-        private TokenizeResult TokenizeCpp(BaseToken rootToken, string text, int index, int length)
+        private TokenizeResult TokenizeCpp(BaseToken rootToken, string text, int index, int length, bool allowDoxy)
         {
             Stopwatch timer = new Stopwatch();
             timer.Restart();
@@ -386,8 +393,24 @@ namespace TSP.DoxygenEditor.Editor
             CppLexer cppLexer = new CppLexer(sourceBuffer);
             IEnumerable<CppToken> cppTokens = cppLexer.Tokenize();
             timer.Stop();
-            TokenizeResult result = new TokenizeResult(rootToken, cppTokens);
-            result.Stats.CppDuration += timer.ElapsedMilliseconds;
+            TokenizeResult result = new TokenizeResult(rootToken);
+            result.Stats.CppDuration += timer.Elapsed;
+            result.AddTokens(cppTokens);
+
+            if (allowDoxy)
+            {
+                foreach (CppToken token in cppTokens)
+                {
+                    if (token.Type == CppTokenType.MultiLineCommentDoc || token.Type == CppTokenType.SingleLineCommentDoc)
+                    {
+                        var doxyRes = TokenizeDoxy(token, text, token.Index, token.Length);
+                        result.Stats.DoxyDuration += doxyRes.Stats.DoxyDuration;
+                        result.Stats.HtmlDuration += doxyRes.Stats.HtmlDuration;
+                        result.InsertTokens(token, doxyRes.Tokens);
+                    }
+                }
+            }
+
             return (result);
         }
 
@@ -399,8 +422,9 @@ namespace TSP.DoxygenEditor.Editor
             HtmlLexer htmlLexer = new HtmlLexer(sourceBuffer);
             IEnumerable<HtmlToken> htmlTokens = htmlLexer.Tokenize();
             timer.Stop();
-            TokenizeResult result = new TokenizeResult(rootToken, htmlTokens);
-            result.Stats.HtmlDuration += timer.ElapsedMilliseconds;
+            TokenizeResult result = new TokenizeResult(rootToken);
+            result.Stats.HtmlDuration += timer.Elapsed;
+            result.AddTokens(htmlTokens);
             return (result);
         }
 
@@ -411,9 +435,10 @@ namespace TSP.DoxygenEditor.Editor
             SourceBuffer sourceBuffer = new StringSourceBuffer(text, index, length);
             DoxygenLexer doxyLexer = new DoxygenLexer(sourceBuffer);
             IEnumerable<DoxygenToken> doxyTokens = doxyLexer.Tokenize();
-            TokenizeResult result = new TokenizeResult(rootToken, doxyTokens);
+            TokenizeResult result = new TokenizeResult(rootToken);
             timer.Stop();
-            result.Stats.DoxyDuration += timer.ElapsedMilliseconds;
+            result.Stats.DoxyDuration += timer.Elapsed;
+            result.AddTokens(doxyTokens);
 
             DoxygenToken prevToken = null;
             foreach (DoxygenToken doxyToken in doxyTokens)
@@ -428,14 +453,14 @@ namespace TSP.DoxygenEditor.Editor
                     }
                     if ("{.c}".Equals(codeType, StringComparison.InvariantCultureIgnoreCase) || "{.cpp}".Equals(codeType, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        var cppRes = TokenizeCpp(doxyToken, text, doxyToken.Index, doxyToken.Length);
-                        result.AddToMap(doxyToken, cppRes);
+                        var cppRes = TokenizeCpp(doxyToken, text, doxyToken.Index, doxyToken.Length, false);
+                        result.InsertTokens(doxyToken, cppRes.Tokens);
                     }
                 }
                 else if (doxyToken.Type == DoxygenTokenType.Text)
                 {
                     var htmlRes = TokenizeHtml(doxyToken, text, doxyToken.Index, doxyToken.Length);
-                    result.AddToMap(doxyToken, htmlRes);
+                    result.InsertTokens(doxyToken, htmlRes.Tokens);
                 }
 
                 prevToken = doxyToken;
@@ -443,99 +468,99 @@ namespace TSP.DoxygenEditor.Editor
             return (result);
         }
 
-        private void ExpandTokenResults(IEnumerable<TokenizeResult> results, List<BaseToken> outTokens)
-        {
-            foreach (var result in results)
-            {
-                int index = outTokens.IndexOf(result.RootToken);
-                if (index == -1)
-                    outTokens.AddRange(result.Tokens);
-                else
-                {
-                    outTokens.InsertRange(index + 1, result.Tokens);
-                    foreach (var p in result.Map)
-                    {
-                        ExpandTokenResults(new[] { p.Value }, outTokens);
-                    }
-                }
-            }
-        }
-
         private void Tokenize(string text)
         {
             Stopwatch timer = new Stopwatch();
 
-            // Clear all tokens
-            Debug.Assert(_tokens.Count == 0);
+            // Tokens must be cleared
+            _tokens.Clear();
 
             Stopwatch totalLexTimer = Stopwatch.StartNew();
 
-            // C++ lexing
-            TokenizerTimingStats stats = new TokenizerTimingStats();
-            var cppRes = TokenizeCpp(null, text, 0, text.Length);
+            // C++ lexing -> Doxygen (Code -> Cpp) -> (Text -> Html)
+            TokenizerTimingStats totalStats = new TokenizerTimingStats();
+            var cppRes = TokenizeCpp(null, text, 0, text.Length, true);
+            totalStats += cppRes.Stats;
+            _tokens.AddRange(cppRes.Tokens);
 
             // Doxy lexing
-            ConcurrentStack<TokenizeResult> tokenResults = new ConcurrentStack<TokenizeResult>();
-            tokenResults.Push(cppRes);
-            Parallel.ForEach(cppRes.Tokens,
-                // Local init
-                () => new List<TokenizeResult>(),
-                // Body
-                (token, state, local) =>
-                {
-                    CppToken cppToken = (CppToken)token;
-                    if (cppToken.Type == CppTokenType.MultiLineCommentDoc || cppToken.Type == CppTokenType.SingleLineCommentDoc)
-                    {
-                        var doxyRes = TokenizeDoxy(token, text, token.Index, token.Length);
-                        local.Add(doxyRes);
-                    }
-                    return (local);
-                },
-                // Local finally
-                (local) =>
-                {
-                    foreach (var res in local)
-                        tokenResults.Push(res);
-                }
-            );
-            foreach (var tokenResult in tokenResults)
-                stats += tokenResult.Stats;
             totalLexTimer.Stop();
-            Debug.WriteLine($"Lexing done (Total: {totalLexTimer.ElapsedMilliseconds} ms, C++: {stats.CppDuration} ms, Doxygen: {stats.DoxyDuration} ms, Html: {stats.HtmlDuration} ms)");
-
-            timer.Restart();
-            ExpandTokenResults(tokenResults, _tokens);
-            timer.Stop();
-            Debug.WriteLine($"Expand done, took {timer.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"Lexing done (Total: {totalLexTimer.Elapsed.ToMilliseconds()} ms, Insert: {totalStats.InsertDuration.ToMilliseconds()}, C++: {totalStats.CppDuration.ToMilliseconds()} ms, Doxygen: {totalStats.DoxyDuration.ToMilliseconds()} ms, Html: {totalStats.HtmlDuration.ToMilliseconds()} ms)");
 
             timer.Restart();
             _styler.Refresh(_tokens);
             timer.Stop();
-            Debug.WriteLine($"Styler done, took {timer.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"Styler done, took {timer.Elapsed.ToMilliseconds()} ms");
         }
 
         private void Parse(string text)
         {
-            // Doxygen parsing
-            Stopwatch timer = Stopwatch.StartNew();
-
-            DoxygenTree doxyTree = new DoxygenTree();
-            doxyTree.GetTextRange += (s, l) => text.Substring(s, l);
-
-            LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
-            while (!tokenStream.IsEOF)
+            // Validate stream
             {
-                BaseToken old = tokenStream.CurrentValue;
-                if (!doxyTree.ParseToken(tokenStream))
+                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                while (!tokenStream.IsEOF)
+                {
+                    var tokenNode = tokenStream.CurrentNode;
+                    if (tokenNode.Next != null)
+                    {
+                        int endIndex = tokenNode.Value.Index;
+                        int startIndex = tokenNode.Next.Value.Index;
+                        Debug.Assert(startIndex >= endIndex);
+                    }
                     tokenStream.Next();
-                Debug.Assert(old != tokenStream.CurrentValue);
+                }
             }
 
+            Stopwatch timer = new Stopwatch();
+
+            // Doxygen parsing
+            timer.Restart();
+            DoxygenTree doxyTree = new DoxygenTree();
+            doxyTree.GetTextRange += (i, l) => text.Substring(i, l);
+            {
+                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                while (!tokenStream.IsEOF)
+                {
+                    BaseToken old = tokenStream.CurrentValue;
+                    if (!doxyTree.ParseToken(tokenStream))
+                        tokenStream.Next();
+                    Debug.Assert(old != tokenStream.CurrentValue);
+                }
+            }
             if (_doxyTree != null) _doxyTree.Dispose();
             _doxyTree = doxyTree;
-
             timer.Stop();
-            Debug.WriteLine($"Doxygen parse took {timer.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
+
+            // C++ parsing
+            timer.Restart();
+            CppTree cppTree = new CppTree();
+            cppTree.GetTextRange += (s, e) => text.Substring(s, e);
+            cppTree.GetLinePos += (i) =>
+            {
+                int result = _editor.LineFromPosition(i);
+                return (result);
+            };
+            cppTree.GetDocumentationNode += (token) =>
+            {
+                BaseNode result = doxyTree.FindNodeByRange(token);
+                return (result);
+            };
+
+            {
+                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                while (!tokenStream.IsEOF)
+                {
+                    BaseToken old = tokenStream.CurrentValue;
+                    if (!cppTree.ParseToken(tokenStream))
+                        tokenStream.Next();
+                    Debug.Assert(old != tokenStream.CurrentValue);
+                }
+            }
+            if (_cppTree != null) _cppTree.Dispose();
+            _cppTree = cppTree;
+            timer.Stop();
+            Debug.WriteLine($"C++ parse done, took {timer.Elapsed.ToMilliseconds()} ms");
         }
 
         private void SetupEditor(Scintilla editor)
@@ -566,8 +591,8 @@ namespace TSP.DoxygenEditor.Editor
             {
                 Scintilla thisEditor = (Scintilla)s;
 
-            // Autofit left-margin to fit-in line count number
-            int maxLineNumberCharLength = thisEditor.Lines.Count.ToString().Length;
+                // Autofit left-margin to fit-in line count number
+                int maxLineNumberCharLength = thisEditor.Lines.Count.ToString().Length;
                 if (maxLineNumberCharLength != _maxLineNumberCharLength)
                 {
                     thisEditor.Margins[0].Width = thisEditor.TextWidth(Style.LineNumber, new string('9', maxLineNumberCharLength + 1));
@@ -595,7 +620,7 @@ namespace TSP.DoxygenEditor.Editor
                     Stopwatch timer = Stopwatch.StartNew();
                     int styleCount = _styler.Highlight(thisEditor, startPos, endPos);
                     timer.Stop();
-                    Debug.WriteLine($"Styled {styleCount} parts ({startPos} to {endPos}) took: {timer.Elapsed.TotalMilliseconds} ms");
+                    Debug.WriteLine($"Styled {styleCount} parts ({startPos} to {endPos}) done, took {timer.Elapsed.ToMilliseconds()} ms");
                 }
             };
 

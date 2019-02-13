@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Utils;
 
@@ -121,8 +122,15 @@ namespace TSP.DoxygenEditor.Lexers.Html
                 {
                     case SlidingTextBuffer.InvalidCharacter:
                         {
-                            return (PushToken(new HtmlToken(Buffer.IsEOF ? HtmlTokenType.EOF : HtmlTokenType.Invalid, 0, 0, false)));
+                            if (Buffer.IsEOF)
+                            {
+                                PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.End - 1), 0, false));
+                                return (false);
+                            }
+                            else
+                                Buffer.NextChar();
                         }
+                        break;
 
                     case '<':
                         {
@@ -137,6 +145,7 @@ namespace TSP.DoxygenEditor.Lexers.Html
                         }
                 }
             } while (!Buffer.IsEOF);
+            PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.End - 1), 0, false));
             return (false);
         }
     }

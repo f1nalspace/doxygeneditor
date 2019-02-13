@@ -4,8 +4,9 @@
     {
         None = 0,
 
-        Block = 1,
-        Group = 2,
+        BlockMulti = 1,
+        BlockSingle = 2,
+        Group = 3,
 
         Page = 50,
 
@@ -17,5 +18,7 @@
 
         SubPage = 1000,
         Ref,
+        Brief,
+        Foreign,
     }
 }

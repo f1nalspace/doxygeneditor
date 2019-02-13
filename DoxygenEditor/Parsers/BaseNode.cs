@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TSP.DoxygenEditor.Lexers;
 
 namespace TSP.DoxygenEditor.Parsers
 {
@@ -46,7 +47,7 @@ namespace TSP.DoxygenEditor.Parsers
 
         public override string ToString()
         {
-            return $"{Level} -> {Entity}";
+            return $"{Level} -> {Entity} ({Entity.StartRange} - {Entity.EndRange})";
         }
     }
 }

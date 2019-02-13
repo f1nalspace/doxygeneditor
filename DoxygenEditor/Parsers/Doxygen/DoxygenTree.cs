@@ -1,29 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Lexers.Cpp;
 using TSP.DoxygenEditor.Lexers.Doxygen;
 using TSP.DoxygenEditor.Lists;
+using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers.Doxygen
 {
     class DoxygenTree : BaseTree
     {
         [Flags]
-        enum CommandFlags
+        enum ParseCommandFlags
         {
             None = 0,
-            RequiresIdent = 1 << 0,
+            RequiresName = 1 << 0,
             AllowCaption = 1 << 1,
         }
 
-        class CommandRule
+        class ParseCommandRule
         {
             public DoxygenEntityType TargetType { get; }
             public bool IsPush { get; }
-            public CommandFlags Flags { get; }
-            public CommandRule(DoxygenEntityType targetType, bool isPush, CommandFlags flags = CommandFlags.RequiresIdent)
+            public ParseCommandFlags Flags { get; }
+            public ParseCommandRule(DoxygenEntityType targetType, bool isPush, ParseCommandFlags flags = ParseCommandFlags.RequiresName)
             {
                 TargetType = targetType;
                 IsPush = isPush;
@@ -40,21 +42,31 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
         };
 
 
-        private static readonly Dictionary<string, CommandRule> commandRulesMap = new Dictionary<string, CommandRule>()
+        private static readonly Dictionary<string, ParseCommandRule> commandRulesMap = new Dictionary<string, ParseCommandRule>()
         {
-            { "page", new CommandRule(DoxygenEntityType.Page, isPush: true, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
-            { "mainpage", new CommandRule(DoxygenEntityType.Page, isPush: true, flags: CommandFlags.None) },
+            { "page", new ParseCommandRule(DoxygenEntityType.Page, isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
+            { "mainpage", new ParseCommandRule(DoxygenEntityType.Page, isPush: true, flags: ParseCommandFlags.None) },
 
-            { "section", new CommandRule(DoxygenEntityType.Section, isPush: true, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
-            { "subsection", new CommandRule(DoxygenEntityType.SubSection,isPush: true, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
-            { "subsubsection", new CommandRule(DoxygenEntityType.SubSubSection, isPush: true, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
+            { "section", new ParseCommandRule(DoxygenEntityType.Section, isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
+            { "subsection", new ParseCommandRule(DoxygenEntityType.SubSection,isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
+            { "subsubsection", new ParseCommandRule(DoxygenEntityType.SubSubSection, isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
 
-            { "subpage", new CommandRule(DoxygenEntityType.SubPage, isPush: false, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
-            { "ref", new CommandRule(DoxygenEntityType.Ref, isPush: false, flags: CommandFlags.RequiresIdent | CommandFlags.AllowCaption) },
+            { "subpage", new ParseCommandRule(DoxygenEntityType.SubPage, isPush: false, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
+            { "ref", new ParseCommandRule(DoxygenEntityType.Ref, isPush: false, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
+            { "brief", new ParseCommandRule(DoxygenEntityType.Brief, isPush: false, flags: ParseCommandFlags.AllowCaption) },
         };
 
-        private void PushEntity(DoxygenEntity newEntity)
+        private DoxygenNode PushEntity(DoxygenEntity newEntity)
         {
+            if (newEntity.Type == DoxygenEntityType.BlockSingle || newEntity.Type == DoxygenEntityType.BlockMulti)
+            {
+                if (Root != null)
+                    Pop();
+                DoxygenNode blockNode = new DoxygenNode(Root, newEntity);
+                Push(blockNode);
+                return (blockNode);
+            }
+
             BaseNode parentNode = Root;
             while (parentNode != null)
             {
@@ -72,11 +84,14 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
                 }
                 else break;
             }
-            Push(new DoxygenNode(parentNode, newEntity));
+            DoxygenNode newNode = new DoxygenNode(parentNode, newEntity);
+            Push(newNode);
+            return (newNode);
         }
 
         private bool ParseCommand(LinkedListStream<BaseToken> stream)
         {
+            // @NOTE(final): This must always return true, due to the fact that the stream is advanced at least once
             DoxygenToken commandToken = stream.Peek<DoxygenToken>();
             Debug.Assert(commandToken != null && commandToken.Type == DoxygenTokenType.Command);
 
@@ -87,30 +102,31 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
 
             if (commandRulesMap.ContainsKey(command))
             {
-                CommandRule config = commandRulesMap[command];
+                ParseCommandRule config = commandRulesMap[command];
 
-                string ident = null;
-                if (config.Flags.HasFlag(CommandFlags.RequiresIdent))
+                string name = null;
+                if (config.Flags.HasFlag(ParseCommandFlags.RequiresName))
                 {
                     DoxygenToken next = stream.Peek<DoxygenToken>();
-                    if (next == null || (next.Type != DoxygenTokenType.Ident))
+                    if (next == null || (next.Type != DoxygenTokenType.Name))
                         return (false);
-                    ident = GetText(next);
+
+                    name = GetText(next);
                     stream.Next<DoxygenToken>();
                 }
 
                 string caption = null;
-                if (config.Flags.HasFlag(CommandFlags.AllowCaption))
+                if (config.Flags.HasFlag(ParseCommandFlags.AllowCaption))
                 {
-                    DoxygenToken next = stream.Peek<DoxygenToken>();
-                    if (next != null && next.Type == DoxygenTokenType.Caption)
+                    DoxygenToken captionToken = stream.Peek() as DoxygenToken;
+                    if (captionToken != null && captionToken.Type == DoxygenTokenType.Caption)
                     {
-                        caption = GetText(next);
-                        stream.Next<DoxygenToken>();
+                        caption = GetText(captionToken);
+                        stream.Next();
                     }
                 }
 
-                DoxygenEntity newEntity = new DoxygenEntity(config.TargetType, ident, commandToken)
+                DoxygenEntity newEntity = new DoxygenEntity(config.TargetType, name, commandToken)
                 {
                     Caption = caption,
                 };
@@ -121,30 +137,64 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
                 }
                 else
                 {
-                    // @FIXME(final): Root is null on a @ref element, which should not happen in any case
-                    BaseNode parentNode = Root;
-                    Debug.Assert(parentNode != null);
-                    Add(new DoxygenNode(parentNode, newEntity));
+                    Debug.Assert(Root != null);
+                    Add(new DoxygenNode(Root, newEntity));
                 }
-                return (true);
             }
-            else
-                return (false);
+            return (true);
         }
 
-        private bool ParseSourceDeclaration(LinkedListStream<BaseToken> stream)
+        private bool ParseSingleBlock(LinkedListStream<BaseToken> stream)
         {
-            DoxygenToken blockEndToken = stream.Peek<DoxygenToken>();
-            Debug.Assert(blockEndToken != null && blockEndToken.Type == DoxygenTokenType.BlockEnd);
+            BaseToken blockToken = stream.Peek();
+            DoxygenEntity blockEntity = new DoxygenEntity(DoxygenEntityType.BlockSingle, null, blockToken);
+            PushEntity(blockEntity);
             stream.Next();
 
-            CppToken cppToken = stream.Peek<CppToken>();
-            if (cppToken != null)
-            {
-                return (true);
-            }
+            BaseToken endToken = null;
+            BaseToken briefToken = new DoxygenToken(DoxygenTokenType.Command, blockToken.Index, blockToken.Length, true);
 
-            return (false);
+            var briefEntity = new DoxygenEntity(DoxygenEntityType.Brief, null, briefToken);
+            PushEntity(briefEntity);
+            while (!stream.IsEOF)
+            {
+                BaseToken token = stream.Peek();
+                DoxygenToken doxyToken = token as DoxygenToken;
+                if (doxyToken != null && doxyToken.Type == DoxygenTokenType.BlockEnd)
+                {
+                    endToken = token;
+                    stream.Next();
+                    break;
+                }
+
+                DoxygenNode foreignNode = null;
+                if (doxyToken != null)
+                {
+                    switch (doxyToken.Type)
+                    {
+                        case DoxygenTokenType.Command:
+                            ParseCommand(stream);
+                            break;
+
+                        default:
+                            foreignNode = new DoxygenNode(Root, new DoxygenEntity(DoxygenEntityType.Foreign, null, token));
+                            break;
+                    }
+                }
+                else
+                    foreignNode = new DoxygenNode(Root, new DoxygenEntity(DoxygenEntityType.Foreign, null, token));
+                if (foreignNode != null)
+                    Add(foreignNode);
+                stream.Next();
+            }
+            Pop(); // Pop brief
+
+            if (endToken != null)
+                blockEntity.EndRange = endToken;
+
+            Pop(); // Pop block
+
+            return (true);
         }
 
         public override bool ParseToken(LinkedListStream<BaseToken> stream)
@@ -158,34 +208,52 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
                     case DoxygenTokenType.Command:
                         return ParseCommand(stream);
 
-#if false
-                    case DoxygenTokenType.BlockStart:
+                    case DoxygenTokenType.BlockStartSingle:
+                        return ParseSingleBlock(stream);
+
+                    case DoxygenTokenType.BlockStartMulti:
                         {
-                            LinkedListNode<BaseToken> n = stream.CurrentNode;
-                            DoxygenEntity blockEntity = new DoxygenEntity(DoxygenEntityType.Block, null, doxyToken);
-                            DoxygenNode newNode = new DoxygenNode(Root, blockEntity);
+                            DoxygenEntity blockEntity = new DoxygenEntity(DoxygenEntityType.BlockMulti, null, doxyToken);
                             PushEntity(blockEntity);
                             stream.Next();
                             return (true);
                         }
-#endif
 
                     case DoxygenTokenType.BlockEnd:
                         {
-#if false
-                            DoxygenNode n = (DoxygenNode)Root;
-                            Debug.Assert(n != null);
-                            DoxygenEntity e = (DoxygenEntity)n.Entity;
+                            // Pop everything until block
+                            while (Root != null)
+                            {
+                                DoxygenEntity e = (DoxygenEntity)Root.Entity;
+                                if (e.Type == DoxygenEntityType.BlockMulti)
+                                {
+                                    break;
+                                }
+                                else
+                                    Pop();
+                            }
+                            Debug.Assert(Root != null);
+                            DoxygenEntity rootEntity = (DoxygenEntity)Root.Entity;
+                            Debug.Assert(rootEntity.Type == DoxygenEntityType.BlockMulti);
                             Pop();
-#endif
-                            return ParseSourceDeclaration(stream);
+
+                            rootEntity.EndRange = doxyToken;
+
+                            stream.Next();
+                            return (true);
                         }
 
                     default:
-                        break;
+                        {
+                            stream.Next();
+                            return (!doxyToken.IsEOF);
+                        }
                 }
             }
-            return (false);
+            else
+            {
+                return (false);
+            }
         }
 
         public override void Dispose()

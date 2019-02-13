@@ -17,9 +17,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Parsers.Doxygen;
-using TSP.DoxygenEditor.Lexers.Doxygen;
+using TSP.DoxygenEditor.Parsers.Cpp;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -42,6 +41,10 @@ namespace TSP.DoxygenEditor.Views
             _configService = IOCContainer.Get<IConfigurationService>();
             _config = new ConfigurationModel();
             _config.Load(_configService);
+
+            // Update UI from config settings
+            miViewShowWhitespaces.Checked = _config.IsWhitespaceVisible;
+            RefreshRecentFiles();
 
             _searchControl = new SearchReplace.SearchReplaceControl();
             Controls.Add(_searchControl);
@@ -201,28 +204,54 @@ namespace TSP.DoxygenEditor.Views
             RemoveFromSymbolTree(editorState);
         }
 
-        private void OpenFileTab(string filePath)
+        private void OpenFileTab(string filePath, bool pushRecentFile = false)
         {
-            EditorState newState = AddFileTab(Path.GetFileName(filePath));
-            TabPage tab = (TabPage)newState.Tag;
-            tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
-            Tuple<bool, Exception> openRes = IOOpenFile(newState, filePath);
-            if (!openRes.Item1)
+            // Is the file already open?
+            EditorState alreadyOpenState = null;
+            foreach (TabPage tab in tcFiles.TabPages)
             {
-                ShowError(openRes.Item2, _errorFileOpenMessage, filePath);
-                RemoveFileTab(newState);
+                EditorState state = (EditorState)tab.Tag;
+                if (string.Equals(state.FilePath, filePath))
+                {
+                    alreadyOpenState = state;
+                    break;
+                }
+            }
+
+            if (alreadyOpenState != null)
+            {
+                // Focus existing state
+                tcFiles.SelectedTab = (TabPage)alreadyOpenState.Tag;
+                alreadyOpenState.SetFocus();
             }
             else
             {
-                // Remove first tab when it was a "New" and is still unchanged
-                if (tcFiles.TabPages.Count == 2)
+                EditorState newState = AddFileTab(Path.GetFileName(filePath));
+                TabPage tab = (TabPage)newState.Tag;
+                tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
+                Tuple<bool, Exception> openRes = IOOpenFile(newState, filePath);
+                if (!openRes.Item1)
                 {
-                    TabPage firstTab = tcFiles.TabPages[0];
-                    EditorState existingState = (EditorState)firstTab.Tag;
-                    if (existingState.FilePath == null && !existingState.IsChanged)
-                        tcFiles.TabPages.Remove(firstTab);
+                    ShowError(openRes.Item2, _errorFileOpenMessage, filePath);
+                    RemoveFileTab(newState);
                 }
-                newState.SetFocus();
+                else
+                {
+                    _config.PushRecentFiles(filePath);
+
+                    // Remove first tab when it was a "New" and is still unchanged
+                    if (tcFiles.TabPages.Count == 2)
+                    {
+                        TabPage firstTab = tcFiles.TabPages[0];
+                        EditorState existingState = (EditorState)firstTab.Tag;
+                        if (existingState.FilePath == null && !existingState.IsChanged)
+                            tcFiles.TabPages.Remove(firstTab);
+                    }
+
+                    // Focus new tab/state
+                    tcFiles.SelectedTab = tab;
+                    newState.SetFocus();
+                }
             }
         }
 
@@ -320,6 +349,11 @@ namespace TSP.DoxygenEditor.Views
                 e.Cancel = !CloseTabs(changes);
         }
 
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            _config.Save(_configService);
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             string[] args = Environment.GetCommandLineArgs();
@@ -356,7 +390,7 @@ namespace TSP.DoxygenEditor.Views
                         tcFiles.SelectedTab = tab;
                         tcFiles.Focus();
                         DoxygenNode entityNode = (DoxygenNode)selectedNode.Tag;
-                        editorState.GoToPosition(entityNode.Entity.Range.Index);
+                        editorState.GoToPosition(entityNode.Entity.StartRange.Index);
                     }
                 }
             }
@@ -410,6 +444,9 @@ namespace TSP.DoxygenEditor.Views
 
         private static HashSet<DoxygenEntityType> AllowedDoxyEntities = new HashSet<DoxygenEntityType>()
         {
+            DoxygenEntityType.BlockSingle,
+            DoxygenEntityType.BlockMulti,
+            DoxygenEntityType.Group,
             DoxygenEntityType.Page,
             DoxygenEntityType.Section,
             DoxygenEntityType.SubSection,
@@ -426,22 +463,28 @@ namespace TSP.DoxygenEditor.Views
                     DoxygenEntity entity = (DoxygenEntity)childEntityNode.Entity;
                     if (!AllowedDoxyEntities.Contains(entity.Type))
                         continue;
-                    TreeNode node = new TreeNode(entity.DisplayName);
-                    node.Tag = childEntityNode;
-                    rootTreeNode.Nodes.Add(node);
-                    if (selectedEntityNode != null)
-                    {
-                        if (selectedEntityNode.Entity.CompareTo(childEntityNode.Entity) == 0)
-                            result.Add(node);
-                    }
+
+                    TreeNode parentNode;
                     if (childEntityNode.ShowChildren)
-                        result.AddRange(BuildSymbolTree(childEntityNode, node, selectedEntityNode));
+                    {
+                        parentNode = new TreeNode(entity.DisplayName);
+                        parentNode.Tag = childEntityNode;
+                        rootTreeNode.Nodes.Add(parentNode);
+                        if (selectedEntityNode != null)
+                        {
+                            if (selectedEntityNode.Entity.CompareTo(childEntityNode.Entity) == 0)
+                                result.Add(parentNode);
+                        }
+                    }
+                    else
+                        parentNode = rootTreeNode;
+                    result.AddRange(BuildSymbolTree(childEntityNode, parentNode, selectedEntityNode));
                 }
             }
             return (result);
         }
 
-        private void RebuildSymbolTree(object tag, BaseTree doxyTree)
+        private void RebuildSymbolTree(object fileTag, BaseTree doxyTree)
         {
             DoxygenNode lastEntity = null;
             if (tvTree.SelectedNode != null)
@@ -449,16 +492,16 @@ namespace TSP.DoxygenEditor.Views
 
             TreeNode newSelectedNode = null;
 
-            // Find root node by tag
-            TreeNode rootNode = FindRootSymbolNode(tag);
-            Debug.Assert(rootNode != null);
+            // Find file node from tag
+            TreeNode fileNode = FindRootSymbolNode(fileTag);
+            Debug.Assert(fileNode != null);
 
             tvTree.BeginUpdate();
-            rootNode.Nodes.Clear();
+            fileNode.Nodes.Clear();
 
             if (doxyTree != null)
             {
-                List<TreeNode> selNodes = BuildSymbolTree(doxyTree, rootNode, lastEntity);
+                List<TreeNode> selNodes = BuildSymbolTree(doxyTree, fileNode, lastEntity);
                 if (selNodes.Count == 1)
                     newSelectedNode = selNodes.First();
             }
@@ -524,15 +567,18 @@ namespace TSP.DoxygenEditor.Views
         private void MenuActionFileOpen(object sender, EventArgs e)
         {
             if (dlgOpenFile.ShowDialog() == DialogResult.OK)
-
+            {
                 foreach (string filePath in dlgOpenFile.FileNames)
                     OpenFileTab(filePath);
+            }
         }
         private void MenuActionFileSave(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
             EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
-            SaveWithConfirmation(editorState, true);
+            Tuple<bool, Exception> r = SaveWithConfirmation(editorState, true);
+            if (r.Item1)
+                _config.PushRecentFiles(editorState.FilePath);
         }
         private void MenuActionFileSaveAs(object sender, EventArgs e)
         {
@@ -544,6 +590,9 @@ namespace TSP.DoxygenEditor.Views
                 Tuple<bool, Exception> r = SaveFileAs(editorState, filePath);
                 if (!r.Item1)
                     ShowError(r.Item2, _errorFileSaveMessage, filePath);
+                else
+                    _config.PushRecentFiles(filePath);
+
             }
         }
         private void MenuActionFileSaveAll(object sender, EventArgs e)
@@ -583,6 +632,12 @@ namespace TSP.DoxygenEditor.Views
                     tabsToClose.Add((EditorState)tab.Tag);
             }
             CloseTabs(tabsToClose);
+        }
+        private void MenuActionFileOpenRecentFile(object sender, EventArgs e)
+        {
+            ToolStripMenuItem item = (ToolStripMenuItem)sender;
+            string filePath = (string)item.Tag;
+            OpenFileTab(filePath);
         }
 
         private void MenuActionEditSearchAndReplaceQuickSearch(object sender, EventArgs e)
@@ -643,6 +698,8 @@ namespace TSP.DoxygenEditor.Views
                 List<SymbolItemModel> symbols = new List<SymbolItemModel>();
                 HashSet<Type> types = new HashSet<Type>();
 
+                // @TODO(final): Implement this for BaseTree!
+
 #if false
                 IEnumerable<Entity> allEntities = editorState.DoxyTree.GetAllEntities();
                 foreach (Entity entity in allEntities)
@@ -684,6 +741,7 @@ namespace TSP.DoxygenEditor.Views
                 editorState.IsShowWhitespace = enabled;
             }
             item.Checked = enabled;
+            _config.IsWhitespaceVisible = enabled;
         }
 
         private void MenuActionHelpAbout(object sender, EventArgs e)
@@ -703,6 +761,17 @@ namespace TSP.DoxygenEditor.Views
             miEditUndo.Enabled = editorState != null && editorState.CanUndo();
             miEditRedo.Enabled = editorState != null && editorState.CanRedo();
             miEditPaste.Enabled = editorState != null && editorState.CanPaste();
+        }
+        private void RefreshRecentFiles()
+        {
+            miFileRecentFiles.DropDownItems.Clear();
+            foreach (string recentFile in _config.RecentFiles)
+            {
+                ToolStripMenuItem newItem = new ToolStripMenuItem(recentFile);
+                newItem.Tag = recentFile;
+                newItem.Click += MenuActionFileOpenRecentFile;
+                miFileRecentFiles.DropDownItems.Add(newItem);
+            }
         }
         #endregion
 
@@ -737,6 +806,16 @@ namespace TSP.DoxygenEditor.Views
         private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
         private void AddIssuesFromEntity(IEnumerable<EditorState> states, EditorState state, BaseNode entityNode, string fileName, string groupName)
         {
+            if (typeof(CppNode).Equals(entityNode.GetType()))
+            {
+                CppEntity cppEntity = (CppEntity)entityNode.Entity;
+                if (cppEntity.DocumentationNode != null)
+                {
+                    AddIssue(new IssueTag(state, cppEntity), IssueType.Info, "Test", cppEntity.Ident, cppEntity.Type.ToString(), groupName, fileName);
+                }
+            }
+
+
 #if false
             if (typeof(CommentEntity).Equals(entity.GetType()))
             {
@@ -757,9 +836,9 @@ namespace TSP.DoxygenEditor.Views
             lvIssues.Items.Clear();
             foreach (EditorState state in states)
             {
-                if (state.DoxyTree != null)
+                if (state.CppTree != null)
                 {
-                    foreach (BaseNode childNode in state.DoxyTree.Children)
+                    foreach (BaseNode childNode in state.CppTree.Children)
                     {
                         AddIssuesFromEntity(states, state, childNode, state.Name, "Root");
                     }
@@ -781,10 +860,11 @@ namespace TSP.DoxygenEditor.Views
                     EditorState state = tag.State;
                     TabPage tab = (TabPage)state.Tag;
                     tcFiles.SelectedTab = tab;
-                    state.GoToPosition(entity.Range.Index);
+                    state.GoToPosition(entity.StartRange.Index);
                 }
             }
         }
         #endregion
+
     }
 }

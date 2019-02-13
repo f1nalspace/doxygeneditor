@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TSP.DoxygenEditor.Lexers;
 
 namespace TSP.DoxygenEditor.Parsers.Doxygen
 {

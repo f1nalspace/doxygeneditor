@@ -17,6 +17,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         private int _lexemeStart; // Start of lexeme relative to the buffer offset
 
         public SourceBuffer Source => _source;
+        public int End => _sourceEnd;
         public int Position => _base + _offset;
         public int Offset => _offset;
         public char[] Buffer => _buffer;

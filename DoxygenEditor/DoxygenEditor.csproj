@@ -82,6 +82,7 @@
     <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\LinkedListExtensions.cs" />
+    <Compile Include="Extensions\TimeSpanExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
     <Compile Include="Lexers\BaseToken.cs" />
@@ -93,11 +94,14 @@
     <Compile Include="Lexers\Html\HtmlLexer.cs" />
     <Compile Include="Lexers\Html\HtmlToken.cs" />
     <Compile Include="Lexers\Html\HtmlTokenType.cs" />
-    <Compile Include="Lexers\InvalidToken.cs" />
     <Compile Include="Lists\LinkedListStream.cs" />
     <Compile Include="Parsers\BaseEntity.cs" />
     <Compile Include="Parsers\BaseNode.cs" />
     <Compile Include="Parsers\BaseTree.cs" />
+    <Compile Include="Parsers\Cpp\CppEntity.cs" />
+    <Compile Include="Parsers\Cpp\CppEntityType.cs" />
+    <Compile Include="Parsers\Cpp\CppNode.cs" />
+    <Compile Include="Parsers\Cpp\CppTree.cs" />
     <Compile Include="Parsers\Doxygen\DoxygenEntity.cs" />
     <Compile Include="Parsers\Doxygen\DoxygenEntityType.cs" />
     <Compile Include="Parsers\Doxygen\DoxygenNode.cs" />
@@ -107,8 +111,6 @@
     <Compile Include="TextAnalysis\StringSourceBuffer.cs" />
     <Compile Include="TextAnalysis\TextRange.cs" />
     <Compile Include="Utils\SyntaxUtils.cs" />
-    <Compile Include="Lexers\TokenTextAttribute.cs" />
-    <Compile Include="Lexers\Cpp\CppTokenTypeExtensions.cs" />
     <Compile Include="Lexers\Cpp\CppLexer.cs" />
     <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />

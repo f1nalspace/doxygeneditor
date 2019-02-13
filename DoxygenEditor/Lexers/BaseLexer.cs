@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TSP.DoxygenEditor.Lists;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Lexers
@@ -11,6 +10,7 @@ namespace TSP.DoxygenEditor.Lexers
         internal readonly SlidingTextBuffer Buffer;
         private readonly List<T> _tokens = new List<T>();
         private IEnumerable<T> Tokens => _tokens;
+        public bool HasTokens => _tokens.Count > 0;
 
         public BaseLexer(SourceBuffer source)
         {
@@ -64,6 +64,13 @@ namespace TSP.DoxygenEditor.Lexers
                     Debug.Assert(Buffer.Position > p);
             }
 
+            if (_tokens.Count == 1)
+            {
+                T token = _tokens[0];
+                if (token.IsEOF)
+                    _tokens.Clear();
+            }
+
 #if DEBUG
             RefreshDebugValues();
 #endif
@@ -78,7 +85,7 @@ namespace TSP.DoxygenEditor.Lexers
             {
                 if (stopOnLinebreak)
                 {
-                    if (Buffer.PeekChar() == '\n')
+                    if ((Buffer.PeekChar() == '\n') || (Buffer.PeekChar() == '\r' && Buffer.PeekChar(1) == '\n'))
                         break;
                 }
                 Buffer.AdvanceChar();

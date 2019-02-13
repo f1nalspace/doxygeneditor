@@ -1,5 +1,4 @@
-﻿using System;
-using TSP.DoxygenEditor.TextAnalysis;
+﻿using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Lexers
 {
@@ -14,7 +13,7 @@ namespace TSP.DoxygenEditor.Lexers
         }
         public override string ToString()
         {
-            return $"{GetType()}, {base.ToString()}";
-        }
+            return $"{GetType().Name}, {base.ToString()}";
+        }        
     }
 }

@@ -43,29 +43,26 @@ namespace TSP.DoxygenEditor.Editor
             { CppTokenType.Hex, cppNumberStyle },
             { CppTokenType.Octal, cppNumberStyle },
             { CppTokenType.Binary, cppNumberStyle },
-
-            { CppTokenType.Typedef, cppReservedKeywordStyle },
-            { CppTokenType.Struct, cppReservedKeywordStyle },
-            { CppTokenType.Union, cppReservedKeywordStyle },
         };
 
         static int doxygenTextStyle = styleIndex++;
         static int doxygenBlockStyle = styleIndex++;
         static int doxygenCommandStyle = styleIndex++;
-        static int doxygenIdentStyle = styleIndex++;
+        static int doxygenNameStyle = styleIndex++;
         static int doxygenCaptionStyle = styleIndex++;
         static int doxygenCodeBlockStyle = styleIndex++;
         static int doxygenCodeTypeStyle = styleIndex++;
 
         static Dictionary<DoxygenTokenType, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenType, int>() {
             { DoxygenTokenType.Text, doxygenTextStyle },
-            { DoxygenTokenType.BlockStart, doxygenBlockStyle },
+            { DoxygenTokenType.BlockStartSingle, doxygenBlockStyle },
+            { DoxygenTokenType.BlockStartMulti, doxygenBlockStyle },
             { DoxygenTokenType.BlockEnd, doxygenBlockStyle },
             { DoxygenTokenType.BlockChars, doxygenBlockStyle },
             { DoxygenTokenType.Command, doxygenCommandStyle },
             { DoxygenTokenType.GroupStart, doxygenCommandStyle },
             { DoxygenTokenType.GroupEnd, doxygenCommandStyle },
-            { DoxygenTokenType.Ident, doxygenIdentStyle },
+            { DoxygenTokenType.Name, doxygenNameStyle },
             { DoxygenTokenType.Caption, doxygenCaptionStyle },
             { DoxygenTokenType.CodeBlock, doxygenCodeBlockStyle },
             { DoxygenTokenType.CodeType, doxygenCodeTypeStyle },
@@ -166,14 +163,14 @@ namespace TSP.DoxygenEditor.Editor
             editor.Styles[cppSingleLineCommentDocStyle].ForeColor = Color.Purple;
             editor.Styles[cppPreprocessorStyle].ForeColor = Color.DarkSlateGray;
             editor.Styles[cppReservedKeywordStyle].ForeColor = Color.Blue;
-            editor.Styles[cppTypeKeywordStyle].ForeColor = Color.Blue;
+            editor.Styles[cppTypeKeywordStyle].ForeColor = Color.BlueViolet;
             editor.Styles[cppStringStyle].ForeColor = Color.Green;
             editor.Styles[cppNumberStyle].ForeColor = Color.Red;
 
             editor.Styles[doxygenTextStyle].ForeColor = Color.Black;
             editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
             editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
-            editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
+            editor.Styles[doxygenNameStyle].ForeColor = Color.Blue;
             editor.Styles[doxygenCaptionStyle].ForeColor = Color.Green;
             editor.Styles[doxygenCodeBlockStyle].ForeColor = Color.Black;
             editor.Styles[doxygenCodeTypeStyle].ForeColor = Color.Red;
@@ -196,6 +193,7 @@ namespace TSP.DoxygenEditor.Editor
 
             var rangeEntry = new StyleEntry(startPos, length, 0);
             var intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
+
             foreach (StyleEntry entry in intersectingEntries)
             {
                 int s = Math.Max(startPos, entry.Index);

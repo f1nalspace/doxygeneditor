@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers.Doxygen
@@ -7,6 +8,7 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
     {
         public DoxygenEntityType Type { get; }
         public string Caption { get; set; }
+        public string Value { get; set; }
         public override string Id { get; }
         public override string DisplayName
         {
@@ -14,12 +16,16 @@ namespace TSP.DoxygenEditor.Parsers.Doxygen
             {
                 if ((Type == DoxygenEntityType.Page) && string.IsNullOrWhiteSpace(Id))
                     return ("Main");
+                else if (!string.IsNullOrWhiteSpace(Value))
+                    return Value;
+                else if (!string.IsNullOrWhiteSpace(Caption))
+                    return Caption;
                 else
-                    return (!string.IsNullOrWhiteSpace(Caption) ? Caption : Id);
+                return Id;
             }
         }
         public DoxygenEntity Group { get; set; }
-        public DoxygenEntity(DoxygenEntityType type, string id, TextRange range) : base(range)
+        public DoxygenEntity(DoxygenEntityType type, string id, BaseToken range) : base(range)
         {
             Type = type;
             Id = id;
