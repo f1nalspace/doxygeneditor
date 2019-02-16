@@ -3,6 +3,7 @@
 *.c text eof=crlf
 *.cpp text eof=crlf
 *.docs text eof=crlf
+*.cs text eof=crlf
 
 *.png binary
 *.jpg binary
