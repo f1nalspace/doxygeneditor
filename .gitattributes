@@ -1,0 +1,10 @@
+* text=auto
+*.h text eof=crlf
+*.c text eof=crlf
+*.cpp text eof=crlf
+*.docs text eof=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.bmp binary
