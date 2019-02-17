@@ -63,6 +63,22 @@ namespace TSP.DoxygenEditor.Parsers.Cpp
             // - struct { int a; }; (Anonymous struct as a member)
             // - struct foo { int a; };
 
+            if (token.Type == CppTokenType.Identifier)
+            {
+                string structIdent = GetText(token);
+                token = stream.CurrentNode?.Value as CppToken;
+                CppEntity structEntity = new CppEntity(CppEntityType.Struct, token, structIdent)
+                {
+                    DocumentationNode = FindDocumentationNode(stream.CurrentNode, 1),
+                };
+                Add(new CppNode(Root, structEntity));
+                stream.Next();
+                if (token != null && (token.Type == CppTokenType.Semicolon || token.Type == CppTokenType.LeftCurlyBrace))
+                {
+                    stream.Next();
+                }
+            }
+
             return;
         }
 
