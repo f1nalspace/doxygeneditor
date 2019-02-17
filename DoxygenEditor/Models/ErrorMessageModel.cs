@@ -2,13 +2,15 @@
 {
     public class ErrorMessageModel
     {
-        public string Text { get; }
         public string Caption { get; }
+        public string ShortText { get; }
+        public string Details { get; set; }
 
-        public ErrorMessageModel(string text, string caption)
+        public ErrorMessageModel(string caption, string shortText)
         {
-            Text = text;
             Caption = caption;
+            ShortText = shortText;
+            Details = null;
         }
     }
 }

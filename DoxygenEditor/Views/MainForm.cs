@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using TSP.DoxygenEditor.Parsers.Doxygen;
 using TSP.DoxygenEditor.Parsers.Cpp;
+using TSP.DoxygenEditor.ErrorDialog;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -27,9 +28,6 @@ namespace TSP.DoxygenEditor.Views
         private readonly IConfigurationService _configService;
         private readonly ConfigurationModel _config;
         private readonly string _appName;
-
-        private static ErrorMessageModel _errorFileOpenMessage = new ErrorMessageModel($"Cannot open file '%FILEPATH%'!", $"File to open file '%FILENAME%'");
-        private static ErrorMessageModel _errorFileSaveMessage = new ErrorMessageModel($"Cannot save file '%FILEPATH%'!", $"File to save file '%FILENAME%'");
 
         public MainForm()
         {
@@ -63,22 +61,13 @@ namespace TSP.DoxygenEditor.Views
             NativeMethods.AddClipboardFormatListener(Handle);
         }
 
-        private void ShowError(Exception exception, string text, string caption, string filePath)
+        private void ShowError(string caption, string shortText, string details)
         {
-            string filename = !string.IsNullOrWhiteSpace(filePath) ? Path.GetFileName(filePath) : null;
-            StringBuilder message = new StringBuilder();
-            message.AppendLine($"[{_appName}] {text}!");
-            if (exception != null)
-            {
-                message.AppendLine();
-                message.Append(exception.ToHumanReadable(filePath));
-            }
-            MessageBox.Show(this, message.ToString(), caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        private void ShowError(Exception exception, ErrorMessageModel messageTemplate, string filePath)
-        {
-            Tuple<string, string> r = messageTemplate.ToFileError(filePath);
-            ShowError(exception, r.Item1, r.Item2, filePath);
+            ErrorDialogForm dialog = new ErrorDialogForm();
+            dialog.Title = caption;
+            dialog.ShortText = shortText;
+            dialog.Details = details;
+            dialog.ShowDialog(this);
         }
 
         protected override void WndProc(ref Message m)
@@ -232,7 +221,10 @@ namespace TSP.DoxygenEditor.Views
                 Tuple<bool, Exception> openRes = IOOpenFile(newState, filePath);
                 if (!openRes.Item1)
                 {
-                    ShowError(openRes.Item2, _errorFileOpenMessage, filePath);
+                    Exception e = openRes.Item2;
+                    var values = new Dictionary<string, string>() { { "filepath", filePath } };
+                    var msg = e.ToErrorMessage("Open file", values);
+                    ShowError(msg.Caption, msg.ShortText, msg.Details);
                     RemoveFileTab(newState);
                 }
                 else
@@ -549,7 +541,13 @@ namespace TSP.DoxygenEditor.Views
                 {
                     Tuple<bool, Exception> result = IOSaveFile(editorState);
                     if (!result.Item1)
-                        ShowError(result.Item2, _errorFileSaveMessage, editorState.FilePath);
+                    {
+                        string filePath = editorState.FilePath;
+                        Exception e = result.Item2;
+                        var values = new Dictionary<string, string>() { { "filepath", filePath } };
+                        var msg = e.ToErrorMessage("Save file", values);
+                        ShowError(msg.Caption, msg.ShortText, msg.Details);
+                    }
                     return (result);
                 }
             }
@@ -589,7 +587,12 @@ namespace TSP.DoxygenEditor.Views
                 EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
                 Tuple<bool, Exception> r = SaveFileAs(editorState, filePath);
                 if (!r.Item1)
-                    ShowError(r.Item2, _errorFileSaveMessage, filePath);
+                {
+                    Exception ex = r.Item2;
+                    var values = new Dictionary<string, string>() { { "filepath", filePath } };
+                    var msg = ex.ToErrorMessage("Save file", values);
+                    ShowError(msg.Caption, msg.ShortText, msg.Details);
+                }
                 else
                     _config.PushRecentFiles(filePath);
 

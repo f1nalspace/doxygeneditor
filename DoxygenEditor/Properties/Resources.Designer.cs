@@ -83,6 +83,16 @@ namespace TSP.DoxygenEditor.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap CollapseArrow_16x {
+            get {
+                object obj = ResourceManager.GetObject("CollapseArrow_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Copy_16x {
             get {
                 object obj = ResourceManager.GetObject("Copy_16x", resourceCulture);
@@ -106,6 +116,16 @@ namespace TSP.DoxygenEditor.Properties {
         internal static System.Drawing.Bitmap Exit_16x {
             get {
                 object obj = ResourceManager.GetObject("Exit_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ExpandArrow_16x {
+            get {
+                object obj = ResourceManager.GetObject("ExpandArrow_16x", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -226,6 +246,16 @@ namespace TSP.DoxygenEditor.Properties {
         internal static System.Drawing.Bitmap SelectAll_16x {
             get {
                 object obj = ResourceManager.GetObject("SelectAll_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap StatusCriticalError_32x {
+            get {
+                object obj = ResourceManager.GetObject("StatusCriticalError_32x", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

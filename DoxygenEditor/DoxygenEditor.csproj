@@ -79,6 +79,12 @@
   <ItemGroup>
     <Compile Include="Editor\EditorState.cs" />
     <Compile Include="Editor\EditorStyler.cs" />
+    <Compile Include="ErrorDialog\ErrorDialogForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ErrorDialog\ErrorDialogForm.Designer.cs">
+      <DependentUpon>ErrorDialogForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\LinkedListExtensions.cs" />
@@ -166,6 +172,9 @@
     <Compile Include="SymbolSearch\SymbolSearchForm.Designer.cs">
       <DependentUpon>SymbolSearchForm.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="ErrorDialog\ErrorDialogForm.resx">
+      <DependentUpon>ErrorDialogForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SearchReplace\SearchReplaceControl.resx">
       <DependentUpon>SearchReplaceControl.cs</DependentUpon>
     </EmbeddedResource>
@@ -206,6 +215,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
+    <None Include="Resources\CollapseArrow_16x.png" />
+    <None Include="Resources\ExpandArrow_16x.png" />
+    <None Include="Resources\StatusCriticalError_32x.png" />
+    <None Include="Resources\StatusCriticalError_64x.png" />
     <None Include="Resources\LICENSE.txt" />
     <None Include="Resources\SelectAll_16x.png" />
     <None Include="Resources\Paste_16x.png" />
