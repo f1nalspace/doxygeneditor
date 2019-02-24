@@ -157,21 +157,95 @@ namespace FastTokenizer
             from rest in NaturalChar.AtLeastOnce()
             select first + (sign.HasValue ? "" + sign.Value : "") + new string(rest);
 
-        static TextParser<char> FSParser = Character.In('f', 'F', 'l', 'L');
         static TextParser<TextSpan> ISParser = Span.MatchedBy(Character.In('u', 'U', 'l', 'L').Many());
 
-        static string E = "([Ee][+-]?{D}+)";
-        static string P = "([Pp][+-]?{D}+)";
-        static string D = "[0-9]";
-        static string H = "[a-fA-F0-9]";
-        static string FS = "(f|F|l|L)";
-        static string IS = "([uUlL]+)";
-        static TextParser<TextSpan> CHexNumberParser = Span.Regex($"0[xX]{H}+{IS}?");
-        static TextParser<TextSpan> COctalNumberParser = Span.Regex($"0[0-7]*{IS}?");
-        static TextParser<TextSpan> CBinaryNumberParser = Span.Regex($"0[bB][0-1]+{IS}?");
-        static TextParser<TextSpan> CIntegerNumberParser = Span.Regex($"[1-9]{D}*{IS}?");
-        static TextParser<TextSpan> CDecimalFloatNumberParser = Span.Regex($"{D}+{E}{FS}?");//.Or(Span.Regex($"{D}*\\.{D}+{E}?{FS}?").Or(Span.Regex($"{D}+\\.{D}*{E}?{FS}?")));
-        static TextParser<TextSpan> CDecimalHexNumberParser = Span.Regex($"0[xX]{H}+{P}{FS}?").Or(Span.Regex($"0[xX]{H}*\\.{H}+{P}?{FS}?").Or(Span.Regex($"0[xX]{H}+\\.{H}*{P}?{FS}?")));
+        static TextParser<TextSpan> CHexNumberParser =
+            Span.MatchedBy(Character.EqualTo('0'))
+            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
+            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
+            .Then(_ => Span.MatchedBy(ISParser.Optional()));
+
+        static TextParser<TextSpan> COctalNumberParser =
+            Span.MatchedBy(Character.EqualTo('0'))
+            .Then(_ => Span.MatchedBy(Span.MatchedBy(OctalChar.Many())))
+            .Then(_ => Span.MatchedBy(ISParser.Optional()));
+
+        static TextParser<TextSpan> CBinaryNumberParser =
+            Span.MatchedBy(Character.EqualTo('0'))
+            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('b')))
+            .Then(_ => Span.MatchedBy(BinaryChar.AtLeastOnce()))
+            .Then(_ => Span.MatchedBy(ISParser.Optional()));
+
+        static TextParser<TextSpan> CIntegerNumberParser =
+            Span.MatchedBy(NaturalChar.Where(f => f != '0'))
+            .Then(_ => Span.MatchedBy(NaturalChar.Many()))
+            .Then(_ => Span.MatchedBy(ISParser.Optional()));
+
+        static TextParser<char> FSParser = Character.In('f', 'F', 'l', 'L');
+
+        // {D}+{E}{FS}?
+        static TextParser<TextSpan> CDecimalFloatNumberParser_Simple =
+            Span.MatchedBy(NaturalChar.AtLeastOnce())
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(FSParser.Optional()));
+
+        // {D}*\\.{D}+{E}?{FS}?
+        static TextParser<TextSpan> CDecimalFloatNumberParser_Complex1 =
+            Span.MatchedBy(NaturalChar.Many())
+            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(NaturalChar.AtLeastOnce()))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(FSParser.Optional()));
+
+        // {D}+\\.{D}*{E}?{FS}?
+        static TextParser<TextSpan> CDecimalFloatNumberParser_Complex2 =
+            Span.MatchedBy(NaturalChar.AtLeastOnce())
+            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(NaturalChar.Many()))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(FSParser.Optional()));
+
+        // All 3 decimal float
+        static TextParser<TextSpan> CDecimalFloatNumberParser =
+            CDecimalFloatNumberParser_Simple
+            .Or(CDecimalFloatNumberParser_Complex1)
+            .Or(CDecimalFloatNumberParser_Complex2);
+
+        // 0[xX]{H}+{P}{FS}?
+        static TextParser<TextSpan> CDecimalHexNumberParser_Simple =
+            Span.MatchedBy(Character.EqualTo('0'))
+            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
+            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(FSParser.Optional()));
+
+        // 0[xX]{H}*\\.{H}+{P}?{FS}?
+        static TextParser<TextSpan> CDecimalHexNumberParser_Complex1 =
+            Span.MatchedBy(Character.EqualTo('0'))
+            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
+            .Then(_ => Span.MatchedBy(HexChar.Many()))
+            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
+            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(FSParser.Optional()));
+
+        // 0[xX]{H}+\\.{H}*{P}?{FS}?
+        static TextParser<TextSpan> CDecimalHexNumberParser_Complex2 =
+            Span.MatchedBy(Character.EqualTo('0'))
+            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
+            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
+            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
+            .Then(_ => Span.MatchedBy(HexChar.Many()))
+            .Then(_ => EParser.OptionalOrDefault(""))
+            .Then(_ => Span.MatchedBy(FSParser.Optional()));
+
+        // All 3 decimal hex parser
+        static TextParser<TextSpan> CDecimalHexNumberParser =
+            CDecimalHexNumberParser_Simple
+            .Or(CDecimalHexNumberParser_Complex1)
+            .Or(CDecimalHexNumberParser_Complex2);
 
         static TextParser<TextSpan> PreprocessorParser
         {
@@ -406,29 +480,13 @@ namespace FastTokenizer
                         case '8':
                         case '9':
                             {
-                                // Hex-Float
-                                var content = CDecimalHexNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    yield return Result.Value(CTokenKind.DecimalHexLiteral, next.Location, content.Remainder);
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
-
-                                // Decimal-Float
-                                content = CDecimalFloatNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    yield return Result.Value(CTokenKind.DecimalFloatLiteral, next.Location, content.Remainder);
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
 
                                 // Hex
-                                content = CHexNumberParser(next.Location);
+                                var content = CHexNumberParser(next.Location);
                                 if (content.HasValue)
                                 {
-                                    yield return Result.Value(CTokenKind.HexLiteral, next.Location, content.Remainder);
+                                    var result = Result.Value(CTokenKind.HexLiteral, next.Location, content.Remainder);
+                                    yield return result;
                                     next = content.Remainder.ConsumeChar();
                                     break;
                                 }
@@ -437,7 +495,8 @@ namespace FastTokenizer
                                 content = COctalNumberParser(next.Location);
                                 if (content.HasValue)
                                 {
-                                    yield return Result.Value(CTokenKind.OctalLiteral, next.Location, content.Remainder);
+                                    var result = Result.Value(CTokenKind.OctalLiteral, next.Location, content.Remainder);
+                                    yield return result;
                                     next = content.Remainder.ConsumeChar();
                                     break;
                                 }
@@ -446,7 +505,28 @@ namespace FastTokenizer
                                 content = CIntegerNumberParser(next.Location);
                                 if (content.HasValue)
                                 {
-                                    yield return Result.Value(CTokenKind.IntegerLiteral, next.Location, content.Remainder);
+                                    var result = Result.Value(CTokenKind.IntegerLiteral, next.Location, content.Remainder);
+                                    yield return result;
+                                    next = content.Remainder.ConsumeChar();
+                                    break;
+                                }
+
+                                // Decimal-Float
+                                content = CDecimalFloatNumberParser(next.Location);
+                                if (content.HasValue)
+                                {
+                                    var result = Result.Value(CTokenKind.DecimalFloatLiteral, next.Location, content.Remainder);
+                                    yield return result;
+                                    next = content.Remainder.ConsumeChar();
+                                    break;
+                                }
+
+                                // Hex-Float
+                                content = CDecimalHexNumberParser(next.Location);
+                                if (content.HasValue)
+                                {
+                                    var result = Result.Value(CTokenKind.DecimalHexLiteral, next.Location, content.Remainder);
+                                    yield return result;
                                     next = content.Remainder.ConsumeChar();
                                     break;
                                 }
@@ -518,7 +598,7 @@ namespace FastTokenizer
             string filePath = args[1];
             string source = File.ReadAllText(filePath);
 
-            var p = EParser(new TextSpan("e+93"));
+            var p = CIntegerNumberParser(new TextSpan("600"));
 
 
 
