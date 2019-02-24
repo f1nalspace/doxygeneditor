@@ -7,9 +7,8 @@ using Superpower;
 using Superpower.Display;
 using Superpower.Model;
 using Superpower.Parsers;
-using TSP.DoxygenEditor.TextAnalysis;
 
-namespace FastTokenizer
+namespace TSP.FastTokenizer
 {
     class Program
     {
@@ -610,11 +609,11 @@ namespace FastTokenizer
                         Console.WriteLine($"Superpower tokenizer start...");
                         timer.Restart();
                         var tokens = new CTokenizer().Tokenize(source);
+                        timer.Stop();
                         foreach (var token in tokens)
                         {
                             Console.WriteLine(token);
                         }
-                        timer.Stop();
                         Console.WriteLine($"Superpower tokenizer got {tokens.Count()} tokens, took {timer.Elapsed.TotalMilliseconds}");
                     }
                     break;
@@ -625,7 +624,7 @@ namespace FastTokenizer
                         timer.Restart();
                         var stream = new BasicTextStream(source, 0, source.Length);
                         var cursor = new StreamCursor(stream);
-                        var tokens = new List<TSP.DoxygenEditor.TextAnalysis.Token>();
+                        var tokens = new List<Token>();
                         while (!cursor.IsEOF)
                         {
                             var token = CustomTokenizer.GetToken(cursor);
@@ -633,11 +632,11 @@ namespace FastTokenizer
                                 break;
                             tokens.Add(token);
                         }
+                        timer.Stop();
                         foreach (var token in tokens)
                         {
                             Console.WriteLine(token);
                         }
-                        timer.Stop();
                         Console.WriteLine($"Custom tokenizer got {tokens.Count()} tokens, took {timer.Elapsed.TotalMilliseconds}");
                     }
                     break;

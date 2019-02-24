@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>FastTokenizer</RootNamespace>
+    <RootNamespace>TSP.FastTokenizer</RootNamespace>
     <AssemblyName>FastTokenizer</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -51,6 +51,9 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>TSP.FastTokenizer.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Superpower, Version=1.0.0.0, Culture=neutral, PublicKeyToken=aec39280ded1b3a7, processorArchitecture=MSIL">

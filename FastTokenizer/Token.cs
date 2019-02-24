@@ -1,4 +1,4 @@
-﻿namespace TSP.DoxygenEditor.TextAnalysis
+﻿namespace TSP.FastTokenizer
 {
     struct Token
     {

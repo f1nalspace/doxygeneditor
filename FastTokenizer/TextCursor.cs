@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace TSP.DoxygenEditor.TextAnalysis
+namespace TSP.FastTokenizer
 {
     class TextCursor
     {

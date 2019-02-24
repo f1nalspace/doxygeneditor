@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TSP.DoxygenEditor.TextAnalysis
+namespace TSP.FastTokenizer
 {
     class BasicTextStream : TextStream
     {
