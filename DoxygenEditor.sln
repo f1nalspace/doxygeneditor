@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoxygenEditor", "DoxygenEditor\DoxygenEditor.csproj", "{70A53966-525E-4F6D-AA1C-229B428F2A98}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastTokenizer", "FastTokenizer\FastTokenizer.csproj", "{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,6 +17,10 @@ Global
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Debug|x64.Build.0 = Debug|x64
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Release|x64.ActiveCfg = Release|x64
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Release|x64.Build.0 = Release|x64
+		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Debug|x64.ActiveCfg = Debug|x64
+		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Debug|x64.Build.0 = Debug|x64
+		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Release|x64.ActiveCfg = Release|x64
+		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
