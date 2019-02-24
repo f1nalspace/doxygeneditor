@@ -8,7 +8,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         protected string Source { get; }
         public int StreamBase { get; }
         public int StreamLength { get; }
-        public int StreamEnd { get; }
+        public int StreamOnePastEnd { get; }
 
         public abstract int StreamPosition { get; }
         public abstract bool IsEOF { get; }
@@ -20,7 +20,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             Source = source;
             StreamBase = sbase;
             StreamLength = length;
-            StreamEnd = StreamBase + StreamLength;
+            StreamOnePastEnd = StreamBase + StreamLength;
         }
 
         public string GetStreamText(int index, int length)

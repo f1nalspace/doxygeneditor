@@ -124,7 +124,7 @@ namespace TSP.DoxygenEditor.Lexers.Html
                         {
                             if (Buffer.IsEOF)
                             {
-                                PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
+                                PushToken(new HtmlToken(HtmlTokenType.EOF, Buffer.StreamOnePastEnd, 0, false));
                                 return (false);
                             }
                             else
@@ -145,7 +145,7 @@ namespace TSP.DoxygenEditor.Lexers.Html
                         }
                 }
             } while (!Buffer.IsEOF);
-            PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
+            PushToken(new HtmlToken(HtmlTokenType.EOF, Buffer.StreamOnePastEnd, 0, false));
             return (false);
         }
     }

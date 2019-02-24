@@ -241,7 +241,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                 string text = Buffer.GetStreamText(state.TextStart, length);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
-                    DoxygenToken token = new DoxygenToken(DoxygenTokenType.Text, Buffer.LexemeStart, Buffer.LexemeWidth, true);
+                    DoxygenToken token = new DoxygenToken(DoxygenTokenType.Text, state.TextStart, length, true);
                     PushToken(token);
                 }
             }
@@ -275,7 +275,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
             {
                 // Block was not closed, so we close it now
                 state.Flags = BlockFlags.None;
-                PushToken(new DoxygenToken(DoxygenTokenType.BlockEnd, Math.Max(0, Buffer.StreamEnd - 1), 1, false));
+                PushToken(new DoxygenToken(DoxygenTokenType.BlockEnd, Buffer.StreamOnePastEnd, 0, false));
             }
         }
 
@@ -385,7 +385,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                             if (Buffer.IsEOF)
                             {
                                 Done(state);
-                                PushToken(new DoxygenToken(DoxygenTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
+                                PushToken(new DoxygenToken(DoxygenTokenType.EOF, Buffer.StreamOnePastEnd, 0, false));
                                 return (false);
                             }
                             else
@@ -401,7 +401,7 @@ namespace TSP.DoxygenEditor.Lexers.Doxygen
                 }
             } while (!Buffer.IsEOF);
             Done(state);
-            PushToken(new DoxygenToken(DoxygenTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
+            PushToken(new DoxygenToken(DoxygenTokenType.EOF, Buffer.StreamOnePastEnd, 0, false));
             return (false);
         }
     }

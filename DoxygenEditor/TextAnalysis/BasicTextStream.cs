@@ -15,7 +15,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public override int StreamPosition => _position;
 
-        public override bool IsEOF => _position >= StreamEnd;
+        public override bool IsEOF => _position >= StreamOnePastEnd;
 
         public override int LexemeStart => _lexemeStart;
 
@@ -38,7 +38,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public override char Peek()
         {
-            if (_position >= StreamBase && _position < StreamEnd)
+            if (_position >= StreamBase && _position < StreamOnePastEnd)
             {
                 char result = Source[_position];
                 return (result);
@@ -49,7 +49,8 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public override char Peek(int delta)
         {
             int p = _position + delta;
-            if (p >= StreamBase && p < StreamEnd)
+            // @TODO(final): StreamEnd - actual stream end?
+            if (p >= StreamBase && p < StreamOnePastEnd)
             {
                 char result = Source[p];
                 return (result);

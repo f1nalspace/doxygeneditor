@@ -542,7 +542,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                         {
                             if (Buffer.IsEOF)
                             {
-                                PushToken(new CppToken(CppTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
+                                PushToken(new CppToken(CppTokenType.EOF, Buffer.StreamOnePastEnd, 0, false));
                                 return (false);
                             }
                             else
@@ -707,7 +707,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                         break;
                 }
             } while (!Buffer.IsEOF);
-            PushToken(new CppToken(CppTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
+            PushToken(new CppToken(CppTokenType.EOF, Buffer.StreamOnePastEnd, 0, false));
             return (false);
         }
     }

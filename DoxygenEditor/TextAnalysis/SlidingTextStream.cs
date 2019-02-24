@@ -21,7 +21,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         {
             get
             {
-                bool result = (_bufferIndex >= _bufferCount) && (StreamPosition >= StreamEnd);
+                bool result = (_bufferIndex >= _bufferCount) && (StreamPosition >= StreamOnePastEnd);
                 return (result);
             }
         }
@@ -81,7 +81,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         {
             if (_bufferIndex >= _bufferCount)
             {
-                if (StreamPosition >= StreamEnd)
+                if (StreamPosition >= StreamOnePastEnd)
                 {
                     return (false);
                 }
@@ -105,7 +105,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     _buffer = newBuffer;
                 }
 
-                int amountToRead = Math.Min(StreamEnd - (_base + _bufferCount), _buffer.Length - _bufferCount);
+                int amountToRead = Math.Min(StreamOnePastEnd - (_base + _bufferCount), _buffer.Length - _bufferCount);
                 Source.CopyTo(_base + _bufferCount, _buffer, _bufferCount, amountToRead);
                 _bufferCount += amountToRead;
                 return (amountToRead > 0);
