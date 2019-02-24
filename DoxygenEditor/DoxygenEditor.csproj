@@ -103,6 +103,7 @@
     <Compile Include="Lists\LinkedListStream.cs" />
     <Compile Include="Parsers\BaseEntity.cs" />
     <Compile Include="Parsers\BaseNode.cs" />
+    <Compile Include="Parsers\BaseParser.cs" />
     <Compile Include="Parsers\BaseTree.cs" />
     <Compile Include="Parsers\Cpp\CppEntity.cs" />
     <Compile Include="Parsers\Cpp\CppEntityType.cs" />
@@ -112,9 +113,10 @@
     <Compile Include="Parsers\Doxygen\DoxygenEntityType.cs" />
     <Compile Include="Parsers\Doxygen\DoxygenNode.cs" />
     <Compile Include="Parsers\Doxygen\DoxygenTree.cs" />
-    <Compile Include="TextAnalysis\SlidingTextBuffer.cs" />
-    <Compile Include="TextAnalysis\SourceBuffer.cs" />
-    <Compile Include="TextAnalysis\StringSourceBuffer.cs" />
+    <Compile Include="TextAnalysis\BasicTextStream.cs" />
+    <Compile Include="TextAnalysis\ITextStream .cs" />
+    <Compile Include="TextAnalysis\SlidingTextStream.cs" />
+    <Compile Include="TextAnalysis\TextStream.cs" />
     <Compile Include="TextAnalysis\TextRange.cs" />
     <Compile Include="Utils\SyntaxUtils.cs" />
     <Compile Include="Lexers\Cpp\CppLexer.cs" />
@@ -122,11 +124,6 @@
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
     <Compile Include="Natives\NativeMethods.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\CommentEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\ParamEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\DeclarationEntity.cs" />
-    <Compile Include="Parsers\Obsolete\TextBuffer.cs" />
-    <Compile Include="Parsers\Obsolete\Token.cs" />
     <Compile Include="Solid\IOCContainer.cs" />
     <Compile Include="SearchReplace\SearchReplaceControl.cs">
       <SubType>UserControl</SubType>
@@ -135,22 +132,10 @@
       <DependentUpon>SearchReplaceControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\LogItemModel.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\GroupEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\JavaDocEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\Entity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\PageEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\RootEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\SectionEntity.cs" />
-    <Compile Include="Parsers\Obsolete\Entities\SubSectionEntity.cs" />
-    <Compile Include="Parsers\Obsolete\LineBuffer.cs" />
-    <Compile Include="Parsers\Obsolete\ParseMessage.cs" />
-    <Compile Include="Parsers\Obsolete\ParseTree.cs" />
-    <Compile Include="Parsers\Obsolete\SequenceInfo.cs" />
     <Compile Include="SearchReplace\SearchReplaceTypes.cs" />
     <Compile Include="Services\IConfigurationService.cs" />
     <Compile Include="Services\RegistryConfigurationService.cs" />
     <Compile Include="Models\ConfigurationModel.cs" />
-    <Compile Include="Parsers\Obsolete\DoxygenParser.cs" />
     <Compile Include="Models\TypeStringModel.cs" />
     <Compile Include="Views\AboutForm.cs">
       <SubType>Form</SubType>

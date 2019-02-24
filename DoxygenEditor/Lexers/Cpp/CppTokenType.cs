@@ -4,7 +4,6 @@
     {
         Invalid = -1,
         EOF,
-        //LineBreak,
         MultiLineComment,
         MultiLineCommentDoc,
         SingleLineComment,

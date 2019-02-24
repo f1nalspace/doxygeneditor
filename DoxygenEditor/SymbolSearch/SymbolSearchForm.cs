@@ -1,5 +1,4 @@
 ﻿using TSP.DoxygenEditor.Models;
-using TSP.DoxygenEditor.Parsers.Obsolete.Entities;
 using TSP.DoxygenEditor.SearchReplace;
 using System;
 using System.Collections.Generic;

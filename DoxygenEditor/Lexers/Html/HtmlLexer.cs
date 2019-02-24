@@ -7,21 +7,21 @@ namespace TSP.DoxygenEditor.Lexers.Html
 {
     class HtmlLexer : BaseLexer<HtmlToken>
     {
-        public HtmlLexer(SourceBuffer source) : base(source)
+        public HtmlLexer(string source, int sbase, int length) : base(source, sbase, length)
         {
         }
 
         private void LexTag()
         {
-            Debug.Assert(Buffer.PeekChar() == '<');
-            Buffer.Start();
+            Debug.Assert(Buffer.Peek() == '<');
+            Buffer.StartLexeme();
 
             HtmlToken startTagToken = new HtmlToken(HtmlTokenType.MetaTagStart, Buffer.LexemeStart, 0, false);
             PushToken(startTagToken);
 
             bool allowAttributes = true;
             Buffer.AdvanceChar();
-            if (Buffer.PeekChar() == '/')
+            if (Buffer.Peek() == '/')
             {
                 startTagToken.ChangeType(HtmlTokenType.MetaTagClose);
                 Buffer.AdvanceChar();
@@ -29,12 +29,12 @@ namespace TSP.DoxygenEditor.Lexers.Html
             }
             PushToken(new HtmlToken(HtmlTokenType.TagChars, Buffer.LexemeStart, Buffer.LexemeWidth, true));
 
-            if (SyntaxUtils.IsIdentStart(Buffer.PeekChar()))
+            if (SyntaxUtils.IsIdentStart(Buffer.Peek()))
             {
-                Buffer.Start();
+                Buffer.StartLexeme();
                 while (!Buffer.IsEOF)
                 {
-                    if (SyntaxUtils.IsIdent(Buffer.PeekChar()))
+                    if (SyntaxUtils.IsIdent(Buffer.Peek()))
                         Buffer.AdvanceChar();
                     else
                         break;
@@ -47,41 +47,41 @@ namespace TSP.DoxygenEditor.Lexers.Html
                 while (!Buffer.IsEOF)
                 {
                     SkipWhitespaces();
-                    char c = Buffer.PeekChar();
+                    char c = Buffer.Peek();
                     if (!SyntaxUtils.IsIdentStart(c))
                         break;
                     else
                     {
-                        Buffer.Start();
+                        Buffer.StartLexeme();
                         while (!Buffer.IsEOF)
                         {
-                            if (SyntaxUtils.IsIdent(Buffer.PeekChar()))
+                            if (SyntaxUtils.IsIdent(Buffer.Peek()))
                                 Buffer.AdvanceChar();
                             else
                                 break;
                         }
                         PushToken(new HtmlToken(HtmlTokenType.AttrName, Buffer.LexemeStart, Buffer.LexemeWidth, true));
                         SkipWhitespaces(); // Allow whitespaces before =
-                        if (Buffer.PeekChar() == '=')
+                        if (Buffer.Peek() == '=')
                         {
-                            Buffer.Start();
+                            Buffer.StartLexeme();
                             Buffer.AdvanceChar();
                             PushToken(new HtmlToken(HtmlTokenType.AttrChars, Buffer.LexemeStart, Buffer.LexemeWidth, true));
                             SkipWhitespaces(); // Allow whitespaces after =
-                            if (Buffer.PeekChar() == '"' || Buffer.PeekChar() == '\'')
+                            if (Buffer.Peek() == '"' || Buffer.Peek() == '\'')
                             {
-                                char quote = Buffer.PeekChar();
-                                Buffer.Start();
+                                char quote = Buffer.Peek();
+                                Buffer.StartLexeme();
                                 Buffer.AdvanceChar();
                                 while (!Buffer.IsEOF)
                                 {
-                                    char attrC = Buffer.PeekChar();
+                                    char attrC = Buffer.Peek();
                                     if (attrC != quote && attrC != '\n')
                                         Buffer.AdvanceChar();
                                     else
                                         break;
                                 }
-                                if (Buffer.PeekChar() == quote)
+                                if (Buffer.Peek() == quote)
                                     Buffer.AdvanceChar();
                                 PushToken(new HtmlToken(HtmlTokenType.AttrValue, Buffer.LexemeStart, Buffer.LexemeWidth, true));
                             }
@@ -93,7 +93,7 @@ namespace TSP.DoxygenEditor.Lexers.Html
             }
 
             SkipWhitespaces(); // Allow whitespaces before /
-            if (Buffer.PeekChar() == '/')
+            if (Buffer.Peek() == '/')
             {
                 startTagToken.ChangeType(HtmlTokenType.MetaTagStartAndClose);
                 Buffer.AdvanceChar();
@@ -102,14 +102,14 @@ namespace TSP.DoxygenEditor.Lexers.Html
 
             SkipUntil('>');
 
-            if (Buffer.PeekChar() == '>')
+            if (Buffer.Peek() == '>')
             {
-                Buffer.Start();
+                Buffer.StartLexeme();
                 Buffer.AdvanceChar();
                 PushToken(new HtmlToken(HtmlTokenType.TagChars, Buffer.LexemeStart, Buffer.LexemeWidth, true));
             }
 
-            int tagLength = Buffer.Position - startTagToken.Index;
+            int tagLength = Buffer.StreamPosition - startTagToken.Index;
             startTagToken.ChangeLength(tagLength);
         }
 
@@ -118,13 +118,13 @@ namespace TSP.DoxygenEditor.Lexers.Html
             do
             {
                 SkipWhitespaces();
-                switch (Buffer.PeekChar())
+                switch (Buffer.Peek())
                 {
-                    case SlidingTextBuffer.InvalidCharacter:
+                    case TextStream.InvalidCharacter:
                         {
                             if (Buffer.IsEOF)
                             {
-                                PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.End - 1), 0, false));
+                                PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
                                 return (false);
                             }
                             else
@@ -145,7 +145,7 @@ namespace TSP.DoxygenEditor.Lexers.Html
                         }
                 }
             } while (!Buffer.IsEOF);
-            PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.End - 1), 0, false));
+            PushToken(new HtmlToken(HtmlTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
             return (false);
         }
     }

@@ -19,6 +19,7 @@ using TSP.DoxygenEditor.Parsers.Doxygen;
 using TSP.DoxygenEditor.Extensions;
 using TSP.DoxygenEditor.Lists;
 using TSP.DoxygenEditor.Parsers.Cpp;
+using System.Linq;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -326,17 +327,6 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private void InsertTokens(BaseToken rootToken, SourceBuffer sourceBuffer, IEnumerable<BaseToken> newTokens)
-        {
-            if (rootToken != null)
-            {
-                int index = _tokens.IndexOf(rootToken);
-                _tokens.InsertRange(index + 1, newTokens);
-            }
-            else
-                _tokens.AddRange(newTokens);
-        }
-
         class TokenizerTimingStats
         {
             public TimeSpan CppDuration = new TimeSpan();
@@ -389,8 +379,7 @@ namespace TSP.DoxygenEditor.Editor
         {
             Stopwatch timer = new Stopwatch();
             timer.Restart();
-            SourceBuffer sourceBuffer = new StringSourceBuffer(text, index, length);
-            CppLexer cppLexer = new CppLexer(sourceBuffer);
+            CppLexer cppLexer = new CppLexer(text, index, length);
             IEnumerable<CppToken> cppTokens = cppLexer.Tokenize();
             timer.Stop();
             TokenizeResult result = new TokenizeResult(rootToken);
@@ -418,8 +407,7 @@ namespace TSP.DoxygenEditor.Editor
         {
             Stopwatch timer = new Stopwatch();
             timer.Restart();
-            SourceBuffer sourceBuffer = new StringSourceBuffer(text, index, length);
-            HtmlLexer htmlLexer = new HtmlLexer(sourceBuffer);
+            HtmlLexer htmlLexer = new HtmlLexer(text, index, length);
             IEnumerable<HtmlToken> htmlTokens = htmlLexer.Tokenize();
             timer.Stop();
             TokenizeResult result = new TokenizeResult(rootToken);
@@ -432,8 +420,7 @@ namespace TSP.DoxygenEditor.Editor
         {
             Stopwatch timer = new Stopwatch();
             timer.Restart();
-            SourceBuffer sourceBuffer = new StringSourceBuffer(text, index, length);
-            DoxygenLexer doxyLexer = new DoxygenLexer(sourceBuffer);
+            DoxygenLexer doxyLexer = new DoxygenLexer(text, index, length);
             IEnumerable<DoxygenToken> doxyTokens = doxyLexer.Tokenize();
             TokenizeResult result = new TokenizeResult(rootToken);
             timer.Stop();
@@ -481,6 +468,7 @@ namespace TSP.DoxygenEditor.Editor
             TokenizerTimingStats totalStats = new TokenizerTimingStats();
             var cppRes = TokenizeCpp(null, text, 0, text.Length, true);
             totalStats += cppRes.Stats;
+            Debug.WriteLine($"Cpp tokens: {cppRes.Tokens.Count()}");
             _tokens.AddRange(cppRes.Tokens);
 
             // Doxy lexing

@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using TSP.DoxygenEditor.Lexers;
-using TSP.DoxygenEditor.Lexers.Cpp;
 using TSP.DoxygenEditor.Lexers.Doxygen;
 using TSP.DoxygenEditor.Lists;
-using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers.Doxygen
 {

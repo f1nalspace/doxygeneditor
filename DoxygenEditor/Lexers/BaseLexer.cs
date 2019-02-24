@@ -7,36 +7,20 @@ namespace TSP.DoxygenEditor.Lexers
 {
     abstract class BaseLexer<T> : IDisposable where T : BaseToken
     {
-        internal readonly SlidingTextBuffer Buffer;
+        internal readonly TextStream Buffer;
         private readonly List<T> _tokens = new List<T>();
         private IEnumerable<T> Tokens => _tokens;
         public bool HasTokens => _tokens.Count > 0;
 
-        public BaseLexer(SourceBuffer source)
+        public BaseLexer(string source, int sbase, int length)
         {
-            Buffer = new SlidingTextBuffer(source);
+            Buffer = new SlidingTextStream(source, sbase, length);
         }
 
         protected bool PushToken(T token)
         {
             _tokens.Add(token);
             return (true);
-        }
-
-        protected void ReplaceTokens(T startToken, T endToken, IEnumerable<T> newTokens)
-        {
-            int startIndex = _tokens.IndexOf(startToken);
-            int endIndex = _tokens.IndexOf(endToken);
-
-            Debug.Assert(startIndex <= endIndex);
-            if (startIndex == endIndex)
-                _tokens.RemoveAt(startIndex);
-            else
-            {
-                int count = endIndex - startIndex;
-                _tokens.RemoveRange(startIndex, count);
-            }
-            _tokens.InsertRange(startIndex, newTokens);
         }
 
         protected abstract bool LexNext();
@@ -46,7 +30,7 @@ namespace TSP.DoxygenEditor.Lexers
         {
             foreach (T token in _tokens)
             {
-                token.DebugValue = Buffer.Source.GetText(token.Index, token.Length);
+                token.DebugValue = Buffer.GetStreamText(token.Index, token.Length);
             }
         }
 #endif
@@ -56,12 +40,12 @@ namespace TSP.DoxygenEditor.Lexers
             _tokens.Clear();
             while (!Buffer.IsEOF)
             {
-                int p = Buffer.Position;
+                int p = Buffer.StreamPosition;
                 bool r = LexNext();
                 if (!r)
                     break;
                 else
-                    Debug.Assert(Buffer.Position > p);
+                    Debug.Assert(Buffer.StreamPosition > p);
             }
 
             if (_tokens.Count == 1)
@@ -81,11 +65,13 @@ namespace TSP.DoxygenEditor.Lexers
         protected int SkipWhitespaces(bool stopOnLinebreak = false)
         {
             int result = 0;
-            while (!Buffer.IsEOF && char.IsWhiteSpace(Buffer.PeekChar()))
+            while (!Buffer.IsEOF && char.IsWhiteSpace(Buffer.Peek()))
             {
                 if (stopOnLinebreak)
                 {
-                    if ((Buffer.PeekChar() == '\n') || (Buffer.PeekChar() == '\r' && Buffer.PeekChar(1) == '\n'))
+                    char c0 = Buffer.Peek();
+                    char c1 = Buffer.Peek(1);
+                    if ((c0 == '\r' && c1 == '\n') || (c0 == '\n') || (c0 == '\r'))
                         break;
                 }
                 Buffer.AdvanceChar();
@@ -99,7 +85,7 @@ namespace TSP.DoxygenEditor.Lexers
             int result = 0;
             while (!Buffer.IsEOF)
             {
-                if (Buffer.PeekChar() == c)
+                if (Buffer.Peek() == c)
                     break;
                 Buffer.AdvanceChar();
                 ++result;

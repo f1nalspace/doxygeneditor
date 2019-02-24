@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using TSP.DoxygenEditor.Lexers.Doxygen;
 using TSP.DoxygenEditor.Lists;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Utils;
@@ -152,21 +153,21 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             //{ '.', CppTokenType.Dot },
         };
 
-        public CppLexer(SourceBuffer source) : base(source)
+        public CppLexer(string source, int sbase, int length) : base(source, sbase, length)
         {
 
         }
 
         private CppToken LexSingleLineComment(bool init)
         {
-            Buffer.Start();
+            int commentStart = Buffer.StreamPosition;
             CppTokenType type = CppTokenType.SingleLineComment;
             if (init)
             {
-                Debug.Assert(Buffer.PeekChar(0) == '/');
-                Debug.Assert(Buffer.PeekChar(1) == '/');
+                Debug.Assert(Buffer.Peek(0) == '/');
+                Debug.Assert(Buffer.Peek(1) == '/');
                 Buffer.AdvanceChar(2);
-                if (Buffer.PeekChar() == '!')
+                if (DoxygenLexer.SingleLineDocChars.Contains(Buffer.Peek()))
                 {
                     Buffer.AdvanceChar();
                     type = CppTokenType.SingleLineCommentDoc;
@@ -174,7 +175,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             }
             while (!Buffer.IsEOF)
             {
-                char c = Buffer.PeekChar();
+                char c = Buffer.Peek();
                 if (c == '\n')
                 {
                     Buffer.AdvanceChar();
@@ -182,20 +183,21 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 }
                 Buffer.AdvanceChar();
             }
-            CppToken token = new CppToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
+            int commentLength = Buffer.StreamPosition - commentStart;
+            CppToken token = new CppToken(type, commentStart, commentLength, true);
             return (token);
         }
 
         private CppToken LexMultiLineComment(bool init)
         {
-            Buffer.Start();
+            int commentStart = Buffer.StreamPosition;
             CppTokenType type = CppTokenType.MultiLineComment;
             if (init)
             {
-                Debug.Assert(Buffer.PeekChar(0) == '/');
-                Debug.Assert(Buffer.PeekChar(1) == '*');
+                Debug.Assert(Buffer.Peek(0) == '/');
+                Debug.Assert(Buffer.Peek(1) == '*');
                 Buffer.AdvanceChar(2);
-                if ((Buffer.PeekChar() == '*' || Buffer.PeekChar() == '!') && Buffer.PeekChar(1) != '/')
+                if (DoxygenLexer.MultiLineDocChars.Contains(Buffer.Peek()))
                 {
                     Buffer.AdvanceChar();
                     type = CppTokenType.MultiLineCommentDoc;
@@ -204,10 +206,10 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             bool isComplete = false;
             while (!Buffer.IsEOF)
             {
-                char c = Buffer.PeekChar(0);
+                char c = Buffer.Peek(0);
                 if (c == '*')
                 {
-                    char n = Buffer.PeekChar(1);
+                    char n = Buffer.Peek(1);
                     if (n == '/')
                     {
                         Buffer.AdvanceChar(2);
@@ -217,28 +219,29 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 }
                 Buffer.AdvanceChar();
             }
-            CppToken token = new CppToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, isComplete);
+            int commentLength = Buffer.StreamPosition - commentStart;
+            CppToken token = new CppToken(type, commentStart, commentLength, isComplete);
             return (token);
         }
 
         private CppToken AddChar(CppTokenType type)
         {
-            Buffer.Start();
+            Buffer.StartLexeme();
             Buffer.AdvanceChar();
             return new CppToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
         }
 
         private CppToken LexPreprocessor()
         {
-            Debug.Assert(Buffer.PeekChar(0) == '#');
+            Debug.Assert(Buffer.Peek(0) == '#');
             CppTokenType type = CppTokenType.Preprocessor;
-            Buffer.Start();
+            int preprocessorStart = Buffer.StreamPosition;
             Buffer.AdvanceChar();
             bool nextLine = false;
             bool isComplete = false;
             while (!Buffer.IsEOF)
             {
-                char c = Buffer.PeekChar();
+                char c = Buffer.Peek();
                 if (c == '\n')
                 {
                     if (nextLine)
@@ -265,18 +268,19 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 }
                 Buffer.AdvanceChar();
             }
-            CppToken result = new CppToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, isComplete);
+            int preprocessorLength = Buffer.StreamPosition - preprocessorStart;
+            CppToken result = new CppToken(type, preprocessorStart, preprocessorLength, isComplete);
             return (result);
         }
 
         private CppToken LexIdent()
         {
-            Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.PeekChar()));
-            Buffer.Start();
+            Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.Peek()));
+            Buffer.StartLexeme();
             StringBuilder identBuffer = new StringBuilder();
             while (!Buffer.IsEOF)
             {
-                char c = Buffer.PeekChar();
+                char c = Buffer.Peek();
                 if (SyntaxUtils.IsIdent(c))
                 {
                     identBuffer.Append(c);
@@ -303,14 +307,14 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
 
         private CppToken LexString()
         {
-            Debug.Assert(Buffer.PeekChar(0) == '"' || Buffer.PeekChar(0) == '\'');
-            Buffer.Start();
-            char quoteChar = Buffer.PeekChar();
+            Debug.Assert(Buffer.Peek(0) == '"' || Buffer.Peek(0) == '\'');
+            Buffer.StartLexeme();
+            char quoteChar = Buffer.Peek();
             Buffer.AdvanceChar();
             bool isComplete = false;
             while (!Buffer.IsEOF)
             {
-                char c = Buffer.PeekChar();
+                char c = Buffer.Peek();
                 if (c == quoteChar)
                 {
                     isComplete = true;
@@ -319,7 +323,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 }
                 else if (c == '\\')
                 {
-                    char n = Buffer.PeekChar(1);
+                    char n = Buffer.Peek(1);
                     switch (n)
                     {
                         case '\'':
@@ -345,12 +349,12 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                         case 'U':
                             {
                                 Buffer.AdvanceChar(2);
-                                if (SyntaxUtils.IsHex(Buffer.PeekChar()))
+                                if (SyntaxUtils.IsHex(Buffer.Peek()))
                                 {
                                     int len = 0;
                                     while (!Buffer.IsEOF)
                                     {
-                                        if (!SyntaxUtils.IsHex(Buffer.PeekChar()))
+                                        if (!SyntaxUtils.IsHex(Buffer.Peek()))
                                             break;
                                         else
                                         {
@@ -359,7 +363,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                                         }
                                     }
                                 }
-                                else throw new Exception($"Unsupported hex string character '{Buffer.PeekChar()}'!");
+                                else throw new Exception($"Unsupported hex string character '{Buffer.Peek()}'!");
                             }
                             continue;
 
@@ -369,14 +373,14 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                                 Buffer.AdvanceChar();
                                 while (!Buffer.IsEOF)
                                 {
-                                    if (!SyntaxUtils.IsOctal(Buffer.PeekChar()))
+                                    if (!SyntaxUtils.IsOctal(Buffer.Peek()))
                                         break;
                                     else
                                         Buffer.AdvanceChar();
                                 }
                                 continue;
                             }
-                            else throw new Exception($"Not supported string escape character '{Buffer.PeekChar()}'!");
+                            else throw new Exception($"Not supported string escape character '{Buffer.Peek()}'!");
                     }
                 }
                 Buffer.AdvanceChar();
@@ -388,16 +392,16 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
         private CppToken LexNumber()
         {
             // @TODO(final): Support \ escape characters
-            Debug.Assert(SyntaxUtils.IsNumeric(Buffer.PeekChar()) || Buffer.PeekChar() == '.');
-            Buffer.Start();
+            Debug.Assert(SyntaxUtils.IsNumeric(Buffer.Peek()) || Buffer.Peek() == '.');
+            Buffer.StartLexeme();
             bool dotSeen = false;
             bool allowDecimal = true;
             bool allowLongSuffix = false;
             CppTokenType type;
-            if (Buffer.PeekChar() == '0')
+            if (Buffer.Peek() == '0')
             {
                 // Either hex or octal
-                char n = Buffer.PeekChar(1);
+                char n = Buffer.Peek(1);
                 if (n == 'x' || n == 'X')
                 {
                     // Skip 0x or 0X
@@ -423,7 +427,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     allowLongSuffix = true;
                 }
             }
-            else if (Buffer.PeekChar() == '.')
+            else if (Buffer.Peek() == '.')
             {
                 // .0-9+ decimal number
                 Buffer.AdvanceChar();
@@ -437,7 +441,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             }
             while (!Buffer.IsEOF)
             {
-                if (Buffer.PeekChar() == '.')
+                if (Buffer.Peek() == '.')
                 {
                     if (!dotSeen && allowDecimal)
                     {
@@ -451,22 +455,22 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 }
                 if (type == CppTokenType.Integer || type == CppTokenType.Double)
                 {
-                    if (!SyntaxUtils.IsNumeric(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsNumeric(Buffer.Peek()))
                         break;
                 }
                 else if (type == CppTokenType.Hex)
                 {
-                    if (!SyntaxUtils.IsHex(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsHex(Buffer.Peek()))
                         break;
                 }
                 else if (type == CppTokenType.Octal)
                 {
-                    if (!SyntaxUtils.IsOctal(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsOctal(Buffer.Peek()))
                         break;
                 }
                 else if (type == CppTokenType.Binary)
                 {
-                    if (!SyntaxUtils.IsBinary(Buffer.PeekChar()))
+                    if (!SyntaxUtils.IsBinary(Buffer.Peek()))
                         break;
                 }
                 else
@@ -481,7 +485,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                 bool notUnsignedSeen = false;
                 while (!Buffer.IsEOF)
                 {
-                    char n = Buffer.PeekChar();
+                    char n = Buffer.Peek();
                     if ((n == 'u' || n == 'U') && !notUnsignedSeen)
                     {
                         notUnsignedSeen = true;
@@ -497,13 +501,13 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
 
             if (allowExpontial)
             {
-                char[] n = new char[3] { Buffer.PeekChar(0), Buffer.PeekChar(1), Buffer.PeekChar(2) };
+                char[] n = new char[3] { Buffer.Peek(0), Buffer.Peek(1), Buffer.Peek(2) };
                 if (n[0] == 'e' || n[0] == 'E' && n[1] == '+' || n[1] == '-' && SyntaxUtils.IsNumeric(n[2]))
                 {
                     Buffer.AdvanceChar(2);
                     while (!Buffer.IsEOF)
                     {
-                        if (SyntaxUtils.IsNumeric(Buffer.PeekChar()))
+                        if (SyntaxUtils.IsNumeric(Buffer.Peek()))
                             Buffer.AdvanceChar();
                         else
                             break;
@@ -514,14 +518,14 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             if (allowFloatSuffix)
             {
                 Debug.Assert(type == CppTokenType.Double);
-                if (Buffer.PeekChar() == 'f')
+                if (Buffer.Peek() == 'f')
                 {
                     type = CppTokenType.Float;
                     Buffer.AdvanceChar();
                 }
             }
 
-            Debug.Assert(!SyntaxUtils.IsNumeric(Buffer.PeekChar()));
+            Debug.Assert(!SyntaxUtils.IsNumeric(Buffer.Peek()));
 
             CppToken result = new CppToken(type, Buffer.LexemeStart, Buffer.LexemeWidth, true);
             return (result);
@@ -532,13 +536,13 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
             do
             {
                 SkipWhitespaces();
-                switch (Buffer.PeekChar())
+                switch (Buffer.Peek())
                 {
-                    case SlidingTextBuffer.InvalidCharacter:
+                    case TextStream.InvalidCharacter:
                         {
                             if (Buffer.IsEOF)
                             {
-                                PushToken(new CppToken(CppTokenType.EOF, Math.Max(0, Buffer.End - 1), 0, false));
+                                PushToken(new CppToken(CppTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
                                 return (false);
                             }
                             else
@@ -576,7 +580,7 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
 
                     case '/':
                         {
-                            char next = Buffer.PeekChar(1);
+                            char next = Buffer.Peek(1);
                             CppToken token;
                             if (next == '*')
                                 token = LexMultiLineComment(true);
@@ -672,12 +676,12 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
                     case '.':
                         {
                             CppToken token;
-                            if (SyntaxUtils.IsNumeric(Buffer.PeekChar()))
+                            if (SyntaxUtils.IsNumeric(Buffer.Peek()))
                                 token = LexNumber();
                             else
                             {
-                                Debug.Assert(Buffer.PeekChar() == '.');
-                                char n = Buffer.PeekChar(1);
+                                Debug.Assert(Buffer.Peek() == '.');
+                                char n = Buffer.Peek(1);
                                 if (SyntaxUtils.IsNumeric(n))
                                     token = LexNumber();
                                 else
@@ -688,22 +692,22 @@ namespace TSP.DoxygenEditor.Lexers.Cpp
 
                     default:
                         {
-                            if (SyntaxUtils.IsIdentStart(Buffer.PeekChar()))
+                            if (SyntaxUtils.IsIdentStart(Buffer.Peek()))
                                 goto case 'a';
 
-                            if (SyntaxUtils.IsNumeric(Buffer.PeekChar()) || Buffer.PeekChar() == '.')
+                            if (SyntaxUtils.IsNumeric(Buffer.Peek()) || Buffer.Peek() == '.')
                                 goto case '0';
 
-                            char c = Buffer.PeekChar();
+                            char c = Buffer.Peek();
                             if (_charTypeMapping.ContainsKey(c))
-                                PushToken(new CppToken(_charTypeMapping[c], Buffer.Position, 1, true));
+                                PushToken(new CppToken(_charTypeMapping[c], Buffer.StreamPosition, 1, true));
 
                             Buffer.AdvanceChar();
                         }
                         break;
                 }
             } while (!Buffer.IsEOF);
-            PushToken(new CppToken(CppTokenType.EOF, Math.Max(0, Buffer.End - 1), 0, false));
+            PushToken(new CppToken(CppTokenType.EOF, Math.Max(0, Buffer.StreamEnd - 1), 0, false));
             return (false);
         }
     }
