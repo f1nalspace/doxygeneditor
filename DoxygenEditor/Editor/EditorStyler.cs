@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.Languages.Doxygen;
+using TSP.DoxygenEditor.Languages.Html;
 using TSP.DoxygenEditor.Lexers;
-using TSP.DoxygenEditor.Lexers.Cpp;
-using TSP.DoxygenEditor.Lexers.Doxygen;
-using TSP.DoxygenEditor.Lexers.Html;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -25,47 +25,48 @@ namespace TSP.DoxygenEditor.Editor
         static readonly int cppStringStyle = styleIndex++;
         static readonly int cppNumberStyle = styleIndex++;
 
-        static readonly Dictionary<CppTokenType, int> cppTokenTypeToStyleDict = new Dictionary<CppTokenType, int>() {
-            { CppTokenType.MultiLineComment, cppMultiLineCommentStyle },
-            { CppTokenType.MultiLineCommentDoc, cppMultiLineCommentDocStyle },
-            { CppTokenType.SingleLineComment, cppSingleLineCommentStyle },
-            { CppTokenType.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
+        static readonly Dictionary<CppTokenKind, int> cppTokenTypeToStyleDict = new Dictionary<CppTokenKind, int>() {
+            { CppTokenKind.MultiLineComment, cppMultiLineCommentStyle },
+            { CppTokenKind.MultiLineCommentDoc, cppMultiLineCommentDocStyle },
+            { CppTokenKind.SingleLineComment, cppSingleLineCommentStyle },
+            { CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
 
-            { CppTokenType.Preprocessor, cppPreprocessorStyle },
+            { CppTokenKind.Preprocessor, cppPreprocessorStyle },
 
-            { CppTokenType.ReservedKeyword, cppReservedKeywordStyle },
-            { CppTokenType.TypeKeyword, cppTypeKeywordStyle },
+            { CppTokenKind.ReservedKeyword, cppReservedKeywordStyle },
+            { CppTokenKind.TypeKeyword, cppTypeKeywordStyle },
 
-            { CppTokenType.String, cppStringStyle },
-            { CppTokenType.Integer, cppNumberStyle },
-            { CppTokenType.Float, cppNumberStyle },
-            { CppTokenType.Double, cppNumberStyle },
-            { CppTokenType.Hex, cppNumberStyle },
-            { CppTokenType.Octal, cppNumberStyle },
-            { CppTokenType.Binary, cppNumberStyle },
+            { CppTokenKind.StringLiteral, cppStringStyle },
+            { CppTokenKind.CharLiteral, cppStringStyle },
+            { CppTokenKind.IntegerLiteral, cppNumberStyle },
+            { CppTokenKind.OctalLiteral, cppNumberStyle },
+            { CppTokenKind.HexLiteral, cppNumberStyle },
+            { CppTokenKind.IntegerFloatLiteral, cppNumberStyle },
+            { CppTokenKind.HexadecimalFloatLiteral, cppNumberStyle },
         };
 
-        static int doxygenTextStyle = styleIndex++;
         static int doxygenBlockStyle = styleIndex++;
         static int doxygenCommandStyle = styleIndex++;
-        static int doxygenNameStyle = styleIndex++;
-        static int doxygenCaptionStyle = styleIndex++;
-        static int doxygenCodeBlockStyle = styleIndex++;
-        static int doxygenCodeTypeStyle = styleIndex++;
+        static int doxygenInvalidCommandStyle = styleIndex++;
+        static int doxygenIdentStyle = styleIndex++;
+        static int doxygenQuoteStringStyle = styleIndex++;
+        static int doxygenArgumentStyle = styleIndex++;
 
-        static Dictionary<DoxygenTokenType, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenType, int>() {
-            { DoxygenTokenType.Text, doxygenTextStyle },
-            { DoxygenTokenType.BlockStartSingle, doxygenBlockStyle },
-            { DoxygenTokenType.BlockStartMulti, doxygenBlockStyle },
-            { DoxygenTokenType.BlockEnd, doxygenBlockStyle },
-            { DoxygenTokenType.BlockChars, doxygenBlockStyle },
-            { DoxygenTokenType.Command, doxygenCommandStyle },
-            { DoxygenTokenType.GroupStart, doxygenCommandStyle },
-            { DoxygenTokenType.GroupEnd, doxygenCommandStyle },
-            { DoxygenTokenType.Name, doxygenNameStyle },
-            { DoxygenTokenType.Caption, doxygenCaptionStyle },
-            { DoxygenTokenType.CodeBlock, doxygenCodeBlockStyle },
-            { DoxygenTokenType.CodeType, doxygenCodeTypeStyle },
+        static Dictionary<DoxygenTokenKind, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenKind, int>() {
+            { DoxygenTokenKind.DoxyBlockStartSingle, doxygenBlockStyle },
+            { DoxygenTokenKind.DoxyBlockStartMulti, doxygenBlockStyle },
+            { DoxygenTokenKind.DoxyBlockEnd, doxygenBlockStyle },
+            { DoxygenTokenKind.DoxyBlockChars, doxygenBlockStyle },
+            { DoxygenTokenKind.Command, doxygenCommandStyle },
+            { DoxygenTokenKind.InvalidCommand, doxygenInvalidCommandStyle },
+            { DoxygenTokenKind.GroupStart, doxygenCommandStyle },
+            { DoxygenTokenKind.GroupEnd, doxygenCommandStyle },
+            { DoxygenTokenKind.ArgumentIdent, doxygenIdentStyle },
+            { DoxygenTokenKind.ArgumentText, doxygenQuoteStringStyle },
+            { DoxygenTokenKind.ArgumentCaption, doxygenArgumentStyle },
+            { DoxygenTokenKind.ArgumentFile, doxygenArgumentStyle },
+            { DoxygenTokenKind.CommandStart, doxygenCommandStyle },
+            { DoxygenTokenKind.CommandEnd, doxygenCommandStyle },
         };
 
         static int htmlTagCharsStyle = styleIndex++;
@@ -73,14 +74,14 @@ namespace TSP.DoxygenEditor.Editor
         static int htmlAttrNameStyle = styleIndex++;
         static int htmlAttrValueStyle = styleIndex++;
 
-        static Dictionary<HtmlTokenType, int> htmlTokenTypeToStyleDict = new Dictionary<HtmlTokenType, int>() {
-            { HtmlTokenType.TagChars, htmlTagCharsStyle },
-            { HtmlTokenType.TagName, htmlTagNameStyle },
-            { HtmlTokenType.AttrName, htmlAttrNameStyle },
-            { HtmlTokenType.AttrValue, htmlAttrValueStyle },
+        static Dictionary<HtmlTokenKind, int> htmlTokenTypeToStyleDict = new Dictionary<HtmlTokenKind, int>() {
+            { HtmlTokenKind.TagChars, htmlTagCharsStyle },
+            { HtmlTokenKind.TagName, htmlTagNameStyle },
+            { HtmlTokenKind.AttrName, htmlAttrNameStyle },
+            { HtmlTokenKind.AttrValue, htmlAttrValueStyle },
         };
 
-        class StyleEntry
+        struct StyleEntry
         {
             public int Index { get; }
             public int Length { get; }
@@ -128,27 +129,27 @@ namespace TSP.DoxygenEditor.Editor
                 if (typeof(CppToken).Equals(token.GetType()))
                 {
                     CppToken cppToken = (CppToken)token;
-                    if (cppTokenTypeToStyleDict.ContainsKey(cppToken.Type))
+                    if (cppTokenTypeToStyleDict.ContainsKey(cppToken.Kind))
                     {
-                        int style = cppTokenTypeToStyleDict[cppToken.Type];
+                        int style = cppTokenTypeToStyleDict[cppToken.Kind];
                         _entries.Add(new StyleEntry(token, style));
                     }
                 }
                 else if (typeof(DoxygenToken).Equals(token.GetType()))
                 {
                     DoxygenToken doxygenToken = (DoxygenToken)token;
-                    if (doxygenTokenTypeToStyleDict.ContainsKey(doxygenToken.Type))
+                    if (doxygenTokenTypeToStyleDict.ContainsKey(doxygenToken.Kind))
                     {
-                        int style = doxygenTokenTypeToStyleDict[doxygenToken.Type];
+                        int style = doxygenTokenTypeToStyleDict[doxygenToken.Kind];
                         _entries.Add(new StyleEntry(token, style));
                     }
                 }
                 else if (typeof(HtmlToken).Equals(token.GetType()))
                 {
                     HtmlToken htmlToken = (HtmlToken)token;
-                    if (htmlTokenTypeToStyleDict.ContainsKey(htmlToken.Type))
+                    if (htmlTokenTypeToStyleDict.ContainsKey(htmlToken.Kind))
                     {
-                        int style = htmlTokenTypeToStyleDict[htmlToken.Type];
+                        int style = htmlTokenTypeToStyleDict[htmlToken.Kind];
                         _entries.Add(new StyleEntry(token, style));
                     }
                 }
@@ -167,13 +168,13 @@ namespace TSP.DoxygenEditor.Editor
             editor.Styles[cppStringStyle].ForeColor = Color.Green;
             editor.Styles[cppNumberStyle].ForeColor = Color.Red;
 
-            editor.Styles[doxygenTextStyle].ForeColor = Color.Black;
             editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
             editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
-            editor.Styles[doxygenNameStyle].ForeColor = Color.Blue;
-            editor.Styles[doxygenCaptionStyle].ForeColor = Color.Green;
-            editor.Styles[doxygenCodeBlockStyle].ForeColor = Color.Black;
-            editor.Styles[doxygenCodeTypeStyle].ForeColor = Color.Red;
+            editor.Styles[doxygenInvalidCommandStyle].ForeColor = Color.Red;
+            editor.Styles[doxygenInvalidCommandStyle].Underline = true;
+            editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
+            editor.Styles[doxygenQuoteStringStyle].ForeColor = Color.Green;
+            editor.Styles[doxygenArgumentStyle].ForeColor = Color.Orange;
 
             editor.Styles[htmlTagCharsStyle].ForeColor = Color.DarkRed;
             editor.Styles[htmlTagNameStyle].ForeColor = Color.DarkRed;

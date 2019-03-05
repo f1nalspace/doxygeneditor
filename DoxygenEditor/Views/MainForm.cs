@@ -17,9 +17,10 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using TSP.DoxygenEditor.Parsers.Doxygen;
-using TSP.DoxygenEditor.Parsers.Cpp;
 using TSP.DoxygenEditor.ErrorDialog;
+using TSP.DoxygenEditor.TextAnalysis;
+using TSP.DoxygenEditor.Languages.Doxygen;
+using TSP.DoxygenEditor.Languages.Cpp;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -191,6 +192,9 @@ namespace TSP.DoxygenEditor.Views
             TabPage tab = (TabPage)editorState.Tag;
             tcFiles.TabPages.Remove(tab);
             RemoveFromSymbolTree(editorState);
+            editorState.Dispose();
+            IEnumerable<EditorState> states = GetAllEditorStates();
+            RefreshIssues(states);
         }
 
         private void OpenFileTab(string filePath, bool pushRecentFile = false)
@@ -476,7 +480,7 @@ namespace TSP.DoxygenEditor.Views
             return (result);
         }
 
-        private void RebuildSymbolTree(object fileTag, BaseTree doxyTree)
+        private void RebuildSymbolTree(object fileTag, BaseNode doxyTree)
         {
             DoxygenNode lastEntity = null;
             if (tvTree.SelectedNode != null)
@@ -785,17 +789,17 @@ namespace TSP.DoxygenEditor.Views
             Warning,
             Info,
         }
-        struct IssueTag
+        class IssueTag
         {
             public EditorState State { get; }
-            public BaseEntity Entity { get; }
-            public IssueTag(EditorState state, BaseEntity entity)
+            public TextPosition Pos { get; }
+            public IssueTag(EditorState state, TextPosition pos)
             {
                 State = state;
-                Entity = entity;
+                Pos = pos;
             }
         }
-        private void AddIssue(IssueTag tag, IssueType type, string message, string symbolName, string symbolType, string group, string file)
+        private void AddIssue(IssueTag tag, IssueType type, string message, string symbolName, string symbolType, string group, int line, string file)
         {
             ListViewItem newItem = new ListViewItem(message);
             newItem.Tag = tag;
@@ -803,6 +807,7 @@ namespace TSP.DoxygenEditor.Views
             newItem.SubItems.Add(symbolName);
             newItem.SubItems.Add(symbolType);
             newItem.SubItems.Add(group);
+            newItem.SubItems.Add(line.ToString());
             newItem.SubItems.Add(file);
             lvIssues.Items.Add(newItem);
         }
@@ -814,7 +819,7 @@ namespace TSP.DoxygenEditor.Views
                 CppEntity cppEntity = (CppEntity)entityNode.Entity;
                 if (cppEntity.DocumentationNode != null)
                 {
-                    AddIssue(new IssueTag(state, cppEntity), IssueType.Info, "Test", cppEntity.Ident, cppEntity.Type.ToString(), groupName, fileName);
+                    AddIssue(new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Ident, cppEntity.Type.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
                 }
             }
 
@@ -839,6 +844,10 @@ namespace TSP.DoxygenEditor.Views
             lvIssues.Items.Clear();
             foreach (EditorState state in states)
             {
+                foreach (var error in state.Errors)
+                {
+                    AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
+                }
                 if (state.CppTree != null)
                 {
                     foreach (BaseNode childNode in state.CppTree.Children)
@@ -859,11 +868,11 @@ namespace TSP.DoxygenEditor.Views
                 if (item.Tag != null)
                 {
                     IssueTag tag = (IssueTag)item.Tag;
-                    BaseEntity entity = tag.Entity;
+                    TextPosition pos = tag.Pos;
                     EditorState state = tag.State;
                     TabPage tab = (TabPage)state.Tag;
                     tcFiles.SelectedTab = tab;
-                    state.GoToPosition(entity.StartRange.Index);
+                    state.GoToPosition(pos.Index);
                 }
             }
         }

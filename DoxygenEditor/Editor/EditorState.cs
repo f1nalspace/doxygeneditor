@@ -1,9 +1,4 @@
-﻿using TSP.DoxygenEditor.Lexers;
-using TSP.DoxygenEditor.Lexers.Cpp;
-using TSP.DoxygenEditor.Lexers.Doxygen;
-using TSP.DoxygenEditor.Lexers.Html;
-using TSP.DoxygenEditor.Parsers;
-using TSP.DoxygenEditor.SearchReplace;
+﻿using TSP.DoxygenEditor.SearchReplace;
 using ScintillaNET;
 using System;
 using System.Collections.Generic;
@@ -14,16 +9,19 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
-using TSP.DoxygenEditor.TextAnalysis;
-using TSP.DoxygenEditor.Parsers.Doxygen;
 using TSP.DoxygenEditor.Extensions;
-using TSP.DoxygenEditor.Lists;
-using TSP.DoxygenEditor.Parsers.Cpp;
 using System.Linq;
+using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.Lexers;
+using TSP.DoxygenEditor.TextAnalysis;
+using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.Languages.Html;
+using TSP.DoxygenEditor.Languages.Doxygen;
+using TSP.DoxygenEditor.Collections;
 
 namespace TSP.DoxygenEditor.Editor
 {
-    class EditorState
+    class EditorState : IDisposable
     {
         private static int _parseCounter = 0;
         private readonly IWin32Window _window;
@@ -33,12 +31,14 @@ namespace TSP.DoxygenEditor.Editor
         private int _maxLineNumberCharLength;
         private System.Windows.Forms.Timer _textChangedTimer;
         private BackgroundWorker _parseWorker;
-        private BaseTree _doxyTree;
-        private BaseTree _cppTree;
+        private BaseNode _doxyTree;
+        private BaseNode _cppTree;
         private readonly List<BaseToken> _tokens = new List<BaseToken>();
+        private readonly List<TextError> _errors = new List<TextError>();
         private readonly EditorStyler _styler = new EditorStyler();
-        public BaseTree DoxyTree { get { return _doxyTree; } }
-        public BaseTree CppTree { get { return _cppTree; } }
+        public IEnumerable<TextError> Errors => _errors;
+        public BaseNode DoxyTree { get { return _doxyTree; } }
+        public BaseNode CppTree { get { return _cppTree; } }
         public object Tag { get; set; }
         public string FilePath { get; set; }
         public string Name { get; set; }
@@ -345,18 +345,21 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        class TokenizeResult
+        class TokenizeResult : IDisposable
         {
             private readonly List<BaseToken> _tokens = new List<BaseToken>();
+            private readonly List<TextError> _errors = new List<TextError>();
             public IEnumerable<BaseToken> Tokens => _tokens;
-            public BaseToken RootToken { get; }
+            public IEnumerable<TextError> Errors => _errors;
             public TokenizerTimingStats Stats { get; }
-            public TokenizeResult(BaseToken rootToken)
+            public TokenizeResult()
             {
-                RootToken = rootToken;
                 Stats = new TokenizerTimingStats();
             }
-
+            public void AddErrors(IEnumerable<TextError> errors)
+            {
+                _errors.AddRange(errors);
+            }
             public void AddTokens(IEnumerable<BaseToken> inTokens)
             {
                 Stopwatch w = Stopwatch.StartNew();
@@ -364,116 +367,255 @@ namespace TSP.DoxygenEditor.Editor
                 w.Stop();
                 Stats.InsertDuration += w.Elapsed;
             }
-
-            public void InsertTokens(BaseToken rootToken, IEnumerable<BaseToken> inTokens)
+            public void AddToken(BaseToken token)
             {
                 Stopwatch w = Stopwatch.StartNew();
-                int index = _tokens.IndexOf(rootToken) + 1;
-                _tokens.InsertRange(index, inTokens);
+                _tokens.Add(token);
                 w.Stop();
                 Stats.InsertDuration += w.Elapsed;
             }
+
+            public void Dispose()
+            {
+                _tokens.Clear();
+                _errors.Clear();
+            }
         }
 
-        private TokenizeResult TokenizeCpp(BaseToken rootToken, string text, int index, int length, bool allowDoxy)
+        private TokenizeResult TokenizeCpp(string text, TextPosition pos, int length, bool allowDoxy)
         {
+            TokenizeResult result = new TokenizeResult();
             Stopwatch timer = new Stopwatch();
             timer.Restart();
-            CppLexer cppLexer = new CppLexer(text, index, length);
-            IEnumerable<CppToken> cppTokens = cppLexer.Tokenize();
-            timer.Stop();
-            TokenizeResult result = new TokenizeResult(rootToken);
-            result.Stats.CppDuration += timer.Elapsed;
-            result.AddTokens(cppTokens);
-
-            if (allowDoxy)
+            List<CppToken> cppTokens = new List<CppToken>();
+            using (CppLexer cppLexer = new CppLexer(text, pos, length))
             {
-                foreach (CppToken token in cppTokens)
+                cppTokens.AddRange(cppLexer.Tokenize());
+                result.AddErrors(cppLexer.LexErrors);
+            }
+            timer.Stop();
+            result.Stats.CppDuration += timer.Elapsed;
+            foreach (CppToken token in cppTokens)
+            {
+                if (allowDoxy && (token.Kind == CppTokenKind.MultiLineCommentDoc || token.Kind == CppTokenKind.SingleLineCommentDoc))
                 {
-                    if (token.Type == CppTokenType.MultiLineCommentDoc || token.Type == CppTokenType.SingleLineCommentDoc)
+                    result.AddToken(token);
+                    using (TokenizeResult doxyRes = TokenizeDoxy(text, token.Position, token.Length))
                     {
-                        var doxyRes = TokenizeDoxy(token, text, token.Index, token.Length);
                         result.Stats.DoxyDuration += doxyRes.Stats.DoxyDuration;
                         result.Stats.HtmlDuration += doxyRes.Stats.HtmlDuration;
-                        result.InsertTokens(token, doxyRes.Tokens);
+                        result.AddTokens(doxyRes.Tokens);
+                        result.AddErrors(doxyRes.Errors);
                     }
                 }
+                else result.AddToken(token);
             }
-
             return (result);
         }
 
-        private TokenizeResult TokenizeHtml(BaseToken rootToken, string text, int index, int length)
+        private TokenizeResult TokenizeHtml(string text, TextPosition pos, int length)
         {
-            Stopwatch timer = new Stopwatch();
-            timer.Restart();
-            HtmlLexer htmlLexer = new HtmlLexer(text, index, length);
-            IEnumerable<HtmlToken> htmlTokens = htmlLexer.Tokenize();
+            TokenizeResult result = new TokenizeResult();
+            Stopwatch timer = Stopwatch.StartNew();
+            using (HtmlLexer htmlLexer = new HtmlLexer(text, pos, length))
+            {
+                IEnumerable<HtmlToken> htmlTokens = htmlLexer.Tokenize();
+                result.AddTokens(htmlTokens);
+                result.AddErrors(htmlLexer.LexErrors);
+            }
             timer.Stop();
-            TokenizeResult result = new TokenizeResult(rootToken);
             result.Stats.HtmlDuration += timer.Elapsed;
-            result.AddTokens(htmlTokens);
             return (result);
         }
 
-        private TokenizeResult TokenizeDoxy(BaseToken rootToken, string text, int index, int length)
+        class CommandStartState
         {
+            public TextPosition StartPosition { get; set; }
+            public string CommandName { get; }
+            public List<DoxygenToken> ArgTokens { get; }
+            public DoxygenToken CommandToken { get; }
+            public DoxygenToken InsertToken { get; set; }
+
+            public CommandStartState(DoxygenToken commandToken, string commandName)
+            {
+                CommandToken = InsertToken = commandToken;
+                CommandName = commandName;
+                ArgTokens = new List<DoxygenToken>();
+                StartPosition = new TextPosition(commandToken.Position);
+            }
+        }
+
+        private TokenizeResult TokenizeDoxy(string text, TextPosition pos, int length)
+        {
+            TokenizeResult result = new TokenizeResult();
+
             Stopwatch timer = new Stopwatch();
             timer.Restart();
-            DoxygenLexer doxyLexer = new DoxygenLexer(text, index, length);
-            IEnumerable<DoxygenToken> doxyTokens = doxyLexer.Tokenize();
-            TokenizeResult result = new TokenizeResult(rootToken);
+            List<DoxygenToken> doxyTokens = new List<DoxygenToken>();
+            using (DoxygenLexer doxyLexer = new DoxygenLexer(text, pos, length))
+            {
+                doxyTokens.AddRange(doxyLexer.Tokenize());
+                result.AddErrors(doxyLexer.LexErrors);
+            }
             timer.Stop();
             result.Stats.DoxyDuration += timer.Elapsed;
-            result.AddTokens(doxyTokens);
 
-            DoxygenToken prevToken = null;
-            foreach (DoxygenToken doxyToken in doxyTokens)
+            Stack<CommandStartState> startStates = new Stack<CommandStartState>();
+            Stack<DoxygenToken> textStartTokens = new Stack<DoxygenToken>();
+            var doxyTokenList = new LinkedList<DoxygenToken>(doxyTokens);
+            var curLink = doxyTokenList.First;
+            while (curLink != null)
             {
-                if (doxyToken.Type == DoxygenTokenType.CodeBlock)
+                var doxyToken = curLink.Value;
+                if (doxyToken.Kind == DoxygenTokenKind.CommandStart)
                 {
-                    string codeType = null;
-                    if (prevToken != null)
+                    result.AddToken(doxyToken);
+
+                    string commandName = text.Substring(doxyToken.Index + 1, doxyToken.Length - 1);
+
+                    List<DoxygenToken> argTokens = new List<DoxygenToken>();
+
+                    // Save argument tokens
+                    if (curLink.Next != null)
                     {
-                        if (prevToken.Type == DoxygenTokenType.CodeType)
-                            codeType = text.Substring(prevToken.Index, prevToken.Length);
+                        LinkedListNode<DoxygenToken> nextLink = curLink.Next;
+                        while (nextLink != null)
+                        {
+                            if (nextLink.Value.IsArgument)
+                            {
+                                argTokens.Add(nextLink.Value);
+                            }
+                            else if (nextLink.Value.IsEndOfLine || nextLink.Value.IsEOF)
+                            {
+                                nextLink = nextLink.Next;
+                                break;
+                            }
+                            else
+                                break;
+                            nextLink = nextLink.Next;
+                        }
+                        curLink = nextLink;
                     }
-                    if ("{.c}".Equals(codeType, StringComparison.InvariantCultureIgnoreCase) || "{.cpp}".Equals(codeType, StringComparison.InvariantCultureIgnoreCase))
+                    else
+                        curLink = null;
+
+                    result.AddTokens(argTokens);
+
+                    CommandStartState startState = new CommandStartState(doxyToken, commandName);
+                    startState.ArgTokens.AddRange(argTokens);
+                    startStates.Push(startState);
+
+                    if (curLink != null)
                     {
-                        var cppRes = TokenizeCpp(doxyToken, text, doxyToken.Index, doxyToken.Length, false);
-                        result.InsertTokens(doxyToken, cppRes.Tokens);
+                        // Now we have the real start of the command content
+                        startState.InsertToken = curLink.Value;
+                        startState.StartPosition = curLink.Value.Position;
                     }
-                }
-                else if (doxyToken.Type == DoxygenTokenType.Text)
-                {
-                    var htmlRes = TokenizeHtml(doxyToken, text, doxyToken.Index, doxyToken.Length);
-                    result.InsertTokens(doxyToken, htmlRes.Tokens);
+
+                    continue;
                 }
 
-                prevToken = doxyToken;
+                if (doxyToken.Kind == DoxygenTokenKind.CommandEnd)
+                {
+                    string commandName = text.Substring(doxyToken.Index + 1, doxyToken.Length - 1);
+                    CommandStartState topStartState = startStates.Count > 0 ? startStates.Peek() : null;
+                    if (topStartState != null)
+                    {
+                        var rule = DoxygenSyntax.GetCommandRule(commandName);
+                        Debug.Assert(rule != null && rule.Kind == DoxygenSyntax.CommandKind.EndCommandBlock);
+                        DoxygenSyntax.EndBlockCommandRule endRule = rule as DoxygenSyntax.EndBlockCommandRule;
+                        Debug.Assert(endRule != null);
+                        if (endRule.StartCommandNames.Contains(topStartState.CommandName))
+                        {
+                            TextPosition commandContentStart = topStartState.StartPosition;
+                            TextPosition commandContentEnd = doxyToken.Position;
+                            Debug.Assert(commandContentEnd.Index >= commandContentStart.Index);
+                            int commandContentLength = commandContentEnd.Index - commandContentStart.Index;
+
+                            // Special handling for code block
+                            if ("code".Equals(topStartState.CommandName))
+                            {
+                                string codeType = null;
+                                DoxygenToken firstArgToken = topStartState.ArgTokens.FirstOrDefault();
+                                if (firstArgToken != null && firstArgToken.Kind == DoxygenTokenKind.ArgumentCaption)
+                                    codeType = text.Substring(firstArgToken.Index, firstArgToken.Length);
+                                if ("{.c}".Equals(codeType, StringComparison.InvariantCultureIgnoreCase) || "{.cpp}".Equals(codeType, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    using (TokenizeResult cppRes = TokenizeCpp(text, commandContentStart, commandContentLength, false))
+                                    {
+                                        result.AddTokens(cppRes.Tokens);
+                                        result.AddErrors(cppRes.Errors);
+                                    }
+                                }
+                            }
+                            startStates.Pop();
+                        }
+                    }
+                    else
+                    {
+                        // @TODO(final): Print error (Command end without command start)
+                    }
+                    result.AddToken(doxyToken);
+                }
+                else if (doxyToken.Kind == DoxygenTokenKind.TextStart)
+                {
+                    textStartTokens.Push(doxyToken);
+                    result.AddToken(doxyToken);
+                }
+                else if (doxyToken.Kind == DoxygenTokenKind.TextEnd)
+                {
+                    if (textStartTokens.Count > 0)
+                    {
+                        DoxygenToken textStartToken = textStartTokens.Pop();
+                        Debug.Assert(doxyToken.Index >= textStartToken.Index);
+                        int textContentLen = doxyToken.Index - textStartToken.Index;
+                        using (TokenizeResult htmlRes = TokenizeHtml(text, textStartToken.Position, textContentLen))
+                        {
+                            result.AddTokens(htmlRes.Tokens);
+                            result.AddErrors(htmlRes.Errors);
+                        }
+                    }
+                    result.AddToken(doxyToken);
+                }
+                else
+                    result.AddToken(doxyToken);
+                curLink = curLink.Next;
             }
             return (result);
+        }
+
+        private void GiveTokensBackToPool()
+        {
+            CppTokenPool.Release(_tokens.Where(t => typeof(CppToken).Equals(t.GetType())).Select(t => (CppToken)t));
+            DoxygenTokenPool.Release(_tokens.Where(t => typeof(DoxygenToken).Equals(t.GetType())).Select(t => (DoxygenToken)t));
+            HtmlTokenPool.Release(_tokens.Where(t => typeof(HtmlToken).Equals(t.GetType())).Select(t => (HtmlToken)t));
         }
 
         private void Tokenize(string text)
         {
             Stopwatch timer = new Stopwatch();
 
-            // Tokens must be cleared
+            // Push back all tokens to to pools
+            GiveTokensBackToPool();
+
+            // Clear tokens & errors
             _tokens.Clear();
+            _errors.Clear();
 
             Stopwatch totalLexTimer = Stopwatch.StartNew();
 
             // C++ lexing -> Doxygen (Code -> Cpp) -> (Text -> Html)
             TokenizerTimingStats totalStats = new TokenizerTimingStats();
-            var cppRes = TokenizeCpp(null, text, 0, text.Length, true);
-            totalStats += cppRes.Stats;
-            Debug.WriteLine($"Cpp tokens: {cppRes.Tokens.Count()}");
-            _tokens.AddRange(cppRes.Tokens);
+            using (TokenizeResult cppRes = TokenizeCpp(text, new TextPosition(0), text.Length, true))
+            {
+                totalStats += cppRes.Stats;
+                _tokens.AddRange(cppRes.Tokens);
+                _errors.AddRange(cppRes.Errors);
+            }
 
             // Doxy lexing
             totalLexTimer.Stop();
-            Debug.WriteLine($"Lexing done (Total: {totalLexTimer.Elapsed.ToMilliseconds()} ms, Insert: {totalStats.InsertDuration.ToMilliseconds()}, C++: {totalStats.CppDuration.ToMilliseconds()} ms, Doxygen: {totalStats.DoxyDuration.ToMilliseconds()} ms, Html: {totalStats.HtmlDuration.ToMilliseconds()} ms)");
+            Debug.WriteLine($"Lexing done (Tokens: {_tokens.Count}, Total: {totalLexTimer.Elapsed.ToMilliseconds()} ms, Insert: {totalStats.InsertDuration.ToMilliseconds()}, C++: {totalStats.CppDuration.ToMilliseconds()} ms, Doxygen: {totalStats.DoxyDuration.ToMilliseconds()} ms, Html: {totalStats.HtmlDuration.ToMilliseconds()} ms)");
 
             timer.Restart();
             _styler.Refresh(_tokens);
@@ -483,6 +625,14 @@ namespace TSP.DoxygenEditor.Editor
 
         private void Parse(string text)
         {
+            // Clear stream from all EOFs
+            _tokens.RemoveAll(d => d.IsEOF || (!d.IsMarker && d.Length == 0));
+
+            // @FIXME(final): Right know, the tokens are not in a valid range
+            // Reason is: No tokens gets replaced by another range.
+            // I tried to replace it, but it was not working at all.
+
+#if false
             // Validate stream
             {
                 LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
@@ -498,55 +648,51 @@ namespace TSP.DoxygenEditor.Editor
                     tokenStream.Next();
                 }
             }
+#endif
 
             Stopwatch timer = new Stopwatch();
 
             // Doxygen parsing
             timer.Restart();
-            DoxygenTree doxyTree = new DoxygenTree();
-            doxyTree.GetTextRange += (i, l) => text.Substring(i, l);
+            using (DoxygenParser doxyParser = new DoxygenParser())
             {
-                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
-                while (!tokenStream.IsEOF)
                 {
-                    BaseToken old = tokenStream.CurrentValue;
-                    if (!doxyTree.ParseToken(tokenStream))
-                        tokenStream.Next();
-                    Debug.Assert(old != tokenStream.CurrentValue);
+                    LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                    while (!tokenStream.IsEOF)
+                    {
+                        BaseToken old = tokenStream.CurrentValue;
+                        if (!doxyParser.ParseToken(tokenStream))
+                            tokenStream.Next();
+                        Debug.Assert(old != tokenStream.CurrentValue);
+                    }
                 }
+                _doxyTree = doxyParser.Root;
             }
-            if (_doxyTree != null) _doxyTree.Dispose();
-            _doxyTree = doxyTree;
             timer.Stop();
             Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
 
             // C++ parsing
             timer.Restart();
-            CppTree cppTree = new CppTree();
-            cppTree.GetTextRange += (s, e) => text.Substring(s, e);
-            cppTree.GetLinePos += (i) =>
+            using (CppParser cppParser = new CppParser())
             {
-                int result = _editor.LineFromPosition(i);
-                return (result);
-            };
-            cppTree.GetDocumentationNode += (token) =>
-            {
-                BaseNode result = doxyTree.FindNodeByRange(token);
-                return (result);
-            };
-
-            {
-                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
-                while (!tokenStream.IsEOF)
+                cppParser.GetDocumentationNode += (token) =>
                 {
-                    BaseToken old = tokenStream.CurrentValue;
-                    if (!cppTree.ParseToken(tokenStream))
-                        tokenStream.Next();
-                    Debug.Assert(old != tokenStream.CurrentValue);
+                    BaseNode result = _doxyTree.FindNodeByRange(token);
+                    return (result);
+                };
+
+                {
+                    LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                    while (!tokenStream.IsEOF)
+                    {
+                        BaseToken old = tokenStream.CurrentValue;
+                        if (!cppParser.ParseToken(tokenStream))
+                            tokenStream.Next();
+                        Debug.Assert(old != tokenStream.CurrentValue);
+                    }
                 }
+                _cppTree = cppParser.Root;
             }
-            if (_cppTree != null) _cppTree.Dispose();
-            _cppTree = cppTree;
             timer.Stop();
             Debug.WriteLine($"C++ parse done, took {timer.Elapsed.ToMilliseconds()} ms");
         }
@@ -586,8 +732,6 @@ namespace TSP.DoxygenEditor.Editor
                     thisEditor.Margins[0].Width = thisEditor.TextWidth(Style.LineNumber, new string('9', maxLineNumberCharLength + 1));
                     _maxLineNumberCharLength = maxLineNumberCharLength;
                 }
-
-                _tokens.Clear();
 
                 IsChanged = true;
                 TabUpdating?.Invoke(this, new EventArgs());
@@ -656,5 +800,17 @@ namespace TSP.DoxygenEditor.Editor
                 }
             };
         }
+
+        #region IDisposable Support
+        private bool _disposed = false; // To detect redundant calls
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                GiveTokensBackToPool();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 }

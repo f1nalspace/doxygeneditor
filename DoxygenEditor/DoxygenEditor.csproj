@@ -85,41 +85,12 @@
     <Compile Include="ErrorDialog\ErrorDialogForm.Designer.cs">
       <DependentUpon>ErrorDialogForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\LinkedListExtensions.cs" />
     <Compile Include="Extensions\TimeSpanExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
-    <Compile Include="Lexers\BaseLexer.cs" />
-    <Compile Include="Lexers\BaseToken.cs" />
-    <Compile Include="Lexers\Cpp\CppToken.cs" />
-    <Compile Include="Lexers\Cpp\CppTokenType.cs" />
-    <Compile Include="Lexers\Doxygen\DoxygenLexer.cs" />
-    <Compile Include="Lexers\Doxygen\DoxygenToken.cs" />
-    <Compile Include="Lexers\Doxygen\DoxygenTokenType.cs" />
-    <Compile Include="Lexers\Html\HtmlLexer.cs" />
-    <Compile Include="Lexers\Html\HtmlToken.cs" />
-    <Compile Include="Lexers\Html\HtmlTokenType.cs" />
-    <Compile Include="Lists\LinkedListStream.cs" />
-    <Compile Include="Parsers\BaseEntity.cs" />
-    <Compile Include="Parsers\BaseNode.cs" />
-    <Compile Include="Parsers\BaseParser.cs" />
-    <Compile Include="Parsers\BaseTree.cs" />
-    <Compile Include="Parsers\Cpp\CppEntity.cs" />
-    <Compile Include="Parsers\Cpp\CppEntityType.cs" />
-    <Compile Include="Parsers\Cpp\CppNode.cs" />
-    <Compile Include="Parsers\Cpp\CppTree.cs" />
-    <Compile Include="Parsers\Doxygen\DoxygenEntity.cs" />
-    <Compile Include="Parsers\Doxygen\DoxygenEntityType.cs" />
-    <Compile Include="Parsers\Doxygen\DoxygenNode.cs" />
-    <Compile Include="Parsers\Doxygen\DoxygenTree.cs" />
-    <Compile Include="TextAnalysis\BasicTextStream.cs" />
-    <Compile Include="TextAnalysis\ITextStream .cs" />
-    <Compile Include="TextAnalysis\SlidingTextStream.cs" />
-    <Compile Include="TextAnalysis\TextStream.cs" />
-    <Compile Include="TextAnalysis\TextRange.cs" />
-    <Compile Include="Utils\SyntaxUtils.cs" />
-    <Compile Include="Lexers\Cpp\CppLexer.cs" />
     <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
@@ -219,6 +190,12 @@
     <None Include="Resources\Save_16x.png" />
     <None Include="Resources\OpenFile_16x.png" />
     <None Include="Resources\NewFile_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DoxygenParsers\DoxygenParsers.csproj">
+      <Project>{3fcfb7f9-107f-432f-aa9f-09c64eedc1a8}</Project>
+      <Name>DoxygenParsers</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

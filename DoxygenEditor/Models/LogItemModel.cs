@@ -14,14 +14,14 @@ namespace TSP.DoxygenEditor.Models
         public IconType Icon { get; }
         public string Name { get; }
         public string Source { get; }
-        public TextRange Range { get; }
+        public TextPosition Pos { get; }
 
-        public LogItemModel(IconType icon, string name, string source, TextRange range)
+        public LogItemModel(IconType icon, string name, string source, TextPosition pos)
         {
             Icon = icon;
             Name = name;
             Source = source;
-            Range = range;
+            Pos = pos;
         }
     }
 }

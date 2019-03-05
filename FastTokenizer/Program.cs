@@ -3,645 +3,219 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Superpower;
-using Superpower.Display;
-using Superpower.Model;
-using Superpower.Parsers;
+using System.Text;
+using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.FastTokenizer
 {
     class Program
     {
-        enum CTokenKind
+        enum TokenizerType
         {
-            Unknown = 0,
-            Spacings,
-            EndOfLine,
-            SingleLineComment,
-            MultiLineComment,
-#if false
-            Preprocessor,
-#endif
-            Ident,
-            StringLiteral,
-            CharLiteral,
-            IntegerLiteral,
-            HexLiteral,
-            OctalLiteral,
-            Binary,
-            DecimalHexLiteral,
-            DecimalFloatLiteral,
-
-            [Token(Example = "...")]
-            Ellipsis,
-            [Token(Example = ">>=")]
-            RightAssign,
-            [Token(Example = "<<=")]
-            LeftAssign,
-            [Token(Example = "+=")]
-            AddAssign,
-            [Token(Example = "-=")]
-            SubAssign,
-            [Token(Example = "*=")]
-            MulAssign,
-            [Token(Example = "/=")]
-            DivAssign,
-            [Token(Example = "%=")]
-            ModAssign,
-            [Token(Example = "&=")]
-            AndAssign,
-            [Token(Example = "^=")]
-            XorAssign,
-            [Token(Example = "|=")]
-            OrAssign,
-            [Token(Example = ">>")]
-            RightOp,
-            [Token(Example = "<<")]
-            LeftOp,
-            [Token(Example = "++")]
-            IncOp,
-            [Token(Example = "--")]
-            DecOp,
-            [Token(Example = "->")]
-            PtrOp,
-            [Token(Example = "&&")]
-            AndOp,
-            [Token(Example = "||")]
-            OrOp,
-            [Token(Example = "<=")]
-            LeOp,
-            [Token(Example = ">=")]
-            GeOp,
-            [Token(Example = "==")]
-            EqOp,
-            [Token(Example = "!=")]
-            NeOp,
-
-            [Token(Example = ";")]
-            Semicolon,
-            [Token(Example = "{")]
-            LeftBrace,
-            [Token(Example = "}")]
-            RightBrace,
-            [Token(Example = ",")]
-            Comma,
-            [Token(Example = ":")]
-            Colon,
-            [Token(Example = "=")]
-            EqualsSign,
-            [Token(Example = "(")]
-            LeftParen,
-            [Token(Example = ")")]
-            RightParen,
-            [Token(Example = "[")]
-            LeftBracket,
-            [Token(Example = "]")]
-            RightBracket,
-            [Token(Example = ".")]
-            Dot,
-            [Token(Example = "&")]
-            Ampersand,
-            [Token(Example = "!")]
-            ExlamationMark,
-            [Token(Example = "~")]
-            Tilde,
-            [Token(Example = "-")]
-            Minus,
-            [Token(Example = "+")]
-            Plus,
-            [Token(Example = "*")]
-            Asterisk,
-            [Token(Example = "/")]
-            Slash,
-            [Token(Example = "%")]
-            Percent,
-            [Token(Example = "<")]
-            Lesser,
-            [Token(Example = ">")]
-            Greater,
-            [Token(Example = "^")]
-            CircumFlex,
-            [Token(Example = "|")]
-            Pipe,
-            [Token(Example = "?")]
-            QuestionMark,
-
-            [Token(Example = "#")]
-            Raute,
-            [Token(Example = "\\")]
-            Backslash,
+            CustomCpp,
+            Superpower,
+            DoxygenCpp
         }
 
-        static TextParser<char> AlphaChar = Character.Matching(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'), "Alpha");
-        static TextParser<char> NumericChar = Character.Matching(c => (c >= '0' && c <= '9'), "Numeric");
-        static TextParser<char> AlphaNumericChar = AlphaChar.Or(NumericChar);
-        static TextParser<char> HexChar = Character.Matching(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'), "Hex");
-        static TextParser<char> OctalChar = Character.Matching(c => c >= '0' && c <= '7', "Octal");
-        static TextParser<char> BinaryChar = Character.Matching(c => c == '0' && c == '1', "Binary");
-        static TextParser<char> NaturalChar = Character.Matching(c => c >= '0' && c <= '9', "Natural");
-        static TextParser<char> SpacingChar = Character.In(' ', '\t', '\v', '\f');
-        static TextParser<char> LineBreakChar = Character.In('\r', '\n');
-
-        static TextParser<TextSpan> SpacingParser = Span.MatchedBy(SpacingChar.AtLeastOnce());
-        static TextParser<TextSpan> LineBreakParser = Span.MatchedBy(LineBreakChar.AtLeastOnce());
-        static TextParser<TextSpan> WhitespaceParser = Span.MatchedBy(SpacingParser.Or(LineBreakParser));
-
-        static TextParser<TextSpan> IdentParser = Span.MatchedBy(AlphaChar.Or(Character.EqualTo('_')).IgnoreThen(AlphaNumericChar.Or(Character.EqualTo('_')).Many()));
-
-        static TextParser<TextSpan> PreprocessorNextLineDelimiter = Span.MatchedBy(Character.EqualTo('\\'));
-
-        static TextParser<string> EParser =
-            from first in Character.In('e', 'E', 'p', 'P')
-            from sign in Character.In('+', '-').Optional()
-            from rest in NaturalChar.AtLeastOnce()
-            select first + (sign.HasValue ? "" + sign.Value : "") + new string(rest);
-
-        static TextParser<TextSpan> ISParser = Span.MatchedBy(Character.In('u', 'U', 'l', 'L').Many());
-
-        static TextParser<TextSpan> CHexNumberParser =
-            Span.MatchedBy(Character.EqualTo('0'))
-            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
-            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
-            .Then(_ => Span.MatchedBy(ISParser.Optional()));
-
-        static TextParser<TextSpan> COctalNumberParser =
-            Span.MatchedBy(Character.EqualTo('0'))
-            .Then(_ => Span.MatchedBy(Span.MatchedBy(OctalChar.Many())))
-            .Then(_ => Span.MatchedBy(ISParser.Optional()));
-
-        static TextParser<TextSpan> CBinaryNumberParser =
-            Span.MatchedBy(Character.EqualTo('0'))
-            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('b')))
-            .Then(_ => Span.MatchedBy(BinaryChar.AtLeastOnce()))
-            .Then(_ => Span.MatchedBy(ISParser.Optional()));
-
-        static TextParser<TextSpan> CIntegerNumberParser =
-            Span.MatchedBy(NaturalChar.Where(f => f != '0'))
-            .Then(_ => Span.MatchedBy(NaturalChar.Many()))
-            .Then(_ => Span.MatchedBy(ISParser.Optional()));
-
-        static TextParser<char> FSParser = Character.In('f', 'F', 'l', 'L');
-
-        // {D}+{E}{FS}?
-        static TextParser<TextSpan> CDecimalFloatNumberParser_Simple =
-            Span.MatchedBy(NaturalChar.AtLeastOnce())
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(FSParser.Optional()));
-
-        // {D}*\\.{D}+{E}?{FS}?
-        static TextParser<TextSpan> CDecimalFloatNumberParser_Complex1 =
-            Span.MatchedBy(NaturalChar.Many())
-            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(NaturalChar.AtLeastOnce()))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(FSParser.Optional()));
-
-        // {D}+\\.{D}*{E}?{FS}?
-        static TextParser<TextSpan> CDecimalFloatNumberParser_Complex2 =
-            Span.MatchedBy(NaturalChar.AtLeastOnce())
-            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(NaturalChar.Many()))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(FSParser.Optional()));
-
-        // All 3 decimal float
-        static TextParser<TextSpan> CDecimalFloatNumberParser =
-            CDecimalFloatNumberParser_Simple
-            .Or(CDecimalFloatNumberParser_Complex1)
-            .Or(CDecimalFloatNumberParser_Complex2);
-
-        // 0[xX]{H}+{P}{FS}?
-        static TextParser<TextSpan> CDecimalHexNumberParser_Simple =
-            Span.MatchedBy(Character.EqualTo('0'))
-            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
-            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(FSParser.Optional()));
-
-        // 0[xX]{H}*\\.{H}+{P}?{FS}?
-        static TextParser<TextSpan> CDecimalHexNumberParser_Complex1 =
-            Span.MatchedBy(Character.EqualTo('0'))
-            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
-            .Then(_ => Span.MatchedBy(HexChar.Many()))
-            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
-            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(FSParser.Optional()));
-
-        // 0[xX]{H}+\\.{H}*{P}?{FS}?
-        static TextParser<TextSpan> CDecimalHexNumberParser_Complex2 =
-            Span.MatchedBy(Character.EqualTo('0'))
-            .Then(_ => Span.MatchedBy(Character.EqualToIgnoreCase('x')))
-            .Then(_ => Span.MatchedBy(HexChar.AtLeastOnce()))
-            .Then(_ => Span.MatchedBy(Character.EqualTo('.')))
-            .Then(_ => Span.MatchedBy(HexChar.Many()))
-            .Then(_ => EParser.OptionalOrDefault(""))
-            .Then(_ => Span.MatchedBy(FSParser.Optional()));
-
-        // All 3 decimal hex parser
-        static TextParser<TextSpan> CDecimalHexNumberParser =
-            CDecimalHexNumberParser_Simple
-            .Or(CDecimalHexNumberParser_Complex1)
-            .Or(CDecimalHexNumberParser_Complex2);
-
-        static TextParser<TextSpan> PreprocessorParser
+        static TimeSpan GetAvgTime(List<TimeSpan> list)
         {
-            get
+            int count = list.Count;
+            long ticks = 0;
+            foreach (var item in list)
+                ticks += item.Ticks;
+            return new TimeSpan(ticks / count);
+        }
+        static TimeSpan GetMinTime(List<TimeSpan> list)
+        {
+            int count = list.Count;
+            TimeSpan result = list.First();
+            foreach (var item in list)
             {
-                var beginPreprocessor = Span.EqualTo("#");
-                return i =>
-                {
-                    // #
-                    var content = beginPreprocessor(i);
-                    if (!content.HasValue)
-                        return content;
-                    var remainder = content.Remainder;
-                    while (!remainder.IsAtEnd)
-                    {
-                        content = Comment.CPlusPlusStyle.Or(Comment.CStyle)(remainder);
-                        if (content.HasValue)
-                            return Result.Value(i.Until(remainder), i, remainder);
-                        bool skipOverLineBreak = false;
-                        content = PreprocessorNextLineDelimiter(remainder);
-                        if (content.HasValue)
-                        {
-                            remainder = content.Remainder;
-                            skipOverLineBreak = true;
-                        }
-                        content = LineBreakParser(remainder);
-                        if (content.HasValue && !skipOverLineBreak)
-                            return Result.Value(i.Until(remainder), i, remainder);
-                        remainder = remainder.ConsumeChar().Remainder;
-                    }
-                    return Result.Value(i.Until(remainder), i, remainder);
-                };
+                if (item < result)
+                    result = item;
             }
+            return (result);
         }
-
-        static TextParser<TextSpan> CStringParser
+        static TimeSpan GetMaxTime(List<TimeSpan> list)
         {
-            get
+            int count = list.Count;
+            TimeSpan result = list.First();
+            foreach (var item in list)
             {
-                return i =>
-                {
-                    var next = Character.EqualTo('"')(i);
-                    if (!next.HasValue)
-                        return Result.Empty<TextSpan>(next.Location);
-                    next = next.Remainder.ConsumeChar();
-                    while (next.HasValue)
-                    {
-                        if (next.Value == '\\')
-                            next = next.Remainder.ConsumeChar();
-                        else if (next.Value == '"')
-                            break;
-                        else
-                            next = next.Remainder.ConsumeChar();
-                    }
-                    return Result.Value(i.Until(next.Location), i, next.Remainder);
-                };
+                if (item > result)
+                    result = item;
             }
+            return (result);
         }
 
-        static TextParser<TextSpan> CCharParser
+        static void CompareTokens(TokenizerType typeA, List<CToken> tokensA, TokenizerType typeB, List<CToken> tokensB)
         {
-            get
+            int maxCount = Math.Max(tokensA.Count, tokensB.Count);
+            for (int i = 0; i < maxCount; ++i)
             {
-                return i =>
+                CToken? tokenA = (i < tokensA.Count) ? new CToken?(tokensA[i]) : null;
+                CToken? tokenB = (i < tokensB.Count) ? new CToken?(tokensB[i]) : null;
+                if (tokenA.HasValue && !tokenB.HasValue)
                 {
-                    Result<char> next = Character.EqualTo('\'')(i);
-                    if (!next.HasValue)
-                        return Result.Empty<TextSpan>(next.Location);
-                    next = next.Remainder.ConsumeChar();
-                    if (next.Value == '\\')
-                    {
-                        next = next.Remainder.ConsumeChar();
-                        char escapeChar = next.Value;
-                        switch (escapeChar)
-                        {
-                            case '\'':
-                            case '"':
-                            case '?':
-                            case '\\':
-                            case 'a':
-                            case 'b':
-                            case 'f':
-                            case 'n':
-                            case 'r':
-                            case 't':
-                            case 'v':
-                                next = next.Remainder.ConsumeChar();
-                                break;
-
-                            case 'u':
-                            case 'U':
-                                {
-                                    // Code point
-                                    throw new ParseException("Codepoint character literal escape not supported!");
-                                }
-
-                            case 'X':
-                                {
-                                    // Hex
-                                    throw new ParseException("Hex character literal escape not supported!");
-                                }
-
-                            case '0':
-                            case '1':
-                            case '2':
-                            case '3':
-                            case '4':
-                            case '5':
-                            case '6':
-                            case '7':
-                                {
-                                    // Octal
-                                    while (next.HasValue)
-                                    {
-                                        if (!(next.Value >= '0' && next.Value <= '7'))
-                                            break;
-                                        next = next.Remainder.ConsumeChar();
-                                    }
-                                }
-                                break;
-
-                            default:
-                                throw new ParseException($"Unsupported char literal escape character '{escapeChar}' on '{next}'");
-                        }
-                    }
-                    else if (next.Value != '\'')
-                        next = next.Remainder.ConsumeChar();
-                    if (next.Value != '\'')
-                        throw new ParseException($"Unterminated char literal on '{next}'");
-                    next = next.Remainder.ConsumeChar();
-                    var r = Result.Value(i.Until(next.Location), i, next.Location);
-                    return r;
-                };
-            }
-        }
-
-        class CTokenizer : Tokenizer<CTokenKind>
-        {
-            private readonly List<string> tokenValues = new List<string>();
-            private readonly Dictionary<string, CTokenKind> valueToTokenMap = new Dictionary<string, CTokenKind>();
-
-            public CTokenizer() : base()
-            {
-                var type = typeof(CTokenKind);
-                var tokenKinds = Enum.GetValues(typeof(CTokenKind));
-                foreach (CTokenKind tokenKind in tokenKinds)
-                {
-                    var memInfo = type.GetMember(tokenKind.ToString());
-                    var attributes = memInfo[0].GetCustomAttributes(typeof(TokenAttribute), false);
-                    if (attributes.Length > 0)
-                    {
-                        var exampleValue = ((TokenAttribute)attributes[0]).Example;
-                        tokenValues.Add(exampleValue);
-                        valueToTokenMap.Add(exampleValue, tokenKind);
-                    }
+                    Console.WriteLine($"Missing token B at index {i} [{typeB}] -> Found A [{typeA}] = {tokenA.Value.Start}");
+                    break;
                 }
-            }
-
-            protected override IEnumerable<Result<CTokenKind>> Tokenize(TextSpan span)
-            {
-                var next = SkipWhiteSpace(span);
-                if (!next.HasValue)
-                    yield break;
-                do
+                else if (tokenB.HasValue && !tokenA.HasValue)
                 {
-                    char ch = next.Value;
-                    var prevLocation = next.Location;
-                    switch (ch)
-                    {
-                        case '/':
-                            {
-                                // Consume /
-                                var tmp = next.Remainder.ConsumeChar();
-                                if (tmp.Value == '*')
-                                {
-                                    var content = Comment.CStyle(next.Location);
-                                    yield return Result.Value(CTokenKind.MultiLineComment, content.Location, content.Remainder);
-                                    next = content.Remainder.ConsumeChar();
-                                }
-                                else if (tmp.Value == '/')
-                                {
-                                    var content = Comment.CPlusPlusStyle(next.Location);
-                                    yield return Result.Value(CTokenKind.SingleLineComment, content.Location, content.Remainder);
-                                    next = content.Remainder.ConsumeChar();
-                                }
-                                else goto default;
-                            }
-                            break;
-
-#if false
-                        case '#':
-                            {
-                                var content = PreprocessorParser(next.Location);
-                                yield return Result.Value(CTokenKind.Preprocessor, content.Location, content.Remainder);
-                                next = content.Remainder.ConsumeChar();
-                            }
-                            break;
-#endif
-
-                        case '"':
-                            {
-                                var content = CStringParser(next.Location);
-                                yield return Result.Value(CTokenKind.StringLiteral, content.Location, content.Remainder);
-                                next = content.Remainder.ConsumeChar();
-                            }
-                            break;
-
-                        case '\'':
-                            {
-                                var content = CCharParser(next.Location);
-                                yield return Result.Value(CTokenKind.CharLiteral, content.Location, content.Remainder);
-                                next = content.Remainder.ConsumeChar();
-                            }
-                            break;
-
-                        case '.':
-                            {
-                                var tmp = next.Remainder.ConsumeChar();
-                                if (tmp.Value >= '0' && tmp.Value <= '9')
-                                    goto case '0';
-                                goto default;
-                            }
-
-                        case '0':
-                        case '1':
-                        case '2':
-                        case '3':
-                        case '4':
-                        case '5':
-                        case '6':
-                        case '7':
-                        case '8':
-                        case '9':
-                            {
-
-                                // Hex
-                                var content = CHexNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    var result = Result.Value(CTokenKind.HexLiteral, next.Location, content.Remainder);
-                                    yield return result;
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
-
-                                // Octal
-                                content = COctalNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    var result = Result.Value(CTokenKind.OctalLiteral, next.Location, content.Remainder);
-                                    yield return result;
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
-
-                                // Integer
-                                content = CIntegerNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    var result = Result.Value(CTokenKind.IntegerLiteral, next.Location, content.Remainder);
-                                    yield return result;
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
-
-                                // Decimal-Float
-                                content = CDecimalFloatNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    var result = Result.Value(CTokenKind.DecimalFloatLiteral, next.Location, content.Remainder);
-                                    yield return result;
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
-
-                                // Hex-Float
-                                content = CDecimalHexNumberParser(next.Location);
-                                if (content.HasValue)
-                                {
-                                    var result = Result.Value(CTokenKind.DecimalHexLiteral, next.Location, content.Remainder);
-                                    yield return result;
-                                    next = content.Remainder.ConsumeChar();
-                                    break;
-                                }
-
-                                throw new ParseException($"Unknown number format for '{next.Location}'");
-                            }
-
-                        case char n when ((n >= 'a' && n <= 'z') || (n >= 'A' && n <= 'Z') || (n == '_')):
-                            {
-                                // Ident
-                                var content = IdentParser(next.Location);
-                                yield return Result.Value(CTokenKind.Ident, content.Location, content.Remainder);
-                                next = content.Remainder.ConsumeChar();
-                            }
-                            break;
-
-                        default:
-                            {
-                                CTokenKind foundTokenKind = CTokenKind.Unknown;
-                                string foundTokenValue = null;
-                                string source = next.Location.Source;
-                                int index = next.Location.Position.Absolute;
-                                foreach (var tokenValue in tokenValues)
-                                {
-                                    if (string.Compare(tokenValue, 0, source, index, tokenValue.Length) == 0)
-                                    {
-                                        foundTokenKind = valueToTokenMap[tokenValue];
-                                        foundTokenValue = tokenValue;
-                                        break;
-                                    }
-                                }
-
-                                if (foundTokenKind != CTokenKind.Unknown)
-                                {
-                                    var content = Span.EqualTo(foundTokenValue)(next.Location);
-                                    Debug.Assert(content.HasValue && content.Value.Length > 0);
-                                    yield return Result.Value(foundTokenKind, content.Location, content.Remainder);
-                                    next = content.Remainder.ConsumeChar();
-                                }
-                                else
-                                {
-                                    var tmp = next.Location.ConsumeChar();
-                                    Debug.Assert(tmp.HasValue);
-                                    yield return Result.Value(CTokenKind.Unknown, tmp.Location, tmp.Remainder);
-                                }
-                            }
-                            break;
-                    }
-
-                    if (next.Location.Equals(prevLocation))
-                    {
-                        // ERROR: Consume next character while cursor not changed
-                        next = next.Remainder.ConsumeChar();
-                    }
-
-                    next = SkipWhiteSpace(next.Location);
-                } while (next.HasValue);
+                    Console.WriteLine($"Missing token A at index {i} [{typeA}] -> Found B [{typeB}] = {tokenB.Value.Start}");
+                    break;
+                }
+                else if (!tokenA.HasValue && !tokenB.HasValue)
+                {
+                    Console.WriteLine($"Missing any token at index {i}");
+                    break;
+                }
+                else
+                {
+                    if (tokenA.Value.Kind != tokenB.Value.Kind)
+                        Console.WriteLine($"Different token kinds ({typeA}:{tokenA.Value.Kind} vs {typeB}:{tokenB.Value.Kind}) on index {i}");
+                    if (tokenA.Value.Start.Index != tokenB.Value.Start.Index)
+                        Console.WriteLine($"Different token starts ({typeA}:{tokenA.Value.Start} vs {typeB}:{tokenB.Value.Start}) on index {i}");
+                    if (tokenA.Value.Length != tokenB.Value.Length)
+                        Console.WriteLine($"Different token lengths ({typeA}:{tokenA.Value.Length} vs {typeB}:{tokenB.Value.Length}) on index {i}");
+                }
             }
         }
 
         static int Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length < 1)
             {
-                Console.Error.WriteLine("Missing arguments!");
+                Console.Error.WriteLine("Missing filepath argument!");
                 return (-1);
             }
-            string tokenizerType = args[0];
-            string filePath = args[1];
+
+            string filePath = args[0];
             string source = File.ReadAllText(filePath);
 
-            var p = CIntegerNumberParser(new TextSpan("600"));
+            TokenizerType[] tokenizerTypes = new[] { TokenizerType.Superpower, TokenizerType.DoxygenCpp, TokenizerType.CustomCpp };
 
+            const int numberOfIterationsPerType = 1;
+            Dictionary<TokenizerType, List<TimeSpan>> durations = new Dictionary<TokenizerType, List<TimeSpan>>();
+            Dictionary<TokenizerType, List<CToken>> tokenMap = new Dictionary<TokenizerType, List<CToken>>();
 
-
-            Stopwatch timer = new Stopwatch();
-            switch (tokenizerType.ToLower())
+            foreach (TokenizerType tokenizerType in tokenizerTypes)
             {
-                case "superpower":
+                List<TimeSpan> spans = new List<TimeSpan>();
+                durations.Add(tokenizerType, spans);
+                List<CToken> outTokens = new List<CToken>();
+                tokenMap.Add(tokenizerType, outTokens);
+                for (int iteration = 1; iteration <= numberOfIterationsPerType; ++iteration)
+                {
+                    outTokens.Clear();
+                    Console.WriteLine($"{tokenizerType} tokenizer[{iteration}/{numberOfIterationsPerType}] start...");
+                    Stopwatch timer = Stopwatch.StartNew();
+                    switch (tokenizerType)
                     {
-                        Console.WriteLine($"Superpower tokenizer start...");
-                        timer.Restart();
-                        var tokens = new CTokenizer().Tokenize(source);
-                        timer.Stop();
-                        foreach (var token in tokens)
-                        {
-                            Console.WriteLine(token);
-                        }
-                        Console.WriteLine($"Superpower tokenizer got {tokens.Count()} tokens, took {timer.Elapsed.TotalMilliseconds}");
-                    }
-                    break;
+                        case TokenizerType.Superpower:
+                            {
+                                var tokenizer = new CSuperPowerTokenizer();
+                                var tokens = tokenizer.Tokenize(source);
+                                foreach (var token in tokens)
+                                {
+                                    if (token.Kind == CppTokenKind.Eof)
+                                        break;
+                                    var start = new TextPosition(token.Position.Absolute, token.Position.Line - 1, token.Position.Column - 1);
+                                    var end = new TextPosition(token.Position.Absolute + token.Span.Length, token.Span.Position.Line - 1, token.Span.Position.Column - 1);
+                                    var value = source.Substring(start.Index, end.Index - start.Index);
+                                    outTokens.Add(new CToken(token.Kind, start, end, value));
+                                }
+                            }
+                            break;
 
-                default:
-                    {
-                        Console.WriteLine($"Custom tokenizer start...");
-                        timer.Restart();
-                        var stream = new BasicTextStream(source, 0, source.Length);
-                        var cursor = new StreamCursor(stream);
-                        var tokens = new List<Token>();
-                        while (!cursor.IsEOF)
-                        {
-                            var token = CustomTokenizer.GetToken(cursor);
-                            if (token.Kind == TokenKind.EOF)
-                                break;
-                            tokens.Add(token);
-                        }
-                        timer.Stop();
-                        foreach (var token in tokens)
-                        {
-                            Console.WriteLine(token);
-                        }
-                        Console.WriteLine($"Custom tokenizer got {tokens.Count()} tokens, took {timer.Elapsed.TotalMilliseconds}");
+                        case TokenizerType.CustomCpp:
+                            {
+                                using (var stream = new BasicTextStream(source, new TextPosition(0), source.Length))
+                                {
+                                    CToken token;
+                                    do
+                                    {
+                                        token = CTokenizer.GetToken(stream);
+                                        if (token.Kind == CppTokenKind.Eof)
+                                            break;
+                                        outTokens.Add(token);
+                                    } while (token.Kind != CppTokenKind.Eof);
+                                }
+                            }
+                            break;
+
+                        case TokenizerType.DoxygenCpp:
+                            {
+                                using (var lexer = new CppLexer(source, new TextPosition(0), source.Length))
+                                {
+                                    var tokens = lexer.Tokenize();
+                                    foreach (var token in tokens)
+                                    {
+                                        if (token.Kind == CppTokenKind.Eof)
+                                            break;
+                                        var start = new TextPosition(token.Position);
+                                        var end = new TextPosition(token.Position.Index + token.Length, token.Position.Line, token.Position.Column);
+                                        var value = source.Substring(start.Index, end.Index - start.Index);
+                                        outTokens.Add(new CToken(token.Kind, start, end, value));
+                                    }
+                                }
+                            }
+                            break;
+
+                        default:
+                            throw new Exception($"Unsupported tokenizer type -> {tokenizerType}");
                     }
-                    break;
+                    timer.Stop();
+                    spans.Add(timer.Elapsed);
+                    Console.WriteLine($"{tokenizerType} tokenizer[{iteration}/{numberOfIterationsPerType}] done, got {outTokens.Count()} tokens, took {timer.Elapsed.TotalMilliseconds} ms");
+                }
             }
 
+            foreach (TokenizerType tokenizerType in tokenizerTypes)
+            {
+                List<TimeSpan> timeSpans = durations[tokenizerType];
+                TimeSpan minTime = GetMinTime(timeSpans);
+                TimeSpan maxTime = GetMaxTime(timeSpans);
+                TimeSpan avgTime = GetAvgTime(timeSpans);
+                Console.WriteLine($"{tokenizerType} tokenizer, min: {minTime}, max: {maxTime}, avg: {avgTime}, iterations: {numberOfIterationsPerType}");
+            }
+
+#if false
+            // Compare tokens against each other
+            foreach (TokenizerType tokenizerTypeA in tokenizerTypes)
+            {
+                List<CToken> tokensA = tokenMap[tokenizerTypeA];
+                foreach (TokenizerType tokenizerTypeB in tokenizerTypes)
+                {
+                    List<CToken> tokensB = tokenMap[tokenizerTypeB];
+                    if (tokenizerTypeA != tokenizerTypeB)
+                    {
+                        CompareTokens(tokenizerTypeA, tokensA, tokenizerTypeB, tokensB);
+                    }
+                }
+            }
+#endif
+
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            foreach (TokenizerType tokenizerType in tokenizerTypes)
+            {
+                string filename = $"tokenizer_{tokenizerType}.txt";
+                string singleFilePath = Path.Combine(desktopPath, filename);
+                List<CToken> tokens = tokenMap[tokenizerType];
+                using (StreamWriter writer = new StreamWriter(singleFilePath, false, Encoding.ASCII))
+                {
+                    foreach (var token in tokens)
+                    {
+                        writer.Write(token);
+                        writer.Write("\n");
+                    }
+                }
+            }
+
+
+            Console.WriteLine("Press any key to exit");
+            Console.ReadKey();
             return (0);
         }
     }
