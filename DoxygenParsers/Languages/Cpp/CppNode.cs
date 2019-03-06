@@ -3,9 +3,9 @@ using TSP.DoxygenEditor.Parsers;
 
 namespace TSP.DoxygenEditor.Languages.Cpp
 {
-    public class CppNode : BaseNode
+    public class CppNode : BaseNode<CppEntity>
     {
-        public CppNode(BaseNode parent, BaseEntity entity) : base(parent, entity)
+        public CppNode(IBaseNode parent, CppEntity entity) : base(parent, entity)
         {
         }
     }

@@ -438,26 +438,27 @@ namespace TSP.DoxygenEditor.Views
             tvTree.EndUpdate();
         }
 
-        private static HashSet<DoxygenEntityType> AllowedDoxyEntities = new HashSet<DoxygenEntityType>()
+        private static HashSet<DoxygenEntityKind> AllowedDoxyEntities = new HashSet<DoxygenEntityKind>()
         {
-            DoxygenEntityType.BlockSingle,
-            DoxygenEntityType.BlockMulti,
-            DoxygenEntityType.Group,
-            DoxygenEntityType.Page,
-            DoxygenEntityType.Section,
-            DoxygenEntityType.SubSection,
-            DoxygenEntityType.SubSubSection,
+            DoxygenEntityKind.BlockSingle,
+            DoxygenEntityKind.BlockMulti,
+            DoxygenEntityKind.Group,
+            DoxygenEntityKind.Page,
+            DoxygenEntityKind.Section,
+            DoxygenEntityKind.SubSection,
+            DoxygenEntityKind.SubSubSection,
         };
 
-        private List<TreeNode> BuildSymbolTree(BaseNode rootEntityNode, TreeNode rootTreeNode, BaseNode selectedEntityNode)
+        private List<TreeNode> BuildSymbolTree(IBaseNode rootEntityNode, TreeNode rootTreeNode, IBaseNode selectedEntityNode)
         {
             List<TreeNode> result = new List<TreeNode>();
-            foreach (BaseNode childEntityNode in rootEntityNode.Children)
+            foreach (IBaseNode childEntityNode in rootEntityNode.Children)
             {
                 if (typeof(DoxygenNode).Equals(childEntityNode.GetType()))
                 {
-                    DoxygenEntity entity = (DoxygenEntity)childEntityNode.Entity;
-                    if (!AllowedDoxyEntities.Contains(entity.Type))
+                    DoxygenNode doxyNode = (DoxygenNode)childEntityNode;
+                    DoxygenEntity entity = doxyNode.Entity;
+                    if (!AllowedDoxyEntities.Contains(entity.Kind))
                         continue;
 
                     TreeNode parentNode;
@@ -468,7 +469,7 @@ namespace TSP.DoxygenEditor.Views
                         rootTreeNode.Nodes.Add(parentNode);
                         if (selectedEntityNode != null)
                         {
-                            if (selectedEntityNode.Entity.CompareTo(childEntityNode.Entity) == 0)
+                            if (selectedEntityNode.CompareTo(childEntityNode) == 0)
                                 result.Add(parentNode);
                         }
                     }
@@ -480,7 +481,7 @@ namespace TSP.DoxygenEditor.Views
             return (result);
         }
 
-        private void RebuildSymbolTree(object fileTag, BaseNode doxyTree)
+        private void RebuildSymbolTree(object fileTag, IBaseNode doxyTree)
         {
             DoxygenNode lastEntity = null;
             if (tvTree.SelectedNode != null)
@@ -812,14 +813,15 @@ namespace TSP.DoxygenEditor.Views
             lvIssues.Items.Add(newItem);
         }
         private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
-        private void AddIssuesFromEntity(IEnumerable<EditorState> states, EditorState state, BaseNode entityNode, string fileName, string groupName)
+        private void AddIssuesFromEntity(IEnumerable<EditorState> states, EditorState state, IBaseNode entityNode, string fileName, string groupName)
         {
             if (typeof(CppNode).Equals(entityNode.GetType()))
             {
-                CppEntity cppEntity = (CppEntity)entityNode.Entity;
+                CppNode cppNode = (CppNode)entityNode;
+                CppEntity cppEntity = cppNode.Entity;
                 if (cppEntity.DocumentationNode != null)
                 {
-                    AddIssue(new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Ident, cppEntity.Type.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
+                    AddIssue(new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Id, cppEntity.Kind.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
                 }
             }
 
@@ -850,7 +852,7 @@ namespace TSP.DoxygenEditor.Views
                 }
                 if (state.CppTree != null)
                 {
-                    foreach (BaseNode childNode in state.CppTree.Children)
+                    foreach (IBaseNode childNode in state.CppTree.Children)
                     {
                         AddIssuesFromEntity(states, state, childNode, state.Name, "Root");
                     }

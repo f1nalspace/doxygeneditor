@@ -1,47 +1,78 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Languages.Doxygen
 {
     public class DoxygenEntity : BaseEntity
     {
-        public DoxygenEntityType Type { get; }
-        public string Caption { get; set; }
-        public string Value { get; set; }
-        public override string Id { get; }
+        public DoxygenEntityKind Kind { get; }
+        public override string Value { get; set; }
+        public override string Id { get; set; }
+        public class Parameter
+        {
+            public string Name { get; }
+            public string Value { get; }
+            public Parameter(string name, string value)
+            {
+                Name = name;
+                Value = value;
+            }
+            public override string ToString()
+            {
+                return $"{Name} => {Value}";
+            }
+        }
+        private readonly List<Parameter> _parameters = new List<Parameter>();
+        public IEnumerable<Parameter> Parameters => _parameters;
+        public void AddParameter(string name, string value)
+        {
+            _parameters.Add(new Parameter(name, value));
+        }
+        public Parameter FindParameterByName(params string[] names)
+        {
+            Parameter param = _parameters.FirstOrDefault(p => names.Contains(p.Name));
+            return (param);
+        }
+        public string GetParameterValue(params string[] names)
+        {
+            Parameter param = FindParameterByName(names);
+            if (param != null)
+                return (param.Value);
+            return (null);
+        }
         public override string DisplayName
         {
             get
             {
-                if ((Type == DoxygenEntityType.Page) && string.IsNullOrWhiteSpace(Id))
+                if ((Kind == DoxygenEntityKind.Page) && string.IsNullOrWhiteSpace(Id))
                     return ("Main");
                 else if (!string.IsNullOrWhiteSpace(Value))
                     return Value;
-                else if (!string.IsNullOrWhiteSpace(Caption))
-                    return Caption;
                 else
                 return Id;
             }
         }
         public DoxygenEntity Group { get; set; }
-        public DoxygenEntity(DoxygenEntityType type, BaseToken token, string id) : base(token)
+        public DoxygenEntity(DoxygenEntityKind kind, TextRange range) : base(range)
         {
-            Type = type;
-            Id = id;
+            Kind = kind;
         }
         public override string ToString()
         {
             StringBuilder s = new StringBuilder();
-            s.Append($"{Type}");
+            s.Append($"{Kind}");
             if (!string.IsNullOrWhiteSpace(Id))
             {
-                if (s.Length > 0) s.Append(",");
+                if (s.Length > 0) s.Append(", ");
                 s.Append(Id);
-                if (!string.IsNullOrWhiteSpace(Caption))
+                if (!string.IsNullOrWhiteSpace(Value))
                 {
                     s.Append(", '");
-                    s.Append(Caption);
+                    s.Append(Value);
                     s.Append("'");
                 }
             }
@@ -59,7 +90,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenEntity other = obj as DoxygenEntity;
             if (other != null)
             {
-                if (other.Type != Type)
+                if (other.Kind != Kind)
                     return (1);
                 int r = string.Compare(other.Id, Id);
                 if (r != 0)

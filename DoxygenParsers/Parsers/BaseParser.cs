@@ -7,17 +7,24 @@ using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers
 {
-    public abstract class BaseParser : IDisposable
+    public abstract class BaseParser<TEntity> : IDisposable where TEntity : BaseEntity
     {
-        private readonly Stack<BaseNode> _stack = new Stack<BaseNode>();
+        private readonly Stack<IEntityBaseNode<TEntity>> _stack = new Stack<IEntityBaseNode<TEntity>>();
 
         private readonly List<TextError> _parseErrors = new List<TextError>();
         public IEnumerable<TextError> ParseErrors => _parseErrors;
-        public BaseNode Root { get; }
+        public IBaseNode Root { get; }
+
+        class RootNode : BaseNode<TEntity>
+        {
+            public RootNode() : base(null, null)
+            {
+            }
+        }
 
         public BaseParser()
         {
-            Root = new BaseNode(null, null);
+            Root = new RootNode();
         }
         protected void AddParseError(TextPosition pos, string message)
         {
@@ -27,9 +34,9 @@ namespace TSP.DoxygenEditor.Parsers
 
         public abstract bool ParseToken(LinkedListStream<BaseToken> stream);
 
-        protected BaseNode Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
+        protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
 
-        protected void Add(BaseNode node)
+        protected void Add(IBaseNode node)
         {
             if (_stack.Count == 0)
                 Root.AddChild(node);
@@ -37,15 +44,15 @@ namespace TSP.DoxygenEditor.Parsers
                 Top.AddChild(node);
         }
 
-        protected void Push(BaseNode node)
+        protected void Push(IEntityBaseNode<TEntity> node)
         {
             Add(node);
             _stack.Push(node);
         }
 
-        protected BaseNode Pop()
+        protected IBaseNode Pop()
         {
-            BaseNode result = _stack.Pop();
+            IBaseNode result = _stack.Pop();
             return (result);
         }
 

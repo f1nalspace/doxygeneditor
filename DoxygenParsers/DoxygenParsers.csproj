@@ -60,7 +60,7 @@
   <ItemGroup>
     <Compile Include="Collections\LinkedListStream.cs" />
     <Compile Include="Languages\Cpp\CppEntity.cs" />
-    <Compile Include="Languages\Cpp\CppEntityType.cs" />
+    <Compile Include="Languages\Cpp\CppEntityKind.cs" />
     <Compile Include="Languages\Cpp\CppLexer.cs" />
     <Compile Include="Languages\Cpp\CppNode.cs" />
     <Compile Include="Languages\Cpp\CppToken.cs" />
@@ -68,7 +68,7 @@
     <Compile Include="Languages\Cpp\CppTokenPool.cs" />
     <Compile Include="Languages\Cpp\CppParser.cs" />
     <Compile Include="Languages\Doxygen\DoxygenEntity.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenEntityType.cs" />
+    <Compile Include="Languages\Doxygen\DoxygenEntityKind.cs" />
     <Compile Include="Languages\Doxygen\DoxygenLexer.cs" />
     <Compile Include="Languages\Doxygen\DoxygenNode.cs" />
     <Compile Include="Languages\Doxygen\DoxygenSyntax.cs" />
@@ -87,6 +87,9 @@
     <Compile Include="Parsers\BaseEntity.cs" />
     <Compile Include="Parsers\BaseNode.cs" />
     <Compile Include="Parsers\BaseParser.cs" />
+    <Compile Include="Parsers\IBaseProperty.cs" />
+    <Compile Include="Parsers\IBaseNode.cs" />
+    <Compile Include="Parsers\IEntityBaseNode.cs" />
     <Compile Include="Pools\ObjectPool.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TextAnalysis\BasicTextStream.cs" />

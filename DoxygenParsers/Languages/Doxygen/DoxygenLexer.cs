@@ -117,6 +117,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             {
                 int argNumber = 0;
                 int argCount = rule.Args.Count();
+                bool noMoreArgs = false;
                 foreach (var arg in rule.Args)
                 {
                     // @TODO(final): Handle rule repeat type for arguments on same type
@@ -128,12 +129,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         else
                         {
                             // No more arguments are following
-                            if (arg.IsRequired)
-                            {
-                                PushError(Buffer.TextPosition, $"Expected spacing character, but found '{Buffer.Peek()}' found for argument ({argNumber}:{arg}) in command '{commandName}'");
-                                return (result);
-                            }
-                            break;
+                            noMoreArgs = true;
                         }
                     }
 
@@ -142,25 +138,28 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     // Prefix
                     string prefix = arg.Prefix;
                     string postfix = arg.Postfix;
-                    bool hadPrefix = true;
-                    if (!string.IsNullOrWhiteSpace(prefix))
+                    bool hadPrefix = false;
+                    if (prefix != null && !noMoreArgs)
                     {
-                        if (Buffer.CompareText(0, prefix) == 0)
+                        if (!string.IsNullOrEmpty(prefix))
                         {
-                            Buffer.AdvanceColumns(prefix.Length);
-                            hadPrefix = true;
+                            if (Buffer.CompareText(0, prefix) == 0)
+                            {
+                                Buffer.AdvanceColumns(prefix.Length);
+                                hadPrefix = true;
+                            }
                         }
-                        else
-                            hadPrefix = false;
+                        else if ((prefix.Length == 0) && (!string.IsNullOrEmpty(postfix)))
+                            hadPrefix = true;
                     }
 
                     switch (arg.Kind)
                     {
                         case DoxygenSyntax.ArgumentKind.PrefixToPostfix:
                             {
-                                if (hadPrefix)
+                                if (hadPrefix && !noMoreArgs)
                                 {
-                                    Debug.Assert(!string.IsNullOrWhiteSpace(postfix));
+                                    Debug.Assert(!string.IsNullOrEmpty(postfix));
                                     bool foundPrefixToPostfix = false;
                                     while (!Buffer.IsEOF)
                                     {
@@ -183,6 +182,11 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                         return (result);
                                     }
                                 }
+                                else if (arg.IsOptional)
+                                {
+                                    DoxygenToken argToken = DoxygenTokenPool.Make(DoxygenTokenKind.ArgumentCaption, Buffer.LexemeRange, false);
+                                    PushToken(argToken);
+                                }
                                 else if (arg.IsRequired)
                                 {
                                     PushError(Buffer.TextPosition, $"Expected prefix '{prefix}' for argument ({argNumber}:{arg}) in command '{commandName}'");
@@ -202,95 +206,93 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 // my::awesome::namespace::function()
                                 // my#awesome#namespace#function()
                                 // method1,method2(),class#field
-                                bool allowMultiple = arg.Kind == DoxygenSyntax.ArgumentKind.MultipleObjectReference;
-                                bool requireIdent = true;
                                 bool foundRef = false;
-                                int referenceCount = 0;
-                                while (!Buffer.IsEOF)
+                                if (!noMoreArgs)
                                 {
-                                    int oldPos = Buffer.StreamPosition;
-                                    char c0 = Buffer.Peek();
-                                    char c1 = Buffer.Peek(1);
-                                    if (!requireIdent)
+                                    bool allowMultiple = arg.Kind == DoxygenSyntax.ArgumentKind.MultipleObjectReference;
+                                    bool requireIdent = true;
+                                    int referenceCount = 0;
+                                    while (!Buffer.IsEOF)
                                     {
-                                        if (c0 == ':' && c1 == ':')
+                                        int oldPos = Buffer.StreamPosition;
+                                        char c0 = Buffer.Peek();
+                                        char c1 = Buffer.Peek(1);
+                                        if (!requireIdent)
                                         {
-                                            Buffer.AdvanceColumns(2);
-                                            requireIdent = true;
-                                            continue;
-                                        }
-                                        else if (c0 == '#' || c0 == '.')
-                                        {
-                                            Buffer.AdvanceColumn();
-                                            requireIdent = true;
-                                            continue;
-                                        }
-                                        else if (c0 == ',' && referenceCount > 0 && allowMultiple)
-                                        {
-                                            Buffer.AdvanceColumn();
-                                            requireIdent = true;
-                                            continue;
-                                        }
-                                        else if (DoxygenSyntax.IsCommandBegin(c0) || char.IsWhiteSpace(c0))
-                                        {
-                                            // Correct termination of object-reference
-                                            foundRef = true;
-                                            break;
+                                            if (c0 == ':' && c1 == ':')
+                                            {
+                                                Buffer.AdvanceColumns(2);
+                                                requireIdent = true;
+                                                continue;
+                                            }
+                                            else if (c0 == '#')
+                                            {
+                                                Buffer.AdvanceColumn();
+                                                requireIdent = true;
+                                                continue;
+                                            }
+                                            else if (c0 == ',' && referenceCount > 0 && allowMultiple)
+                                            {
+                                                Buffer.AdvanceColumn();
+                                                requireIdent = true;
+                                                continue;
+                                            }
+                                            else
+                                            {
+                                                // Correct termination of object-reference
+                                                foundRef = true;
+                                                break;
+                                            }
                                         }
                                         else
                                         {
-                                            PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
-                                            return (result);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (SyntaxUtils.IsIdentStart(c0))
-                                        {
-                                            requireIdent = false;
-                                            while (!Buffer.IsEOF)
+                                            if (SyntaxUtils.IsIdentStart(c0))
                                             {
-                                                if (!SyntaxUtils.IsIdentPart(Buffer.Peek()))
-                                                    break;
-                                                Buffer.AdvanceColumn();
-                                            }
-                                            if (Buffer.Peek() == '(')
-                                            {
-                                                // Parse until right parent
-                                                Buffer.AdvanceColumn();
-                                                bool terminatedFunc = false;
+                                                requireIdent = false;
                                                 while (!Buffer.IsEOF)
                                                 {
-                                                    if (Buffer.Peek() == ')')
-                                                    {
-                                                        Buffer.AdvanceColumn();
-                                                        terminatedFunc = true;
+                                                    if (!SyntaxUtils.IsIdentPart(Buffer.Peek()))
                                                         break;
-                                                    }
-                                                    Buffer.AdvanceAuto();
+                                                    Buffer.AdvanceColumn();
                                                 }
-                                                if (!terminatedFunc)
+                                                if (Buffer.Peek() == '(')
                                                 {
-                                                    PushError(Buffer.TextPosition, $"Unterminated function reference for argument ({argNumber}:{arg}) in command '{commandName}'");
-                                                    return (result);
+                                                    // Parse until right parent
+                                                    Buffer.AdvanceColumn();
+                                                    bool terminatedFunc = false;
+                                                    while (!Buffer.IsEOF)
+                                                    {
+                                                        if (Buffer.Peek() == ')')
+                                                        {
+                                                            Buffer.AdvanceColumn();
+                                                            terminatedFunc = true;
+                                                            break;
+                                                        }
+                                                        Buffer.AdvanceAuto();
+                                                    }
+                                                    if (!terminatedFunc)
+                                                    {
+                                                        PushError(Buffer.TextPosition, $"Unterminated function reference for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                                        return (result);
+                                                    }
                                                 }
+                                                ++referenceCount;
+                                                continue;
                                             }
-                                            ++referenceCount;
-                                            continue;
+                                            else
+                                            {
+                                                PushError(Buffer.TextPosition, $"Requires identifier, but found '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                                return (result);
+                                            }
                                         }
-                                        else
-                                        {
-                                            PushError(Buffer.TextPosition, $"Requires identifier, but found '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
-                                            return (result);
-                                        }
+
+
                                     }
-
-
-                                }
-                                if (Buffer.IsEOF)
-                                {
-                                    // Correct termination of object-reference when stream ends (Single-line)
-                                    foundRef = true;
+                                    if (Buffer.IsEOF)
+                                    {
+                                        // Correct termination of object-reference when stream ends (Single-line)
+                                        foundRef = true;
+                                    }
                                 }
                                 if (arg.IsOptional || foundRef)
                                 {
@@ -310,7 +312,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 bool foundIdent = false;
 
                                 // Special handling for @param command and ... parameter
-                                if ("param".Equals(commandName) && (arg.Kind == DoxygenSyntax.ArgumentKind.Identifier))
+                                if (!noMoreArgs && "param".Equals(commandName) && (arg.Kind == DoxygenSyntax.ArgumentKind.Identifier))
                                 {
                                     if (Buffer.Peek() == '.')
                                     {
@@ -325,20 +327,13 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
 
                                 // We dont allow parsing a ident, when any special handling was matched
-                                if (!foundIdent && SyntaxUtils.IsIdentStart(Buffer.Peek()))
+                                if (!noMoreArgs && !foundIdent && SyntaxUtils.IsIdentStart(Buffer.Peek()))
                                 {
                                     foundIdent = true;
-
-                                    // @TODO(final): Expect spacing to terminate identifier - not wait until identifier is finished
                                     while (!Buffer.IsEOF)
                                     {
-                                        if (char.IsWhiteSpace(Buffer.Peek()))
+                                        if (!SyntaxUtils.IsIdentPart(Buffer.Peek()))
                                             break;
-                                        else if (!SyntaxUtils.IsIdentPart(Buffer.Peek()))
-                                        {
-                                            PushError(Buffer.TextPosition, $"Expect identifier terminator (whitespace) but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
-                                            return (result);
-                                        }
                                         Buffer.AdvanceColumn();
                                     }
                                 }
@@ -359,41 +354,44 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         case DoxygenSyntax.ArgumentKind.HeaderName:
                             {
                                 bool foundFilename = false;
-                                bool requiredQuotes = arg.Kind == DoxygenSyntax.ArgumentKind.HeaderName;
-                                char curChar = Buffer.Peek();
-                                if (curChar == '<' || curChar == '\"')
+                                if (!noMoreArgs)
                                 {
-                                    char quoteChar = curChar == '<' ? '>' : '\"';
-                                    Buffer.AdvanceColumn();
-                                    while (!Buffer.IsEOF)
+                                    bool requiredQuotes = arg.Kind == DoxygenSyntax.ArgumentKind.HeaderName;
+                                    char curChar = Buffer.Peek();
+                                    if (curChar == '<' || curChar == '\"')
                                     {
-                                        curChar = Buffer.Peek();
-                                        if (curChar == quoteChar)
-                                        {
-                                            Buffer.AdvanceColumn();
-                                            foundFilename = true;
-                                            break;
-                                        }
-                                        else if (SyntaxUtils.IsLineBreak(curChar))
-                                            break;
+                                        char quoteChar = curChar == '<' ? '>' : '\"';
                                         Buffer.AdvanceColumn();
-                                    }
-                                    if (!foundFilename)
-                                    {
-                                        PushError(Buffer.TextPosition, $"Unterminated filename, expect quote char '{quoteChar}' but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
-                                        return (result);
-                                    }
-                                }
-                                else if (!requiredQuotes)
-                                {
-                                    if (SyntaxUtils.IsFilename(Buffer.Peek()))
-                                    {
-                                        foundFilename = true;
                                         while (!Buffer.IsEOF)
                                         {
-                                            if (!SyntaxUtils.IsFilename(Buffer.Peek()))
+                                            curChar = Buffer.Peek();
+                                            if (curChar == quoteChar)
+                                            {
+                                                Buffer.AdvanceColumn();
+                                                foundFilename = true;
+                                                break;
+                                            }
+                                            else if (SyntaxUtils.IsLineBreak(curChar))
                                                 break;
                                             Buffer.AdvanceColumn();
+                                        }
+                                        if (!foundFilename)
+                                        {
+                                            PushError(Buffer.TextPosition, $"Unterminated filename, expect quote char '{quoteChar}' but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                            return (result);
+                                        }
+                                    }
+                                    else if (!requiredQuotes)
+                                    {
+                                        if (SyntaxUtils.IsFilename(Buffer.Peek()))
+                                        {
+                                            foundFilename = true;
+                                            while (!Buffer.IsEOF)
+                                            {
+                                                if (!SyntaxUtils.IsFilename(Buffer.Peek()))
+                                                    break;
+                                                Buffer.AdvanceColumn();
+                                            }
                                         }
                                     }
                                 }
@@ -414,7 +412,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             {
                                 // @TODO(final): IsWordStart()
                                 bool foundWord = false;
-                                if (char.IsLetterOrDigit(Buffer.Peek()))
+                                if (!noMoreArgs && char.IsLetterOrDigit(Buffer.Peek()))
                                 {
                                     foundWord = true;
                                     while (!Buffer.IsEOF)
@@ -444,9 +442,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
                                 // @TODO(final): Make quotes configurable in the argument rule
                                 bool hasQuote = Buffer.Peek() == '"' || Buffer.Peek() == '<';
-
                                 char endQuote = char.MaxValue;
-                                if (hasQuote)
+                                if (hasQuote && !noMoreArgs)
                                 {
                                     endQuote = Buffer.Peek() == '<' ? '>' : '"';
                                     Buffer.AdvanceColumn();
@@ -492,17 +489,20 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         case DoxygenSyntax.ArgumentKind.UntilEndOfLine:
                             {
                                 bool eolFound = false;
-                                while (!Buffer.IsEOF)
+                                if (!noMoreArgs)
                                 {
-                                    if (SyntaxUtils.IsLineBreak(Buffer.Peek()))
+                                    while (!Buffer.IsEOF)
                                     {
-                                        eolFound = true;
-                                        break;
+                                        if (SyntaxUtils.IsLineBreak(Buffer.Peek()))
+                                        {
+                                            eolFound = true;
+                                            break;
+                                        }
+                                        Buffer.AdvanceColumn();
                                     }
-                                    Buffer.AdvanceColumn();
+                                    if (Buffer.IsEOF)
+                                        eolFound = true;
                                 }
-                                if (Buffer.IsEOF)
-                                    eolFound = true;
                                 if (arg.IsOptional || eolFound)
                                 {
                                     DoxygenToken argToken = DoxygenTokenPool.Make(DoxygenTokenKind.ArgumentText, Buffer.LexemeRange, true);
@@ -527,7 +527,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     }
 
                     // Postfix
-                    if (hadPrefix && !string.IsNullOrWhiteSpace(postfix) && arg.Kind != DoxygenSyntax.ArgumentKind.PrefixToPostfix)
+                    if (!noMoreArgs && (hadPrefix && !string.IsNullOrWhiteSpace(postfix) && arg.Kind != DoxygenSyntax.ArgumentKind.PrefixToPostfix))
                     {
                         if (Buffer.CompareText(0, postfix) == 0)
                         {

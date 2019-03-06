@@ -10,7 +10,14 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         public override bool IsValid => Kind != DoxygenTokenKind.Invalid;
         public override bool IsEndOfLine => Kind == DoxygenTokenKind.EndOfLine;
         public bool IsArgument => (Kind == DoxygenTokenKind.ArgumentCaption || Kind == DoxygenTokenKind.ArgumentIdent || Kind == DoxygenTokenKind.ArgumentText);
-        public override bool IsMarker => (Kind == DoxygenTokenKind.TextStart || Kind == DoxygenTokenKind.TextEnd);
+        public override bool IsMarker =>
+            (Kind == DoxygenTokenKind.TextStart ||
+             Kind == DoxygenTokenKind.TextEnd ||
+             Kind == DoxygenTokenKind.ArgumentCaption ||
+             Kind == DoxygenTokenKind.ArgumentFile ||
+             Kind == DoxygenTokenKind.ArgumentIdent ||
+             Kind == DoxygenTokenKind.ArgumentText
+            );
         public DoxygenToken() : base()
         {
             Kind = DoxygenTokenKind.Invalid;

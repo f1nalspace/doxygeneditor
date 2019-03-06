@@ -2,11 +2,11 @@
 
 namespace TSP.DoxygenEditor.Languages.Doxygen
 {
-    public class DoxygenNode : BaseNode
+    public class DoxygenNode : BaseNode<DoxygenEntity>
     {
-        public override bool ShowChildren => DoxygenParser.ShowChildrensSet.Contains(((DoxygenEntity)Entity).Type);
+        public override bool ShowChildren => DoxygenParser.ShowChildrensSet.Contains(((DoxygenEntity)Entity).Kind);
 
-        public DoxygenNode(BaseNode parent, BaseEntity entity) : base(parent, entity)
+        public DoxygenNode(IBaseNode parent, DoxygenEntity entity) : base(parent, entity)
         {
         }
     }

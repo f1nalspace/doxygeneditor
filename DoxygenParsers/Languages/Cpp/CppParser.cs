@@ -8,16 +8,16 @@ using TSP.DoxygenEditor.Parsers;
 
 namespace TSP.DoxygenEditor.Languages.Cpp
 {
-    public class CppParser : BaseParser
+    public class CppParser : BaseParser<CppEntity>
     {
-        public delegate BaseNode GetDocumentationNodeEventHandler(BaseToken token);
+        public delegate IBaseNode GetDocumentationNodeEventHandler(BaseToken token);
         public event GetDocumentationNodeEventHandler GetDocumentationNode;
 
         public CppParser()
         {
         }
 
-        private BaseNode FindDocumentationNode(LinkedListNode<BaseToken> searchNode, int maxLineDelta)
+        private IBaseNode FindDocumentationNode(LinkedListNode<BaseToken> searchNode, int maxLineDelta)
         {
             BaseToken searchToken = searchNode.Value;
             int start = searchToken.Index;
@@ -63,7 +63,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             {
                 string structIdent = token.Value;
                 token = stream.CurrentNode?.Value as CppToken;
-                CppEntity structEntity = new CppEntity(CppEntityType.Struct, token, structIdent)
+                CppEntity structEntity = new CppEntity(CppEntityKind.Struct, token, structIdent)
                 {
                     DocumentationNode = FindDocumentationNode(stream.CurrentNode, 1),
                 };
@@ -123,7 +123,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     if (token != null && token.Kind == CppTokenKind.IdentLiteral)
                     {
                         string typedefIdent = token.Value;
-                        CppEntity typedefEntity = new CppEntity(CppEntityType.Typedef, token, typedefIdent)
+                        CppEntity typedefEntity = new CppEntity(CppEntityKind.Typedef, token, typedefIdent)
                         {
                             DocumentationNode = FindDocumentationNode(identNode, 1),
                         };
@@ -228,7 +228,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     Debug.Assert(token.Kind == CppTokenKind.Semicolon);
                     stream.Next();
 
-                    CppEntity functionEntity = new CppEntity(CppEntityType.Function, functionNameToken, functionName);
+                    CppEntity functionEntity = new CppEntity(CppEntityKind.Function, functionNameToken, functionName);
                     CppNode functionNode = new CppNode(Top, functionEntity);
                     Add(functionNode);
 

@@ -22,10 +22,6 @@
         ArgumentFile,
         TextStart,
         TextEnd,
-
-#if false
-        CodeType,
-        CodeBlock,
-#endif
+        Text,
     }
 }

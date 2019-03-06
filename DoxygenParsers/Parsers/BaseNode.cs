@@ -1,60 +1,59 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers
 {
-    public class BaseNode
+    public abstract class BaseNode<TEntity> : IEntityBaseNode<TEntity> where TEntity : BaseEntity
     {
-        public BaseNode Parent { get; }
+        public IBaseNode Parent { get; }
         public int Level { get; }
-        private readonly List<BaseNode> _children = new List<BaseNode>();
-        public IEnumerable<BaseNode> Children
-        {
-            get { return _children; }
-        }
-        public BaseEntity Entity { get; }
-        public virtual bool ShowChildren { get { return (false); } }
-
+        private readonly List<IBaseNode> _children = new List<IBaseNode>();
+        public IEnumerable<IBaseNode> Children => _children;
+        public TEntity Entity { get; }
+        public TextRange StartRange => Entity.StartRange;
+        public TextRange EndRange => Entity.EndRange;
+        public string Id => Entity.Id;
+        public string Value => Entity.Value;
+        public virtual bool ShowChildren => false;
         public string FullId
         {
             get
             {
                 List<string> ids = new List<string>();
-                BaseNode p = this;
-                while (p != null)
+                IBaseNode prevNode = this;
+                do
                 {
-                    if (!string.IsNullOrWhiteSpace(p.Entity.Id))
-                        ids.Add(p.Entity.Id);
-                    p = p.Parent;
-                }
+                    if (!string.IsNullOrWhiteSpace(prevNode.Id))
+                        ids.Add(prevNode.Id);
+                    prevNode = prevNode.Parent;
+                } while (prevNode != null);
                 ids.Reverse();
                 string result = string.Join(".", ids);
                 return (result);
             }
         }
 
-        public BaseNode(BaseNode parent, BaseEntity entity)
+        public BaseNode(IBaseNode parent, TEntity entity)
         {
             Parent = parent;
             Level = parent != null ? parent.Level + 1 : 0;
             Entity = entity;
         }
 
-        public void AddChild(BaseNode child)
+        public void AddChild(IBaseNode child)
         {
             _children.Add(child);
         }
 
-        public BaseNode FindNodeByRange(TextRange range)
+        public IBaseNode FindNodeByRange(TextRange range)
         {
-            BaseNode found = _children.FirstOrDefault(n => n.Entity.EndRange.Equals(range));
+            IBaseNode found = _children.FirstOrDefault(n => n.EndRange.Equals(range));
             if (found != null)
                 return (found);
-            foreach (BaseNode child in _children)
+            foreach (IBaseNode child in _children)
             {
-                BaseNode foundInChild = child.FindNodeByRange(range);
+                IBaseNode foundInChild = child.FindNodeByRange(range);
                 if (foundInChild != null)
                     return (foundInChild);
             }
@@ -64,6 +63,17 @@ namespace TSP.DoxygenEditor.Parsers
         public override string ToString()
         {
             return $"{Level} -> {Entity} ({Entity.StartRange} - {Entity.EndRange}, {Entity.Length})";
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (obj == null)
+                return (-1);
+            var t = obj.GetType();
+            if (!typeof(IEntityBaseNode<TEntity>).IsAssignableFrom(t))
+                return (-1);
+            IEntityBaseNode<TEntity> a = (IEntityBaseNode<TEntity>)obj;
+            return a.Entity.CompareTo(Entity);
         }
     }
 }

@@ -1,23 +1,22 @@
-﻿using TSP.DoxygenEditor.Lexers;
+﻿using TSP.DoxygenEditor.Languages.Doxygen;
+using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Parsers;
 
 namespace TSP.DoxygenEditor.Languages.Cpp
 {
     public class CppEntity : BaseEntity
     {
-        public string Ident { get; }
-        public string Value { get; set; }
-        public CppEntityType Type { get; }
-
-        public override string Id => Ident;
+        public CppEntityKind Kind { get; }
+        public override string Value { get; set; }
+        public override string Id { get; set; }
         public override string DisplayName => Value;
 
-        public BaseNode DocumentationNode { get; set; }
+        public IBaseNode DocumentationNode { get; set; }
 
-        public CppEntity(CppEntityType type, BaseToken token, string ident) : base(token)
+        public CppEntity(CppEntityKind kind, BaseToken token, string ident) : base(token)
         {
-            Type = type;
-            Ident = ident;
+            Kind = kind;
+            Id = ident;
         }
 
         public override int CompareTo(object obj)
@@ -25,7 +24,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppEntity other = obj as CppEntity;
             if (other != null)
             {
-                if (other.Type != Type)
+                if (other.Kind != Kind)
                     return (1);
                 int r = string.Compare(other.Id, Id);
                 if (r != 0)

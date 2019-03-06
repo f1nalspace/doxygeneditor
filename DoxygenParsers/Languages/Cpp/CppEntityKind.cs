@@ -1,6 +1,6 @@
 ﻿namespace TSP.DoxygenEditor.Languages.Cpp
 {
-    public enum CppEntityType
+    public enum CppEntityKind
     {
         None = 0,
         Function,

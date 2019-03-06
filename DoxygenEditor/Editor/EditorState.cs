@@ -31,14 +31,14 @@ namespace TSP.DoxygenEditor.Editor
         private int _maxLineNumberCharLength;
         private System.Windows.Forms.Timer _textChangedTimer;
         private BackgroundWorker _parseWorker;
-        private BaseNode _doxyTree;
-        private BaseNode _cppTree;
+        private IBaseNode _doxyTree;
+        private IBaseNode _cppTree;
         private readonly List<BaseToken> _tokens = new List<BaseToken>();
         private readonly List<TextError> _errors = new List<TextError>();
         private readonly EditorStyler _styler = new EditorStyler();
         public IEnumerable<TextError> Errors => _errors;
-        public BaseNode DoxyTree { get { return _doxyTree; } }
-        public BaseNode CppTree { get { return _cppTree; } }
+        public IBaseNode DoxyTree { get { return _doxyTree; } }
+        public IBaseNode CppTree { get { return _cppTree; } }
         public object Tag { get; set; }
         public string FilePath { get; set; }
         public string Name { get; set; }
@@ -654,7 +654,7 @@ namespace TSP.DoxygenEditor.Editor
 
             // Doxygen parsing
             timer.Restart();
-            using (DoxygenParser doxyParser = new DoxygenParser())
+            using (DoxygenParser doxyParser = new DoxygenParser(text))
             {
                 {
                     LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
@@ -666,6 +666,7 @@ namespace TSP.DoxygenEditor.Editor
                         Debug.Assert(old != tokenStream.CurrentValue);
                     }
                 }
+                _errors.InsertRange(0, doxyParser.ParseErrors);
                 _doxyTree = doxyParser.Root;
             }
             timer.Stop();
@@ -677,7 +678,7 @@ namespace TSP.DoxygenEditor.Editor
             {
                 cppParser.GetDocumentationNode += (token) =>
                 {
-                    BaseNode result = _doxyTree.FindNodeByRange(token);
+                    IBaseNode result = _doxyTree.FindNodeByRange(token);
                     return (result);
                 };
 
@@ -691,6 +692,7 @@ namespace TSP.DoxygenEditor.Editor
                         Debug.Assert(old != tokenStream.CurrentValue);
                     }
                 }
+                _errors.InsertRange(0, cppParser.ParseErrors);
                 _cppTree = cppParser.Root;
             }
             timer.Stop();
