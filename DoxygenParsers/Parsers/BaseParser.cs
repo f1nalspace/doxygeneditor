@@ -35,6 +35,60 @@ namespace TSP.DoxygenEditor.Parsers
             _parseErrors.Add(new TextError(pos, category, message));
         }
 
+        protected enum SearchMode
+        {
+            Current,
+            Next,
+            Forward,
+            Prev,
+            Backward,
+        }
+
+        protected class SearchResult<TToken>
+        {
+            public LinkedListNode<BaseToken> Node { get; }
+            public TToken Token { get; }
+            public SearchResult(LinkedListNode<BaseToken> node, TToken token)
+            {
+                Node = node;
+                Token = token;
+            }
+        }
+
+        protected SearchResult<TToken> Search<TToken>(LinkedListNode<BaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc) where TToken : BaseToken
+        {
+            bool canTravel = (mode == SearchMode.Forward || mode == SearchMode.Backward);
+            var n = inNode;
+            do
+            {
+                if (n == null)
+                    break;
+                switch (mode)
+                {
+                    case SearchMode.Current:
+                        break;
+                    case SearchMode.Prev:
+                    case SearchMode.Backward:
+                        n = n.Previous;
+                        break;
+                    case SearchMode.Next:
+                    case SearchMode.Forward:
+                        n = n.Next;
+                        break;
+                }
+                if (n != null)
+                {
+                    TToken token = n.Value as TToken;
+                    if (token != null)
+                    {
+                        if (matchFunc(token))
+                            return new SearchResult<TToken>(n, token);
+                    }
+                }
+            } while (n != null && canTravel);
+            return (null);
+        }
+
         public abstract bool ParseToken(LinkedListStream<BaseToken> stream);
 
         protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }

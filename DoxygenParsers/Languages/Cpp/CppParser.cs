@@ -46,58 +46,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (null);
         }
 
-        enum SearchMode
-        {
-            Current,
-            Next,
-            Forward,
-            Prev,
-            Backward,
-        }
-        class SearchResult
-        {
-            public LinkedListNode<BaseToken> Node { get; }
-            public CppToken Token { get; }
-            public SearchResult(LinkedListNode<BaseToken> node, CppToken token)
-            {
-                Node = node;
-                Token = token;
-            }
-        }
-        private SearchResult Search(LinkedListNode<BaseToken> inNode, SearchMode mode, Func<CppToken, bool> matchFunc)
-        {
-            bool canTravel = (mode == SearchMode.Forward || mode == SearchMode.Backward);
-            var n = inNode;
-            do
-            {
-                if (n == null)
-                    break;
-                switch (mode)
-                {
-                    case SearchMode.Current:
-                        break;
-                    case SearchMode.Prev:
-                    case SearchMode.Backward:
-                        n = n.Previous;
-                        break;
-                    case SearchMode.Next:
-                    case SearchMode.Forward:
-                        n = n.Next;
-                        break;
-                }
-                if (n != null)
-                {
-                    CppToken token = n.Value as CppToken;
-                    if (token != null)
-                    {
-                        if (matchFunc(token))
-                            return new SearchResult(n, token);
-                    }
-                }
-            } while (n != null && canTravel);
-            return (null);
-        }
-        private SearchResult Search(LinkedListStream<BaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
+        private SearchResult<CppToken> Search(LinkedListStream<BaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
         {
             var searchFunc = new Func<CppToken, bool>((token) =>
             {
@@ -108,10 +57,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 }
                 return (false);
             });
-            SearchResult result = Search(stream.CurrentNode, mode, searchFunc);
+            SearchResult<CppToken> result = Search(stream.CurrentNode, mode, searchFunc);
             return (result);
         }
-        private SearchResult Search(SearchResult inResult, SearchMode mode, params CppTokenKind[] kinds)
+        private SearchResult<CppToken> Search(SearchResult<CppToken> inResult, SearchMode mode, params CppTokenKind[] kinds)
         {
             var searchFunc = new Func<CppToken, bool>((token) =>
             {
@@ -122,7 +71,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 }
                 return (false);
             });
-            SearchResult result = Search(inResult.Node, mode, searchFunc);
+            SearchResult<CppToken> result = Search(inResult.Node, mode, searchFunc);
             return (result);
         }
         private bool IsToken(LinkedListStream<BaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
@@ -136,7 +85,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 }
                 return (false);
             });
-            SearchResult result = Search(stream.CurrentNode, mode, searchFunc);
+            SearchResult<CppToken> result = Search(stream.CurrentNode, mode, searchFunc);
             return (result != null);
 
         }
@@ -195,7 +144,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Debug.Assert(enumBaseToken.Kind == CppTokenKind.ReservedKeyword && "enum".Equals(enumBaseToken.Value));
             stream.Next();
 
-            SearchResult enumIdentResult = null;
+            SearchResult<CppToken> enumIdentResult = null;
 
             var classKeywordResult = Search(stream, SearchMode.Current, CppTokenKind.ReservedKeyword);
             if (classKeywordResult != null)
@@ -348,7 +297,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppToken structKeywordToken = stream.Peek<CppToken>();
             Debug.Assert(structKeywordToken.Kind == CppTokenKind.ReservedKeyword && ("struct".Equals(structKeywordToken.Value) || "union".Equals(structKeywordToken.Value)));
 
-            var typedefResult = Search(stream.CurrentNode, SearchMode.Prev, (t) => t.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(t.Value));
+            var typedefResult = Search<CppToken>(stream.CurrentNode, SearchMode.Prev, (t) => t.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(t.Value));
             bool isTypedef = typedefResult != null;
 
             stream.Next();
@@ -421,7 +370,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     stream.Seek(semicolonResult.Node);
                     stream.Next();
 
-                    SearchResult identResult = null;
+                    SearchResult<CppToken> identResult = null;
                     var prevResult = Search(semicolonResult, SearchMode.Prev, CppTokenKind.RightParen, CppTokenKind.IdentLiteral);
                     if (prevResult != null)
                     {
