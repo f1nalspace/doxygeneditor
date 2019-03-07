@@ -63,6 +63,7 @@
     <Compile Include="Languages\Cpp\CppEntityKind.cs" />
     <Compile Include="Languages\Cpp\CppLexer.cs" />
     <Compile Include="Languages\Cpp\CppNode.cs" />
+    <Compile Include="Languages\Cpp\CppSyntax.cs" />
     <Compile Include="Languages\Cpp\CppToken.cs" />
     <Compile Include="Languages\Cpp\CppTokenKind.cs" />
     <Compile Include="Languages\Cpp\CppTokenPool.cs" />
@@ -83,13 +84,17 @@
     <Compile Include="Languages\Html\HtmlTokenPool.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
     <Compile Include="Lexers\BaseToken.cs" />
+    <Compile Include="Parsers\SymbolKind.cs" />
     <Compile Include="Lexers\TokenKindAttribute.cs" />
     <Compile Include="Parsers\BaseEntity.cs" />
     <Compile Include="Parsers\BaseNode.cs" />
     <Compile Include="Parsers\BaseParser.cs" />
+    <Compile Include="Parsers\RefrenceSymbol.cs" />
+    <Compile Include="Parsers\SourceSymbol.cs" />
     <Compile Include="Parsers\IBaseProperty.cs" />
     <Compile Include="Parsers\IBaseNode.cs" />
     <Compile Include="Parsers\IEntityBaseNode.cs" />
+    <Compile Include="Parsers\SymbolCache.cs" />
     <Compile Include="Pools\ObjectPool.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TextAnalysis\BasicTextStream.cs" />

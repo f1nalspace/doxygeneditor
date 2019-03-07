@@ -33,6 +33,11 @@ namespace TSP.DoxygenEditor.Collections
             _currentNode = _items.First;
         }
 
+        public void Seek(LinkedListNode<T> node)
+        {
+            _currentNode = node;
+        }
+
         public T Peek()
         {
             if (_currentNode != null)

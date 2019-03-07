@@ -14,10 +14,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         public override string Id { get; set; }
         public class Parameter
         {
+            public DoxygenToken Token { get; }
             public string Name { get; }
             public string Value { get; }
-            public Parameter(string name, string value)
+            public Parameter(DoxygenToken token, string name, string value)
             {
+                Token = token;
                 Name = name;
                 Value = value;
             }
@@ -28,9 +30,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         }
         private readonly List<Parameter> _parameters = new List<Parameter>();
         public IEnumerable<Parameter> Parameters => _parameters;
-        public void AddParameter(string name, string value)
+        public void AddParameter(DoxygenToken token, string name, string value)
         {
-            _parameters.Add(new Parameter(name, value));
+            _parameters.Add(new Parameter(token, name, value));
         }
         public Parameter FindParameterByName(params string[] names)
         {

@@ -45,11 +45,16 @@ namespace TSP.DoxygenEditor.SearchReplace
 
         public event ExecuteSearchEventHandler Search;
         public event ExecuteReplaceEventHandler Replace;
+        public event FocusChangedEventHandler FocusChanged;
 
         public SearchReplaceControl()
         {
             InitializeComponent();
             _initHeight = Height;
+            cbSearchText.GotFocus += (s, e) => FocusChanged?.Invoke(this, true);
+            cbSearchText.LostFocus += (s, e) => FocusChanged?.Invoke(this, false);
+            cbReplaceText.GotFocus += (s, e) => FocusChanged?.Invoke(this, true);
+            cbReplaceText.LostFocus += (s, e) => FocusChanged?.Invoke(this, false);
         }
 
         private void btnToggleReplace_Click(object sender, EventArgs e)
@@ -127,6 +132,12 @@ namespace TSP.DoxygenEditor.SearchReplace
         public bool IsShown()
         {
             bool result = Visible;
+            return (result);
+        }
+
+        public bool IsFocused()
+        {
+            bool result = Focused || cbSearchText.Focused || cbReplaceText.Focused;
             return (result);
         }
 

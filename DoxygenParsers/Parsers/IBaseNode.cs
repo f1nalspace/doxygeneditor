@@ -12,6 +12,7 @@ namespace TSP.DoxygenEditor.Parsers
         bool ShowChildren { get; }
         string FullId { get; }
         string Id { get; }
+        TextRange StartRange { get; }
         TextRange EndRange { get; }
         void AddChild(IBaseNode child);
         IBaseNode FindNodeByRange(TextRange range);

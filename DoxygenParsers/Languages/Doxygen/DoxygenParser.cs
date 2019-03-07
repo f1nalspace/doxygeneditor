@@ -20,47 +20,10 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
         public string Source { get; }
 
-        public DoxygenParser(string source)
+        public DoxygenParser(object tag, string source) : base(tag)
         {
             Source = source;
         }
-
-#if false
-        [Flags]
-        enum ParseCommandFlags
-        {
-            None = 0,
-            RequiresName = 1 << 0,
-            AllowCaption = 1 << 1,
-        }
-
-        class ParseCommandRule
-        {
-            public DoxygenEntityType TargetType { get; }
-            public bool IsPush { get; }
-            public ParseCommandFlags Flags { get; }
-            public ParseCommandRule(DoxygenEntityType targetType, bool isPush, ParseCommandFlags flags = ParseCommandFlags.RequiresName)
-            {
-                TargetType = targetType;
-                IsPush = isPush;
-                Flags = flags;
-            }
-        }
-
-        private static readonly Dictionary<string, ParseCommandRule> commandRulesMap = new Dictionary<string, ParseCommandRule>()
-        {
-            { "page", new ParseCommandRule(DoxygenEntityType.Page, isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
-            { "mainpage", new ParseCommandRule(DoxygenEntityType.Page, isPush: true, flags: ParseCommandFlags.None) },
-
-            { "section", new ParseCommandRule(DoxygenEntityType.Section, isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
-            { "subsection", new ParseCommandRule(DoxygenEntityType.SubSection,isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
-            { "subsubsection", new ParseCommandRule(DoxygenEntityType.SubSubSection, isPush: true, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
-
-            { "subpage", new ParseCommandRule(DoxygenEntityType.SubPage, isPush: false, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
-            { "ref", new ParseCommandRule(DoxygenEntityType.Ref, isPush: false, flags: ParseCommandFlags.RequiresName | ParseCommandFlags.AllowCaption) },
-            { "brief", new ParseCommandRule(DoxygenEntityType.Brief, isPush: false, flags: ParseCommandFlags.AllowCaption) },
-        };
-#endif
 
         private DoxygenNode PushEntity(DoxygenEntity newEntity)
         {
@@ -79,29 +42,6 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenNode itemNode = new DoxygenNode(Top, newEntity);
             Push(itemNode);
             return (itemNode);
-
-#if false
-            BaseNode parentNode = Top;
-            while (parentNode != null)
-            {
-                DoxygenNode doxyParentNode = parentNode as DoxygenNode;
-                if (doxyParentNode == null)
-                    break;
-                DoxygenEntity parentEntity = (DoxygenEntity)doxyParentNode.Entity;
-                int typeDiff = (int)newEntity.Type - (int)parentEntity.Type;
-                if (typeDiff <= 0)
-                {
-                    Pop();
-                    parentNode = parentNode.Parent;
-                    if (typeDiff == 0)
-                        break;
-                }
-                else break;
-            }
-            DoxygenNode newNode = new DoxygenNode(parentNode, newEntity);
-            Push(newNode);
-            return (newNode);
-#endif
         }
 
         private void ParseText(LinkedListStream<BaseToken> stream, IBaseNode contentNode)
@@ -214,20 +154,46 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     {
                         string paramName = arg.Name;
                         string paramValue = argToken.Value;
-                        commandNode.Entity.AddParameter(paramName, paramValue);
+                        commandNode.Entity.AddParameter(argToken, paramName, paramValue);
                     }
                     stream.Next();
                 }
 
                 if (commandEntity != null)
                 {
-                    string name = commandEntity.GetParameterValue("name", "id");
-                    string text = commandEntity.GetParameterValue("text", "title", "caption");
-                    if (!string.IsNullOrWhiteSpace(name))
-                        commandEntity.Id = name;
-                    if (!string.IsNullOrWhiteSpace(text))
-                        commandEntity.Value = text;
+                    // Get name and text parameter (Some commands, have different names and text parameters, so there is a variable list of strings)
+                    var nameParam = commandEntity.FindParameterByName("name", "id");
+                    var textParam = commandEntity.FindParameterByName("text", "title", "caption");
+                    if (nameParam != null && !string.IsNullOrWhiteSpace(nameParam.Value))
+                        commandEntity.Id = nameParam.Value;
+                    else
+                    {
+                        if (rule.Kind == DoxygenSyntax.CommandKind.Section)
+                        {
+                            if (!"mainpage".Equals(commandName))
+                                AddParseError(commandToken.Position, $"Missing identifier mapping for command '{commandName}'");
+                        }
+                    }
+                    if (textParam != null && !string.IsNullOrWhiteSpace(textParam.Value))
+                        commandEntity.Value = textParam.Value;
+
+                    if (nameParam != null && !string.IsNullOrWhiteSpace(nameParam.Value))
+                    {
+                        Debug.Assert(commandNode != null);
+                        if (rule.Kind == DoxygenSyntax.CommandKind.Section)
+                        {
+                            SymbolKind kind = SymbolKind.DoxygenSection;
+                            if ("page".Equals(commandName) || "mainpage".Equals(commandName))
+                                kind = SymbolKind.DoxygenPage;
+                            SymbolCache.AddSource(Tag, commandEntity.Id, new SourceSymbol(commandNode, nameParam.Token, kind));
+                        }
+                        else if ("ref".Equals(commandName))
+                            SymbolCache.AddReference(Tag, commandEntity.Id, new RefrenceSymbol(commandNode, nameParam.Token));
+                        else if ("subpage".Equals(commandName))
+                            SymbolCache.AddReference(Tag, commandEntity.Id, new RefrenceSymbol(commandNode, nameParam.Token));
+                    }
                 }
+
                 ParseBlockContent(stream, commandNode);
             }
             return (true);

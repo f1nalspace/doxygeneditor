@@ -52,8 +52,10 @@ namespace TSP.DoxygenEditor.Editor
         }
 
         public delegate void ParseEventHandler(object sender, bool allDone);
+        public delegate void FocusChangedEventHandler(object sender, bool focused);
         public event EventHandler TabUpdating;
         public event ParseEventHandler ParseComplete;
+        public event FocusChangedEventHandler FocusChanged;
 
         public EditorState(IWin32Window window)
         {
@@ -82,6 +84,10 @@ namespace TSP.DoxygenEditor.Editor
             _searchControl.Replace += (s, mode) =>
             {
                 ReplaceText(_window, _searchControl.SearchText, _searchControl.ReplaceText, mode, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap);
+            };
+            _searchControl.FocusChanged += (s, focused) =>
+            {
+                FocusChanged?.Invoke(this, focused);
             };
             _searchControl.Hide();
 
@@ -124,12 +130,12 @@ namespace TSP.DoxygenEditor.Editor
 
         public bool CanUndo()
         {
-            bool result = _editor.CanUndo;
+            bool result = !_searchControl.IsFocused() && _editor.CanUndo;
             return (result);
         }
         public bool CanRedo()
         {
-            bool result = _editor.CanRedo;
+            bool result = !_searchControl.IsFocused() && _editor.CanRedo;
             return (result);
         }
         public void Undo()
@@ -143,17 +149,17 @@ namespace TSP.DoxygenEditor.Editor
 
         public bool CanCut()
         {
-            bool result = (_editor.SelectionStart < _editor.SelectionEnd);
+            bool result = !_searchControl.IsFocused() && (_editor.SelectionStart < _editor.SelectionEnd);
             return (result);
         }
         public bool CanCopy()
         {
-            bool result = (_editor.SelectionStart < _editor.SelectionEnd);
+            bool result = !_searchControl.IsFocused() && (_editor.SelectionStart < _editor.SelectionEnd);
             return (result);
         }
         public bool CanPaste()
         {
-            bool result = _editor.CanPaste;
+            bool result = !_searchControl.IsFocused() && _editor.CanPaste;
             return (result);
         }
         public void Cut()
@@ -601,6 +607,7 @@ namespace TSP.DoxygenEditor.Editor
             // Clear tokens & errors
             _tokens.Clear();
             _errors.Clear();
+            SymbolCache.Clear(Tag);
 
             Stopwatch totalLexTimer = Stopwatch.StartNew();
 
@@ -625,13 +632,12 @@ namespace TSP.DoxygenEditor.Editor
 
         private void Parse(string text)
         {
-            // Clear stream from all EOFs
+            // Clear stream from all invalid tokens
             _tokens.RemoveAll(d => d.IsEOF || (!d.IsMarker && d.Length == 0));
 
             // @FIXME(final): Right know, the tokens are not in a valid range
             // Reason is: No tokens gets replaced by another range.
-            // I tried to replace it, but it was not working at all.
-
+            // Also there are zero-length tokens or start/end tokens
 #if false
             // Validate stream
             {
@@ -654,17 +660,15 @@ namespace TSP.DoxygenEditor.Editor
 
             // Doxygen parsing
             timer.Restart();
-            using (DoxygenParser doxyParser = new DoxygenParser(text))
+            using (DoxygenParser doxyParser = new DoxygenParser(this, text))
             {
+                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                while (!tokenStream.IsEOF)
                 {
-                    LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
-                    while (!tokenStream.IsEOF)
-                    {
-                        BaseToken old = tokenStream.CurrentValue;
-                        if (!doxyParser.ParseToken(tokenStream))
-                            tokenStream.Next();
-                        Debug.Assert(old != tokenStream.CurrentValue);
-                    }
+                    BaseToken old = tokenStream.CurrentValue;
+                    if (!doxyParser.ParseToken(tokenStream))
+                        tokenStream.Next();
+                    Debug.Assert(old != tokenStream.CurrentValue);
                 }
                 _errors.InsertRange(0, doxyParser.ParseErrors);
                 _doxyTree = doxyParser.Root;
@@ -674,23 +678,20 @@ namespace TSP.DoxygenEditor.Editor
 
             // C++ parsing
             timer.Restart();
-            using (CppParser cppParser = new CppParser())
+            using (CppParser cppParser = new CppParser(this))
             {
                 cppParser.GetDocumentationNode += (token) =>
                 {
                     IBaseNode result = _doxyTree.FindNodeByRange(token);
                     return (result);
                 };
-
+                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                while (!tokenStream.IsEOF)
                 {
-                    LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
-                    while (!tokenStream.IsEOF)
-                    {
-                        BaseToken old = tokenStream.CurrentValue;
-                        if (!cppParser.ParseToken(tokenStream))
-                            tokenStream.Next();
-                        Debug.Assert(old != tokenStream.CurrentValue);
-                    }
+                    BaseToken old = tokenStream.CurrentValue;
+                    if (!cppParser.ParseToken(tokenStream))
+                        tokenStream.Next();
+                    Debug.Assert(old != tokenStream.CurrentValue);
                 }
                 _errors.InsertRange(0, cppParser.ParseErrors);
                 _cppTree = cppParser.Root;

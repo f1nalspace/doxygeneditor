@@ -14,4 +14,5 @@
 
     public delegate void ExecuteSearchEventHandler(object sender, SearchDirection direction);
     public delegate void ExecuteReplaceEventHandler(object sender, ReplaceMode mode);
+    public delegate void FocusChangedEventHandler(object sender, bool focused);
 }

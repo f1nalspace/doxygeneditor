@@ -22,8 +22,11 @@ namespace TSP.DoxygenEditor.Parsers
             }
         }
 
-        public BaseParser()
+        public object Tag { get; }
+
+        public BaseParser(object tag)
         {
+            Tag = tag;
             Root = new RootNode();
         }
         protected void AddParseError(TextPosition pos, string message)

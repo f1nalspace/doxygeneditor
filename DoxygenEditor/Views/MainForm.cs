@@ -90,9 +90,6 @@ namespace TSP.DoxygenEditor.Views
         #region Editor
         private System.Windows.Forms.Timer TextSelectedTimer { get; }
         private SearchReplaceControl _searchControl;
-
-
-
         #endregion
 
         #region Tabs
@@ -170,6 +167,11 @@ namespace TSP.DoxygenEditor.Views
             EditorState newState = new EditorState(this) { Name = name, Tag = newTab };
             newState.IsShowWhitespace = miViewShowWhitespaces.Checked;
             newState.TabUpdating += (s, e) => UpdateTabState((EditorState)s);
+            newState.FocusChanged += (s, e) =>
+            {
+                UpdateMenuEditChange(newState);
+                UpdateMenuSelection(newState);
+            };
             newState.ParseComplete += (object s, bool allDone) =>
             {
                 RebuildSymbolTree(newState, newState.DoxyTree);
@@ -824,38 +826,29 @@ namespace TSP.DoxygenEditor.Views
                     AddIssue(new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Id, cppEntity.Kind.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
                 }
             }
-
-
-#if false
-            if (typeof(CommentEntity).Equals(entity.GetType()))
-            {
-                CommentEntity comment = (CommentEntity)entity;
-                DeclarationEntity decl = entity.FindChildByType<DeclarationEntity>();
-                if (decl != null)
-                {
-                    ParamEntity seeParam = comment.FindChildByExpression<ParamEntity>(f => "see".Equals(f.ParamName) && _rexRefWithIdent.IsMatch(f.ParamValue));
-                    if (seeParam == null)
-                        AddIssue(new IssueTag(state, decl), IssueType.Warning, "Missing documentation", decl.DisplayName, decl.DeclarationType.ToString(), groupName, fileName);
-                }
-            }
-#endif
         }
         private void RefreshIssues(IEnumerable<EditorState> states)
         {
             lvIssues.BeginUpdate();
             lvIssues.Items.Clear();
+
+            // Validate symbols from cache
+            var symbolErrors = SymbolCache.Validate();
+            foreach (var errorPair in symbolErrors)
+            {
+                var error = errorPair.Value;
+                var state = (EditorState)errorPair.Key;
+                AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
+            }
+
             foreach (EditorState state in states)
             {
                 foreach (var error in state.Errors)
-                {
                     AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
-                }
                 if (state.CppTree != null)
                 {
                     foreach (IBaseNode childNode in state.CppTree.Children)
-                    {
                         AddIssuesFromEntity(states, state, childNode, state.Name, "Root");
-                    }
                 }
             }
             lvIssues.EndUpdate();
