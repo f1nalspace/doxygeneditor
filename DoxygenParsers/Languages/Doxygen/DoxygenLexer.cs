@@ -113,6 +113,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
             CommandResult result = new CommandResult(commandStart, rule, commandName);
 
+            string typeName = "Command";
+
             if (rule != null)
             {
                 int argNumber = 0;
@@ -178,7 +180,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     }
                                     else if (arg.IsRequired)
                                     {
-                                        PushError(Buffer.TextPosition, $"Expected postfix '{postfix}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                        PushError(Buffer.TextPosition, $"Expected postfix '{postfix}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                         return (result);
                                     }
                                 }
@@ -189,7 +191,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Expected prefix '{prefix}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Expected prefix '{prefix}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -272,7 +274,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                                     }
                                                     if (!terminatedFunc)
                                                     {
-                                                        PushError(Buffer.TextPosition, $"Unterminated function reference for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                                        PushError(Buffer.TextPosition, $"Unterminated function reference for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                                         return (result);
                                                     }
                                                 }
@@ -281,7 +283,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             }
                                             else
                                             {
-                                                PushError(Buffer.TextPosition, $"Requires identifier, but found '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                                PushError(Buffer.TextPosition, $"Requires identifier, but found '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                                 return (result);
                                             }
                                         }
@@ -301,7 +303,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -344,7 +346,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -377,7 +379,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                         }
                                         if (!foundFilename)
                                         {
-                                            PushError(Buffer.TextPosition, $"Unterminated filename, expect quote char '{quoteChar}' but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                            PushError(Buffer.TextPosition, $"Unterminated filename, expect quote char '{quoteChar}' but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                             return (result);
                                         }
                                     }
@@ -402,7 +404,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -430,7 +432,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -469,7 +471,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     }
                                     if (!isComplete)
                                     {
-                                        PushError(Buffer.TextPosition, $"Unterminated quote string for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                        PushError(Buffer.TextPosition, $"Unterminated quote string for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                         return (result);
                                     }
                                 }
@@ -480,7 +482,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -510,7 +512,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unterminated end-of-line for argument ({argNumber}:{arg}) in command '{commandName}'");
+                                    PushError(Buffer.TextPosition, $"Unterminated end-of-line for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -522,7 +524,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             goto CommandDone;
 
                         default:
-                            PushError(Buffer.TextPosition, $"Unsupported argument ({argNumber}:{arg}) in command '{commandName}'");
+                            PushError(Buffer.TextPosition, $"Unsupported argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                             return (result);
                     }
 
@@ -535,7 +537,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         }
                         else
                         {
-                            PushError(Buffer.TextPosition, $"Expected postfix '{postfix}' for pp-argument({argNumber}:{arg}) in command '{commandName}'");
+                            PushError(Buffer.TextPosition, $"Expected postfix '{postfix}' for pp-argument({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                             return (result);
                         }
                     }

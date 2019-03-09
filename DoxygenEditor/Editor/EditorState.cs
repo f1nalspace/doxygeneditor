@@ -607,7 +607,7 @@ namespace TSP.DoxygenEditor.Editor
             // Clear tokens & errors
             _tokens.Clear();
             _errors.Clear();
-            SymbolCache.Clear(Tag);
+            SymbolCache.Clear(this);
 
             Stopwatch totalLexTimer = Stopwatch.StartNew();
 
@@ -666,6 +666,11 @@ namespace TSP.DoxygenEditor.Editor
                 while (!tokenStream.IsEOF)
                 {
                     BaseToken old = tokenStream.CurrentValue;
+                    if (!typeof(DoxygenToken).Equals(old.GetType()))
+                    {
+                        tokenStream.Next();
+                        continue;
+                    }
                     if (!doxyParser.ParseToken(tokenStream))
                         tokenStream.Next();
                     Debug.Assert(old != tokenStream.CurrentValue);
@@ -689,6 +694,11 @@ namespace TSP.DoxygenEditor.Editor
                 while (!tokenStream.IsEOF)
                 {
                     BaseToken old = tokenStream.CurrentValue;
+                    if (!typeof(CppToken).Equals(old.GetType()))
+                    {
+                        tokenStream.Next();
+                        continue;
+                    }
                     if (!cppParser.ParseToken(tokenStream))
                         tokenStream.Next();
                     Debug.Assert(old != tokenStream.CurrentValue);

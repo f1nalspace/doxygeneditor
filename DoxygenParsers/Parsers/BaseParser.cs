@@ -29,10 +29,10 @@ namespace TSP.DoxygenEditor.Parsers
             Tag = tag;
             Root = new RootNode();
         }
-        protected void AddParseError(TextPosition pos, string message)
+        protected void AddParseError(TextPosition pos, string message, string type, string symbol = null)
         {
             string category = GetType().Name;
-            _parseErrors.Add(new TextError(pos, category, message));
+            _parseErrors.Add(new TextError(pos, category, message, type, symbol));
         }
 
         protected enum SearchMode
@@ -68,11 +68,9 @@ namespace TSP.DoxygenEditor.Parsers
                     case SearchMode.Current:
                         break;
                     case SearchMode.Prev:
-                    case SearchMode.Backward:
                         n = n.Previous;
                         break;
                     case SearchMode.Next:
-                    case SearchMode.Forward:
                         n = n.Next;
                         break;
                 }
@@ -83,6 +81,15 @@ namespace TSP.DoxygenEditor.Parsers
                     {
                         if (matchFunc(token))
                             return new SearchResult<TToken>(n, token);
+                    }
+                    switch (mode)
+                    {
+                        case SearchMode.Backward:
+                            n = n.Previous;
+                            break;
+                        case SearchMode.Forward:
+                            n = n.Next;
+                            break;
                     }
                 }
             } while (n != null && canTravel);

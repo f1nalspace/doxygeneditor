@@ -81,6 +81,7 @@ namespace TSP.DoxygenEditor.Views
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.imglstIcons = new System.Windows.Forms.ImageList(this.components);
             this.dlgOpenFile = new System.Windows.Forms.OpenFileDialog();
             this.cmsTabActions = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -89,7 +90,6 @@ namespace TSP.DoxygenEditor.Views
             this.miCurrentTabCloseAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miCurrentTabCloseAllButThis = new System.Windows.Forms.ToolStripMenuItem();
             this.dlgSaveFile = new System.Windows.Forms.SaveFileDialog();
-            this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.scMainAndLog)).BeginInit();
@@ -521,6 +521,7 @@ namespace TSP.DoxygenEditor.Views
             this.columnHeader6});
             this.lvIssues.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lvIssues.FullRowSelect = true;
+            this.lvIssues.HideSelection = false;
             this.lvIssues.Location = new System.Drawing.Point(3, 2);
             this.lvIssues.MultiSelect = false;
             this.lvIssues.Name = "lvIssues";
@@ -555,6 +556,11 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.columnHeader5.Text = "Line";
             this.columnHeader5.Width = 100;
+            // 
+            // columnHeader6
+            // 
+            this.columnHeader6.Text = "File";
+            this.columnHeader6.Width = 150;
             // 
             // imglstIcons
             // 
@@ -618,11 +624,6 @@ namespace TSP.DoxygenEditor.Views
             this.dlgSaveFile.Filter = "Doxygen files (*.docs)|*.docs|C Header file (*.h)|*.h";
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
-            // 
-            // columnHeader6
-            // 
-            this.columnHeader6.Text = "File";
-            this.columnHeader6.Width = 150;
             // 
             // MainForm
             // 

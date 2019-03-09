@@ -9,8 +9,21 @@ namespace TSP.DoxygenEditor.Parsers
         private class Entry
         {
             private readonly Dictionary<string, List<SourceSymbol>> _sources = new Dictionary<string, List<SourceSymbol>>();
-            private readonly Dictionary<string, KeyValuePair<string, List<RefrenceSymbol>>> _references = new Dictionary<string, KeyValuePair<string, List<RefrenceSymbol>>>();
-            public IEnumerable<KeyValuePair<string, List<RefrenceSymbol>>> References => _references.Values;
+            private readonly Dictionary<string, KeyValuePair<string, List<ReferenceSymbol>>> _references = new Dictionary<string, KeyValuePair<string, List<ReferenceSymbol>>>();
+            public IEnumerable<KeyValuePair<string, List<ReferenceSymbol>>> References => _references.Values;
+            public IEnumerable<KeyValuePair<string, List<SourceSymbol>>> Sources
+            {
+                get
+                {
+                    List<KeyValuePair<string, List<SourceSymbol>>> result = new List<KeyValuePair<string, List<SourceSymbol>>>();
+                    foreach (var pair in _sources)
+                    {
+                        var k = new KeyValuePair<string, List<SourceSymbol>>(pair.Key, pair.Value);
+                        result.Add(k);
+                    }
+                    return (result);
+                }
+            }
 
             public bool HasSource(string name)
             {
@@ -31,14 +44,14 @@ namespace TSP.DoxygenEditor.Parsers
                 set.Add(symbol);
             }
 
-            public void AddReference(string name, RefrenceSymbol symbol)
+            public void AddReference(string name, ReferenceSymbol symbol)
             {
-                KeyValuePair<string, List<RefrenceSymbol>> pair;
+                KeyValuePair<string, List<ReferenceSymbol>> pair;
                 if (_references.ContainsKey(name))
                     pair = _references[name];
                 else
                 {
-                    pair = new KeyValuePair<string, List<RefrenceSymbol>>(name, new List<RefrenceSymbol>());
+                    pair = new KeyValuePair<string, List<ReferenceSymbol>>(name, new List<ReferenceSymbol>());
                     _references.Add(name, pair);
                 }
                 pair.Value.Add(symbol);
@@ -58,7 +71,17 @@ namespace TSP.DoxygenEditor.Parsers
                 throw new ArgumentNullException("Tag");
             if (_entries.ContainsKey(tag))
                 _entries[tag].Clear();
+        }
 
+        public static void Remove(object tag)
+        {
+            if (tag == null)
+                throw new ArgumentNullException("Tag");
+            if (_entries.ContainsKey(tag))
+            {
+                _entries[tag].Clear();
+                _entries.Remove(tag);
+            }
         }
 
         public static void AddSource(object tag, string name, SourceSymbol symbol)
@@ -70,7 +93,7 @@ namespace TSP.DoxygenEditor.Parsers
             _entries[tag].AddSource(name, symbol);
         }
 
-        public static void AddReference(object tag, string name, RefrenceSymbol symbol)
+        public static void AddReference(object tag, string name, ReferenceSymbol symbol)
         {
             if (tag == null)
                 throw new ArgumentNullException("Tag");
@@ -91,6 +114,24 @@ namespace TSP.DoxygenEditor.Parsers
             return (false);
         }
 
+        public static IEnumerable<KeyValuePair<string, SourceSymbol>> GetSources(object tag)
+        {
+            List<KeyValuePair<string, SourceSymbol>> result = new List<KeyValuePair<string, SourceSymbol>>();
+            var entry = _entries.ContainsKey(tag) ? _entries[tag] : null;
+            if (entry != null)
+            {
+                var sources = entry.Sources;
+                foreach (var source in sources)
+                {
+                    foreach (var symbol in source.Value)
+                    {
+                        result.Add(new KeyValuePair<string, SourceSymbol>(source.Key, symbol));
+                    }
+                }
+            }
+            return (result);
+        }
+
         public static IEnumerable<KeyValuePair<object, TextError>> Validate()
         {
             List<KeyValuePair<object, TextError>> result = new List<KeyValuePair<object, TextError>>();
@@ -104,7 +145,7 @@ namespace TSP.DoxygenEditor.Parsers
                     foreach (var reference in names.Value)
                     {
                         if (!HasReference(name))
-                            result.Add(new KeyValuePair<object, TextError>(tag, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'")));
+                            result.Add(new KeyValuePair<object, TextError>(tag, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Target.ToString(), name)));
                     }
                 }
             }

@@ -138,12 +138,6 @@ namespace TSP.DoxygenEditor.TextAnalysis
             TextPosition.Column = pos.Column;
             TextPosition.Line = pos.Line;
         }
-        public void Seek(TextPositionAsStruct pos)
-        {
-            TextPosition.Index = pos.Index;
-            TextPosition.Column = pos.Column;
-            TextPosition.Line = pos.Line;
-        }
 
         public void StartLexeme()
         {

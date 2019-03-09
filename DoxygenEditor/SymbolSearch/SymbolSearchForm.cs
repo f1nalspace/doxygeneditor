@@ -16,7 +16,7 @@ namespace TSP.DoxygenEditor.SymbolSearch
             private set;
         }
 
-        public Type SearchType
+        public string SearchType
         {
             get;
             private set;
@@ -30,7 +30,7 @@ namespace TSP.DoxygenEditor.SymbolSearch
             private set;
         }
 
-        public SymbolSearchForm(IEnumerable<SymbolItemModel> allItems, IEnumerable<Type> allSearchTypes)
+        public SymbolSearchForm(IEnumerable<SymbolItemModel> allItems, IEnumerable<string> allSearchTypes)
         {
             InitializeComponent();
             _allItems = allItems;
@@ -51,9 +51,9 @@ namespace TSP.DoxygenEditor.SymbolSearch
 
             comboBoxSearchType.BeginUpdate();
             comboBoxSearchType.Items.Clear();
-            comboBoxSearchType.Items.Add(new TypeStringModel(null));
+            comboBoxSearchType.Items.Add("All types");
             foreach (var t in allSearchTypes)
-                comboBoxSearchType.Items.Add(new TypeStringModel(t));
+                comboBoxSearchType.Items.Add(t);
             comboBoxSearchType.EndUpdate();
             comboBoxSearchType.SelectedIndex = 0;
 
@@ -73,7 +73,7 @@ namespace TSP.DoxygenEditor.SymbolSearch
             {
                 if (SearchType != null)
                 {
-                    if (!item.TypeString.Equals(SearchType.Name))
+                    if (!item.Type.Equals(SearchType))
                         continue;
                 }
 
@@ -92,7 +92,7 @@ namespace TSP.DoxygenEditor.SymbolSearch
                 listItem.Tag = item;
                 listItem.Text = item.Id;
                 listItem.SubItems.Add(item.Caption);
-                listItem.SubItems.Add(item.TypeString);
+                listItem.SubItems.Add(item.Type);
                 listViewResults.Items.Add(listItem);
 
                 if (selectedItem == null)
@@ -113,8 +113,8 @@ namespace TSP.DoxygenEditor.SymbolSearch
 
         private void comboBoxSearchType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            TypeStringModel v = (TypeStringModel)comboBoxSearchType.Items[comboBoxSearchType.SelectedIndex];
-            SearchType = v.Type;
+            string v = comboBoxSearchType.SelectedIndex == 0 ? null : (string)comboBoxSearchType.Items[comboBoxSearchType.SelectedIndex];
+            SearchType = v;
             _delayedTextChangeTimer.Stop();
             _delayedTextChangeTimer.Start();
         }

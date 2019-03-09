@@ -6,7 +6,10 @@
         DoxygenSection,
         DoxygenPage,
         CppType,
-        CppFunction,
+        CppStruct,
+        CppFunctionDefinition,
+        CppFunctionBody,
+        CppEnum,
         CppMember,
         CppDefine,
     }

@@ -3,7 +3,9 @@
     public enum CppEntityKind
     {
         None = 0,
-        Function,
+        FunctionDefinition,
+        FunctionCall,
+        FunctionBody,
         Typedef,
         FunctionTypedef,
         Enum,

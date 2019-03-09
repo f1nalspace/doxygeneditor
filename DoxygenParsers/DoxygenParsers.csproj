@@ -84,12 +84,13 @@
     <Compile Include="Languages\Html\HtmlTokenPool.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
     <Compile Include="Lexers\BaseToken.cs" />
+    <Compile Include="Parsers\ReferenceTarget.cs" />
     <Compile Include="Parsers\SymbolKind.cs" />
     <Compile Include="Lexers\TokenKindAttribute.cs" />
     <Compile Include="Parsers\BaseEntity.cs" />
     <Compile Include="Parsers\BaseNode.cs" />
     <Compile Include="Parsers\BaseParser.cs" />
-    <Compile Include="Parsers\RefrenceSymbol.cs" />
+    <Compile Include="Parsers\ReferenceSymbol.cs" />
     <Compile Include="Parsers\SourceSymbol.cs" />
     <Compile Include="Parsers\IBaseProperty.cs" />
     <Compile Include="Parsers\IBaseNode.cs" />
@@ -101,7 +102,6 @@
     <Compile Include="TextAnalysis\ITextStream .cs" />
     <Compile Include="TextAnalysis\TextError.cs" />
     <Compile Include="TextAnalysis\TextPosition.cs" />
-    <Compile Include="TextAnalysis\TextPositionAsStruct.cs" />
     <Compile Include="TextAnalysis\TextRange.cs" />
     <Compile Include="TextAnalysis\TextStream.cs" />
   </ItemGroup>

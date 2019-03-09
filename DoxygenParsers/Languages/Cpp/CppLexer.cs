@@ -299,7 +299,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (result);
         }
 
-        private CppToken LexString(string name)
+        private CppToken LexString(string typeName)
         {
             Debug.Assert(Buffer.Peek(0) == '"' || Buffer.Peek(0) == '\'');
             Buffer.StartLexeme();
@@ -363,7 +363,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                 }
                                 else
                                 {
-                                    PushError(Buffer.TextPosition, $"Unsupported hex escape character '{Buffer.Peek()}'!");
+                                    PushError(Buffer.TextPosition, $"Unsupported hex escape character '{Buffer.Peek()}'!", typeName);
                                     break;
                                 }
                                 ++count;
@@ -386,7 +386,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             }
                             else
                             {
-                                PushError(Buffer.TextPosition, $"Not supported escape character '{Buffer.Peek()}'!");
+                                PushError(Buffer.TextPosition, $"Not supported escape character '{Buffer.Peek()}'!", typeName);
                                 break;
                             }
                     }
@@ -408,13 +408,13 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
 
             if (!isComplete)
-                PushError(Buffer.LexemeStart, $"Unterminated {name} literal!");
+                PushError(Buffer.LexemeStart, $"Unterminated {typeName} literal!", typeName);
             else
             {
                 if (minCount > 0 && count < minCount)
-                    PushError(Buffer.LexemeStart, $"Not enough characters for {name} literal, expect {minCount} but got {count}!");
+                    PushError(Buffer.LexemeStart, $"Not enough characters for {typeName} literal, expect {minCount} but got {count}!", typeName);
                 else if (maxCount > -1 && (count > maxCount))
-                    PushError(Buffer.LexemeStart, $"Too many characters for {name} literal, expect {maxCount} but got {count}!");
+                    PushError(Buffer.LexemeStart, $"Too many characters for {typeName} literal, expect {maxCount} but got {count}!", typeName);
             }
 
             CppToken result = CppTokenPool.Make(kind, Buffer.LexemeRange, isComplete);
@@ -495,32 +495,32 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         if (SyntaxUtils.IsNumeric(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsNumeric);
                         else
-                            PushError(Buffer.TextPosition, $"Expect integer literal, but got '{Buffer.Peek()}'");
+                            PushError(Buffer.TextPosition, $"Expect integer literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     case CppTokenKind.OctalLiteral:
                         if (SyntaxUtils.IsOctal(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsOctal);
                         else
-                            PushError(Buffer.TextPosition, $"Expect octal literal, but got '{Buffer.Peek()}'");
+                            PushError(Buffer.TextPosition, $"Expect octal literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     case CppTokenKind.HexLiteral:
                         if (SyntaxUtils.IsHex(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsHex);
                         else
-                            PushError(Buffer.TextPosition, $"Expect hex literal, but got '{Buffer.Peek()}'");
+                            PushError(Buffer.TextPosition, $"Expect hex literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     case CppTokenKind.BinaryLiteral:
                         if (SyntaxUtils.IsBinary(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsBinary);
                         else
-                            PushError(Buffer.TextPosition, $"Expect binary literal, but got '{Buffer.Peek()}'");
+                            PushError(Buffer.TextPosition, $"Expect binary literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     default:
-                        PushError(Buffer.TextPosition, $"Unsupported token kind '{kind}' for integer literal on {Buffer}");
+                        PushError(Buffer.TextPosition, $"Unsupported token kind '{kind}' for integer literal on {Buffer}", kind.ToString());
                         break;
                 }
                 bool hadIntegerLiteral = Buffer.TextPosition.Index > s;
@@ -532,7 +532,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     {
                         if (!hadIntegerLiteral)
                         {
-                            PushError(Buffer.TextPosition, $"Too many single quote escape in integer literal, expect any integer literal but got '{Buffer.Peek()}'");
+                            PushError(Buffer.TextPosition, $"Too many single quote escape in integer literal, expect any integer literal but got '{Buffer.Peek()}'", kind.ToString());
                             return (null);
                         }
                         Buffer.AdvanceColumn();
@@ -546,7 +546,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             {
                 if (firstLiteralPos == Buffer.TextPosition.Index)
                 {
-                    PushError(Buffer.TextPosition, $"Expect any integer literal after starting dot, but got '{Buffer.Peek()}'");
+                    PushError(Buffer.TextPosition, $"Expect any integer literal after starting dot, but got '{Buffer.Peek()}'", kind.ToString());
                 }
             }
 
@@ -1007,7 +1007,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             else
                             {
                                 kind = CppTokenKind.Unknown;
-                                PushError(Buffer.TextPosition, $"Unsupported character '{first}'");
+                                PushError(Buffer.TextPosition, $"Unsupported character '{first}'", "Character");
                                 Buffer.AdvanceColumn();
                             }
                         }

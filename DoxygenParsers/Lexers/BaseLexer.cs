@@ -21,10 +21,10 @@ namespace TSP.DoxygenEditor.Lexers
             Buffer = new BasicTextStream(source, pos, length);
         }
 
-        protected void PushError(TextPosition pos, string message)
+        protected void PushError(TextPosition pos, string message, string type, string symbol = null)
         {
             string category = GetType().Name;
-            _lexErrors.Add(new TextError(pos, category, message));
+            _lexErrors.Add(new TextError(pos, category, message, type, symbol));
         }
 
         protected bool PushToken(T token)

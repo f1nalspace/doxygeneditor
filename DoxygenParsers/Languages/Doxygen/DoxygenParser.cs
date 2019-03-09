@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using TSP.DoxygenEditor.Collections;
+using TSP.DoxygenEditor.Languages.Utils;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Parsers;
 using TSP.DoxygenEditor.TextAnalysis;
@@ -87,6 +88,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             string commandName = commandToken.Value.Substring(1);
             stream.Next();
 
+            string typeName = "Command";
+
             var rule = DoxygenSyntax.GetCommandRule(commandName);
             if (rule != null)
             {
@@ -95,12 +98,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     var t = Top;
                     if (t == null)
                     {
-                        AddParseError(commandToken.Position, $"Unterminated starting command block in command '{commandName}'");
+                        AddParseError(commandToken.Position, $"Unterminated starting command block in command '{commandName}'", typeName, commandName);
                         return (false);
                     }
                     if (t.Entity.Kind != DoxygenEntityKind.BlockCommand)
                     {
-                        AddParseError(commandToken.Position, $"Expect starting command block, but found '{t.Entity.Kind}' in command '{commandName}'");
+                        AddParseError(commandToken.Position, $"Expect starting command block, but found '{t.Entity.Kind}' in command '{commandName}'", typeName, commandName);
                         return (false);
                     }
                     Pop();
@@ -147,7 +150,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         break;
                     if (expectedTokenKind != argToken.Kind)
                     {
-                        AddParseError(argToken.Position, $"Expect argument token '{expectedTokenKind}', but got '{argToken.Kind}'");
+                        AddParseError(argToken.Position, $"Expect argument token '{expectedTokenKind}', but got '{argToken.Kind}'", typeName, commandName);
                         break;
                     }
                     if (commandNode != null)
@@ -171,7 +174,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         if (rule.Kind == DoxygenSyntax.CommandKind.Section)
                         {
                             if (!"mainpage".Equals(commandName))
-                                AddParseError(commandToken.Position, $"Missing identifier mapping for command '{commandName}'");
+                                AddParseError(commandToken.Position, $"Missing identifier mapping for command '{commandName}'", typeName, commandName);
                         }
                     }
                     if (textParam != null && !string.IsNullOrWhiteSpace(textParam.Value))
@@ -187,10 +190,59 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 kind = SymbolKind.DoxygenPage;
                             SymbolCache.AddSource(Tag, commandEntity.Id, new SourceSymbol(commandNode, nameParam.Token, kind));
                         }
-                        else if ("ref".Equals(commandName))
-                            SymbolCache.AddReference(Tag, commandEntity.Id, new RefrenceSymbol(commandNode, nameParam.Token));
+                        else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
+                        {
+                            string referenceValue = nameParam.Value;
+                            TextPosition startPos = new TextPosition(0, nameParam.Token.Position.Line, nameParam.Token.Position.Column);
+                            using (TextStream referenceTextStream = new BasicTextStream(referenceValue, startPos, referenceValue.Length))
+                            {
+                                ReferenceTarget referenceTarget = ReferenceTarget.Any;
+                                while (!referenceTextStream.IsEOF)
+                                {
+                                    char first = referenceTextStream.Peek();
+                                    char second = referenceTextStream.Peek(1);
+                                    char third = referenceTextStream.Peek(2);
+                                    if (SyntaxUtils.IsIdentStart(first))
+                                    {
+                                        referenceTextStream.StartLexeme();
+                                        while (!referenceTextStream.IsEOF)
+                                        {
+                                            if (!SyntaxUtils.IsIdentPart(referenceTextStream.Peek()))
+                                                break;
+                                            referenceTextStream.AdvanceColumn();
+                                        }
+                                        var refRange = referenceTextStream.LexemeRange;
+                                        string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length);
+                                        if (referenceTextStream.Peek() == '(')
+                                        {
+                                            referenceTarget = ReferenceTarget.CppFunction;
+                                            referenceTextStream.AdvanceColumn();
+                                            while (!referenceTextStream.IsEOF)
+                                            {
+                                                if (referenceTextStream.Peek() == ')')
+                                                    break;
+                                                referenceTextStream.AdvanceColumn();
+                                            }
+                                        }
+                                        var symbolRange = new TextRange(new TextPosition(nameParam.Token.Position.Index + refRange.Position.Index, refRange.Position.Line, refRange.Position.Column), refRange.Length);
+                                        SymbolCache.AddReference(Tag, singleRereference, new ReferenceSymbol(commandNode, symbolRange, referenceTarget));
+                                    }
+                                    else if (first == '#' || first == '.')
+                                    {
+                                        referenceTarget = ReferenceTarget.CppMember;
+                                        referenceTextStream.AdvanceColumn();
+                                    }
+                                    else if (first == ':' || second == ':')
+                                    {
+                                        referenceTarget = ReferenceTarget.CppMember;
+                                        referenceTextStream.AdvanceColumns(2);
+                                    }
+                                    else break;
+                                }
+                            }
+                        }
                         else if ("subpage".Equals(commandName))
-                            SymbolCache.AddReference(Tag, commandEntity.Id, new RefrenceSymbol(commandNode, nameParam.Token));
+                            SymbolCache.AddReference(Tag, commandEntity.Id, new ReferenceSymbol(commandNode, nameParam.Token, ReferenceTarget.DoxygenPage));
                     }
                 }
 

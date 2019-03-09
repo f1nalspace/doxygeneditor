@@ -27,9 +27,9 @@ namespace TSP.DoxygenEditor.Editor
 
         static readonly Dictionary<CppTokenKind, int> cppTokenTypeToStyleDict = new Dictionary<CppTokenKind, int>() {
             { CppTokenKind.MultiLineComment, cppMultiLineCommentStyle },
-            { CppTokenKind.MultiLineCommentDoc, cppMultiLineCommentDocStyle },
+            //{ CppTokenKind.MultiLineCommentDoc, cppMultiLineCommentDocStyle },
             { CppTokenKind.SingleLineComment, cppSingleLineCommentStyle },
-            { CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
+            //{ CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
 
             { CppTokenKind.Preprocessor, cppPreprocessorStyle },
 

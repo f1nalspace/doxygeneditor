@@ -194,6 +194,7 @@ namespace TSP.DoxygenEditor.Views
             TabPage tab = (TabPage)editorState.Tag;
             tcFiles.TabPages.Remove(tab);
             RemoveFromSymbolTree(editorState);
+            SymbolCache.Remove(editorState);
             editorState.Dispose();
             IEnumerable<EditorState> states = GetAllEditorStates();
             RefreshIssues(states);
@@ -706,37 +707,27 @@ namespace TSP.DoxygenEditor.Views
             if (editorState.DoxyTree != null)
             {
                 List<SymbolItemModel> symbols = new List<SymbolItemModel>();
-                HashSet<Type> types = new HashSet<Type>();
+                HashSet<string> types = new HashSet<string>();
 
                 // @TODO(final): Implement this for BaseTree!
-
-#if false
-                IEnumerable<Entity> allEntities = editorState.DoxyTree.GetAllEntities();
-                foreach (Entity entity in allEntities)
+                var allSources = SymbolCache.GetSources(editorState);
+                foreach (var source in allSources)
                 {
-                    Type t = entity.GetType();
-                    if (typeof(PageEntity).Equals(t) ||
-                        typeof(SectionEntity).Equals(t) ||
-                        typeof(SubSectionEntity).Equals(t) ||
-                        typeof(DeclarationEntity).Equals(t))
+                    symbols.Add(new SymbolItemModel()
                     {
-                        symbols.Add(new SymbolItemModel()
-                        {
-                            Caption = entity.DisplayName,
-                            Id = entity.Id,
-                            TypeString = entity.GetType().Name,
-                            Position = entity.LineInfo.Start,
-                        });
-                        types.Add(entity.GetType());
-                    }
+                        Caption = null,
+                        Id = source.Key,
+                        Type = source.Value.Kind.ToString(),
+                        Position = source.Value.Range.Position,
+                    });
+                    types.Add(source.Value.Kind.ToString());
                 }
-#endif
 
                 SymbolSearchForm form = new SymbolSearchForm(symbols, types);
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     SymbolItemModel selectedItem = form.SelectedItem;
-                    editorState.GoToPosition(selectedItem.Position);
+                    editorState.GoToPosition(selectedItem.Position.Index);
                 }
             }
         }
@@ -815,16 +806,20 @@ namespace TSP.DoxygenEditor.Views
             lvIssues.Items.Add(newItem);
         }
         private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
-        private void AddIssuesFromEntity(IEnumerable<EditorState> states, EditorState state, IBaseNode entityNode, string fileName, string groupName)
+        private void AddIssuesFromNode(IEnumerable<EditorState> states, EditorState state, IBaseNode rootNode, string fileName, string groupName)
         {
-            if (typeof(CppNode).Equals(entityNode.GetType()))
+            if (typeof(CppNode).Equals(rootNode.GetType()))
             {
-                CppNode cppNode = (CppNode)entityNode;
+                CppNode cppNode = (CppNode)rootNode;
                 CppEntity cppEntity = cppNode.Entity;
                 if (cppEntity.DocumentationNode != null)
                 {
                     AddIssue(new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Id, cppEntity.Kind.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
                 }
+            }
+            foreach (var child in rootNode.Children)
+            {
+                AddIssuesFromNode(states, state, child, fileName, "Child");
             }
         }
         private void RefreshIssues(IEnumerable<EditorState> states)
@@ -838,7 +833,7 @@ namespace TSP.DoxygenEditor.Views
             {
                 var error = errorPair.Value;
                 var state = (EditorState)errorPair.Key;
-                AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
+                AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, error.Symbol, error.Type, error.Category, error.Pos.Line + 1, state.Name);
             }
 
             foreach (EditorState state in states)
@@ -847,8 +842,7 @@ namespace TSP.DoxygenEditor.Views
                     AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
                 if (state.CppTree != null)
                 {
-                    foreach (IBaseNode childNode in state.CppTree.Children)
-                        AddIssuesFromEntity(states, state, childNode, state.Name, "Root");
+                    AddIssuesFromNode(states, state, state.CppTree, state.Name, "Root");
                 }
             }
             lvIssues.EndUpdate();
