@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Lexers;
@@ -7,7 +8,7 @@ using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers
 {
-    public abstract class BaseParser<TEntity> : IDisposable where TEntity : BaseEntity
+    public abstract class BaseParser<TEntity, TToken> : IDisposable where TEntity : BaseEntity where TToken : BaseToken
     {
         private readonly Stack<IEntityBaseNode<TEntity>> _stack = new Stack<IEntityBaseNode<TEntity>>();
 
@@ -24,6 +25,8 @@ namespace TSP.DoxygenEditor.Parsers
         }
 
         public object Tag { get; }
+
+        protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
 
         public BaseParser(object tag)
         {
@@ -45,18 +48,18 @@ namespace TSP.DoxygenEditor.Parsers
             Backward,
         }
 
-        protected class SearchResult<TToken>
+        protected class SearchResult<T>
         {
             public LinkedListNode<IBaseToken> Node { get; }
-            public TToken Token { get; }
-            public SearchResult(LinkedListNode<IBaseToken> node, TToken token)
+            public T Token { get; }
+            public SearchResult(LinkedListNode<IBaseToken> node, T token)
             {
                 Node = node;
                 Token = token;
             }
         }
 
-        protected SearchResult<TToken> Search<TToken>(LinkedListNode<IBaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc) where TToken : class
+        protected SearchResult<TToken> Search(LinkedListNode<IBaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc)
         {
             bool canTravel = (mode == SearchMode.Forward || mode == SearchMode.Backward);
             var n = inNode;
@@ -100,7 +103,22 @@ namespace TSP.DoxygenEditor.Parsers
 
         public abstract bool ParseToken(LinkedListStream<IBaseToken> stream);
 
-        protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
+        public void ParseTokens(IEnumerable<IBaseToken> tokens)
+        {
+            LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(tokens);
+            while (!tokenStream.IsEOF)
+            {
+                IBaseToken old = tokenStream.CurrentValue;
+                if (!typeof(TToken).Equals(old.GetType()))
+                {
+                    tokenStream.Next();
+                    continue;
+                }
+                if (!ParseToken(tokenStream))
+                    tokenStream.Next();
+                Debug.Assert(old != tokenStream.CurrentValue);
+            }
+        }
 
         protected void Add(IBaseNode node)
         {

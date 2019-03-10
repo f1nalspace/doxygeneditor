@@ -560,6 +560,18 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return new LexResult(kind, true);
         }
 
+        private bool LexPreprocessor()
+        {
+            Debug.Assert(Buffer.Peek() == '#');
+            Buffer.StartLexeme();
+            Buffer.AdvanceColumn();
+
+            CppToken token = CppTokenPool.Make(CppTokenKind.PreprocessorStart, Buffer.LexemeRange, true);
+            PushToken(token);
+
+            return (true);
+        }
+
         protected override bool LexNext()
         {
             SkipAllWhitespaces();
@@ -825,6 +837,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     }
                     break;
 
+                case '#':
+                    return LexPreprocessor();
+
                 case '"':
                     lexRes = LexString("string");
                     break;
@@ -839,10 +854,6 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     break;
                 case '\\':
                     lexRes.Kind = CppTokenKind.Backslash;
-                    Buffer.AdvanceColumn();
-                    break;
-                case '#':
-                    lexRes.Kind = CppTokenKind.Raute;
                     Buffer.AdvanceColumn();
                     break;
                 case ',':

@@ -680,19 +680,7 @@ namespace TSP.DoxygenEditor.Editor
             timer.Restart();
             using (DoxygenParser doxyParser = new DoxygenParser(this, text))
             {
-                LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(_tokens);
-                while (!tokenStream.IsEOF)
-                {
-                    IBaseToken old = tokenStream.CurrentValue;
-                    if (!typeof(DoxygenToken).Equals(old.GetType()))
-                    {
-                        tokenStream.Next();
-                        continue;
-                    }
-                    if (!doxyParser.ParseToken(tokenStream))
-                        tokenStream.Next();
-                    Debug.Assert(old != tokenStream.CurrentValue);
-                }
+                doxyParser.ParseTokens(_tokens);
                 _errors.InsertRange(0, doxyParser.ParseErrors);
                 _doxyTree = doxyParser.Root;
                 doxyNodeCount = doxyParser.TotalNodeCount;
@@ -711,19 +699,7 @@ namespace TSP.DoxygenEditor.Editor
                     IBaseNode result = _doxyTree.FindNodeByRange(token.Range);
                     return (result);
                 };
-                LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(_tokens);
-                while (!tokenStream.IsEOF)
-                {
-                    IBaseToken old = tokenStream.CurrentValue;
-                    if (!typeof(CppToken).Equals(old.GetType()))
-                    {
-                        tokenStream.Next();
-                        continue;
-                    }
-                    if (!cppParser.ParseToken(tokenStream))
-                        tokenStream.Next();
-                    Debug.Assert(old != tokenStream.CurrentValue);
-                }
+                cppParser.ParseTokens(_tokens);
                 _errors.InsertRange(0, cppParser.ParseErrors);
                 _cppTree = cppParser.Root;
                 cppNodeCount = cppParser.TotalNodeCount;

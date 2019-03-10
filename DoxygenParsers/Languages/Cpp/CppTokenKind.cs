@@ -9,47 +9,31 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         // End of stream/file
         Eof = 0,
-        // ([ \v\f]+)|([\t]+)
+        // Spacings (Tabs, Empty space, Vertical space, etc.)
         Spacings,
-        // ([\r][\n])|([\n][\r])|([\n\r])
+        // End of line
         EndOfLine,
 
-        // \/\/^[\r\n]*
         SingleLineComment,
-        // \/\/[/!]^[\r\n]*
         SingleLineCommentDoc,
-        // \/\*.*\*\/
         MultiLineComment,
-        // \/\*[*!].*\*\/
         MultiLineCommentDoc,
 
-        // #(.*)
-        Preprocessor,
+        PreprocessorStart,
+        PreprocessorKeyword,
+        PreprocessorEnd,
 
-        // [a-zA-Z_][a-zA-Z0-9_]* (Normal identifier)
         IdentLiteral,
-        // [a-zA-Z_][a-zA-Z0-9_]* (Reserved keyword)
         ReservedKeyword,
-        // [a-zA-Z_][a-zA-Z0-9_]* (Type)
         TypeKeyword,
 
-        // L?\"^[\"]*\"
-        // @TODO(final): Support for C++/11 unicode escape
         StringLiteral,
-        // [L]?\'([\w^\\]|[\\a\\b\\f\\n\\r\\t\\v]|\\[0-7]{1,3}|\\X[0-9a-fA-F]{1,2})\'
-        // @TODO(final): Support for C++/11 unicode escape
         CharLiteral,
-        // [0-9]+
         IntegerLiteral,
-        // 0[xX][a-fA-F0-9]+
         HexLiteral,
-        // 0[0-7]*
         OctalLiteral,
-        // 0b[0-1]+
         BinaryLiteral,
-        // (\.[0-9]+)|([0-9]+\.[0-9]+)
         IntegerFloatLiteral,
-        // (\.[0-9a-fA-F]+)|([0-9a-fA-F]+\.[0-9a-fA-F]+)
         HexadecimalFloatLiteral,
 
         [TokenKind(Text = ">>=")]

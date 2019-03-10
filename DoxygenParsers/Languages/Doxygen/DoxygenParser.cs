@@ -10,7 +10,7 @@ using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Languages.Doxygen
 {
-    public class DoxygenParser : BaseParser<DoxygenEntity>
+    public class DoxygenParser : BaseParser<DoxygenEntity, DoxygenToken>
     {
         public static HashSet<DoxygenEntityKind> ShowChildrensSet = new HashSet<DoxygenEntityKind>()
         {

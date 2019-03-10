@@ -31,7 +31,8 @@ namespace TSP.DoxygenEditor.Editor
             { CppTokenKind.SingleLineComment, cppSingleLineCommentStyle },
             //{ CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
 
-            { CppTokenKind.Preprocessor, cppPreprocessorStyle },
+            { CppTokenKind.PreprocessorStart, cppPreprocessorStyle },
+            { CppTokenKind.PreprocessorKeyword, cppPreprocessorStyle },
 
             { CppTokenKind.ReservedKeyword, cppReservedKeywordStyle },
             { CppTokenKind.TypeKeyword, cppTypeKeywordStyle },

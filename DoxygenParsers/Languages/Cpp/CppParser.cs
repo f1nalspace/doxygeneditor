@@ -11,7 +11,7 @@ using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Languages.Cpp
 {
-    public class CppParser : BaseParser<CppEntity>
+    public class CppParser : BaseParser<CppEntity, CppToken>
     {
         public delegate IBaseNode GetDocumentationNodeEventHandler(IBaseToken token);
         public event GetDocumentationNodeEventHandler GetDocumentationNode;
@@ -240,7 +240,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppToken structKeywordToken = stream.Peek<CppToken>();
             Debug.Assert(structKeywordToken.Kind == CppTokenKind.ReservedKeyword && ("struct".Equals(structKeywordToken.Value) || "union".Equals(structKeywordToken.Value)));
 
-            var typedefResult = Search<CppToken>(stream.CurrentNode, SearchMode.Prev, (t) => t.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(t.Value));
+            var typedefResult = Search(stream.CurrentNode, SearchMode.Prev, (t) => t.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(t.Value));
             bool isTypedef = typedefResult != null;
 
             stream.Next();
