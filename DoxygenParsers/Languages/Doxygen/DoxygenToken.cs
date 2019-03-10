@@ -31,7 +31,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         public void Set(DoxygenTokenKind kind, TextRange range, bool isComplete)
         {
             Set(range, isComplete);
-            IsComplete = isComplete;
+            Kind = kind;
         }
         public override string ToString()
         {
