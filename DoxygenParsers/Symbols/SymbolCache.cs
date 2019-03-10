@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using TSP.DoxygenEditor.TextAnalysis;
 
-namespace TSP.DoxygenEditor.Parsers
+namespace TSP.DoxygenEditor.Symbols
 {
     public static class SymbolCache
     {
@@ -145,7 +145,7 @@ namespace TSP.DoxygenEditor.Parsers
                     foreach (var reference in names.Value)
                     {
                         if (!HasReference(name))
-                            result.Add(new KeyValuePair<object, TextError>(tag, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Target.ToString(), name)));
+                            result.Add(new KeyValuePair<object, TextError>(tag, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name)));
                     }
                 }
             }

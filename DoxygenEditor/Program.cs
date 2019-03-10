@@ -39,6 +39,16 @@ SOFTWARE.
 	Version History
 -------------------------------------------------------------------------------
 
+    ## v0.8.0.0:
+    - Finished doxygen lexer
+    - Finished doxygen parser
+    - Finished cpp lexer
+    - Finished cpp lexer
+    - Added a symbol cache for validating symbols
+    - Added performance tab
+    - Added copyright file header to every source file
+    - Fixed a few editor bugs
+
     ## v0.7.0.0:
     - Initial version
 

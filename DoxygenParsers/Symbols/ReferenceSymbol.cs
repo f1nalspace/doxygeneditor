@@ -1,17 +1,18 @@
-﻿using TSP.DoxygenEditor.TextAnalysis;
+﻿using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.TextAnalysis;
 
-namespace TSP.DoxygenEditor.Parsers
+namespace TSP.DoxygenEditor.Symbols
 {
     public class ReferenceSymbol
     {
         public IBaseNode Node { get; }
         public TextRange Range { get; }
-        public ReferenceTarget Target { get; }
-        public ReferenceSymbol(IBaseNode node, TextRange range, ReferenceTarget target)
+        public ReferenceSymbolKind Kind { get; }
+        public ReferenceSymbol(IBaseNode node, TextRange range, ReferenceSymbolKind kind)
         {
             Node = node;
             Range = range;
-            Target = target;
+            Kind = kind;
         }
         public override string ToString()
         {

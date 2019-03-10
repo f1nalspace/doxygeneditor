@@ -91,6 +91,7 @@
     <Compile Include="Extensions\LinkedListExtensions.cs" />
     <Compile Include="Extensions\TimeSpanExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
+    <Compile Include="Models\PerformanceItemModel.cs" />
     <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />

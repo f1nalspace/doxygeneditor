@@ -5,6 +5,7 @@ using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Languages.Utils;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.Symbols;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Languages.Doxygen
@@ -185,9 +186,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         Debug.Assert(commandNode != null);
                         if (rule.Kind == DoxygenSyntax.CommandKind.Section)
                         {
-                            SymbolKind kind = SymbolKind.DoxygenSection;
+                            SourceSymbolKind kind = SourceSymbolKind.DoxygenSection;
                             if ("page".Equals(commandName) || "mainpage".Equals(commandName))
-                                kind = SymbolKind.DoxygenPage;
+                                kind = SourceSymbolKind.DoxygenPage;
                             SymbolCache.AddSource(Tag, commandEntity.Id, new SourceSymbol(commandNode, nameParam.Token, kind));
                         }
                         else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
@@ -196,7 +197,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             TextPosition startPos = new TextPosition(0, nameParam.Token.Position.Line, nameParam.Token.Position.Column);
                             using (TextStream referenceTextStream = new BasicTextStream(referenceValue, startPos, referenceValue.Length))
                             {
-                                ReferenceTarget referenceTarget = ReferenceTarget.Any;
+                                ReferenceSymbolKind referenceTarget = ReferenceSymbolKind.Any;
                                 while (!referenceTextStream.IsEOF)
                                 {
                                     char first = referenceTextStream.Peek();
@@ -215,7 +216,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                         string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length);
                                         if (referenceTextStream.Peek() == '(')
                                         {
-                                            referenceTarget = ReferenceTarget.CppFunction;
+                                            referenceTarget = ReferenceSymbolKind.CppFunction;
                                             referenceTextStream.AdvanceColumn();
                                             while (!referenceTextStream.IsEOF)
                                             {
@@ -229,12 +230,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     }
                                     else if (first == '#' || first == '.')
                                     {
-                                        referenceTarget = ReferenceTarget.CppMember;
+                                        referenceTarget = ReferenceSymbolKind.CppMember;
                                         referenceTextStream.AdvanceColumn();
                                     }
                                     else if (first == ':' || second == ':')
                                     {
-                                        referenceTarget = ReferenceTarget.CppMember;
+                                        referenceTarget = ReferenceSymbolKind.CppMember;
                                         referenceTextStream.AdvanceColumns(2);
                                     }
                                     else break;
@@ -242,7 +243,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             }
                         }
                         else if ("subpage".Equals(commandName))
-                            SymbolCache.AddReference(Tag, commandEntity.Id, new ReferenceSymbol(commandNode, nameParam.Token, ReferenceTarget.DoxygenPage));
+                            SymbolCache.AddReference(Tag, commandEntity.Id, new ReferenceSymbol(commandNode, nameParam.Token, ReferenceSymbolKind.DoxygenPage));
                     }
                 }
 

@@ -21,6 +21,8 @@ using TSP.DoxygenEditor.ErrorDialog;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.Symbols;
+using System.Collections;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -30,9 +32,26 @@ namespace TSP.DoxygenEditor.Views
         private readonly ConfigurationModel _config;
         private readonly string _appName;
 
+        class PerformanceListViewItemComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                if (x == null || y == null)
+                    return (-1);
+                ListViewItem item1 = (ListViewItem)x;
+                ListViewItem item2 = (ListViewItem)y;
+                PerformanceItemModel a = (PerformanceItemModel)item1.Tag;
+                PerformanceItemModel b = (PerformanceItemModel)item2.Tag;
+                int result = a.Compare(b, a);
+                return (result);
+            }
+        }
+
         public MainForm()
         {
             InitializeComponent();
+
+            lvPerformance.ListViewItemSorter = new PerformanceListViewItemComparer();
 
             FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
             _appName = verInfo.ProductName;
@@ -144,6 +163,7 @@ namespace TSP.DoxygenEditor.Views
             IEnumerable<EditorState> changedEditorStates = GetChangedEditorStates();
             bool anyChanges = changedEditorStates.Count() > 0;
 
+            miFileRefresh.Enabled = editorState != null;
             miFileSave.Enabled = editorState != null && editorState.IsChanged;
             miFileSaveAll.Enabled = anyChanges;
             miFileClose.Enabled = tcFiles.SelectedTab != null;
@@ -163,8 +183,9 @@ namespace TSP.DoxygenEditor.Views
 
         private EditorState AddFileTab(string name)
         {
+            int tabIndex = tcFiles.TabPages.Count;
             TabPage newTab = new TabPage() { Text = name };
-            EditorState newState = new EditorState(this) { Name = name, Tag = newTab };
+            EditorState newState = new EditorState(this, name, newTab, tabIndex);
             newState.IsShowWhitespace = miViewShowWhitespaces.Checked;
             newState.TabUpdating += (s, e) => UpdateTabState((EditorState)s);
             newState.FocusChanged += (s, e) =>
@@ -172,14 +193,19 @@ namespace TSP.DoxygenEditor.Views
                 UpdateMenuEditChange(newState);
                 UpdateMenuSelection(newState);
             };
-            newState.ParseComplete += (object s, bool allDone) =>
+            newState.ParseComplete += (EditorState editorState, bool isComplete) =>
             {
-                RebuildSymbolTree(newState, newState.DoxyTree);
-                if (allDone)
+                RebuildSymbolTree(editorState, editorState.DoxyTree);
+                AddPerformanceItems(editorState);
+                if (isComplete)
                 {
                     IEnumerable<EditorState> states = GetAllEditorStates();
                     RefreshIssues(states);
                 }
+            };
+            newState.ParseStarting += (EditorState editorState, bool isComplete) =>
+            {
+                ClearPerformanceItems(editorState);
             };
             newTab.Tag = newState;
             newTab.Controls.Add(newState.Container);
@@ -195,6 +221,7 @@ namespace TSP.DoxygenEditor.Views
             tcFiles.TabPages.Remove(tab);
             RemoveFromSymbolTree(editorState);
             SymbolCache.Remove(editorState);
+            ClearPerformanceItems(editorState);
             editorState.Dispose();
             IEnumerable<EditorState> states = GetAllEditorStates();
             RefreshIssues(states);
@@ -561,6 +588,20 @@ namespace TSP.DoxygenEditor.Views
             }
         }
 
+        private void MenuActionFileRefresh(object sender, EventArgs e)
+        {
+            Debug.Assert(tcFiles.SelectedTab != null);
+            EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
+            if (editorState.IsChanged)
+            {
+                var caption = $"Revert file '{editorState.Name}'";
+                var text = $"The file '{editorState.Name}' has changes, do you want to reload and revert it?";
+                var dlgResult = MessageBox.Show(this, text, caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                if (dlgResult != DialogResult.Yes)
+                    return;
+            }
+            IOOpenFile(editorState, editorState.FilePath);
+        }
         private void MenuActionFileNew(object sender, EventArgs e)
         {
             string name = GetNextTabName("File");
@@ -864,6 +905,46 @@ namespace TSP.DoxygenEditor.Views
                     state.GoToPosition(pos.Index);
                 }
             }
+        }
+        #endregion
+
+        #region Performance
+        private void AddPerformanceItem(EditorState state, PerformanceItemModel item)
+        {
+            ListViewItem newItem = new ListViewItem(state.Name);
+            newItem.Tag = item;
+            newItem.SubItems.Add(item.Size);
+            newItem.SubItems.Add(item.What);
+            newItem.SubItems.Add(item.Duration.ToMilliseconds());
+            lvPerformance.Items.Add(newItem);
+        }
+
+        private void AddPerformanceItems(EditorState state)
+        {
+            ClearPerformanceItems(state);
+            lvPerformance.BeginUpdate();
+            foreach (var item in state.PerformanceItems)
+            {
+                AddPerformanceItem(state, item);
+            }
+            lvPerformance.Sort();
+            lvPerformance.EndUpdate();
+        }
+
+        private void ClearPerformanceItems(EditorState state)
+        {
+            List<ListViewItem> itemsToRemove = new List<ListViewItem>();
+            lvPerformance.BeginUpdate();
+            foreach (ListViewItem item in lvPerformance.Items)
+            {
+                if (item.Tag == state)
+                    itemsToRemove.Add(item);
+            }
+            foreach (ListViewItem item in itemsToRemove)
+            {
+                lvPerformance.Items.Remove(item);
+            }
+            lvPerformance.EndUpdate();
         }
         #endregion
 

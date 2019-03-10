@@ -1,19 +1,20 @@
-﻿using TSP.DoxygenEditor.TextAnalysis;
+﻿using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.TextAnalysis;
 
-namespace TSP.DoxygenEditor.Parsers
+namespace TSP.DoxygenEditor.Symbols
 {
     public class SourceSymbol
     {
         public IBaseNode Node { get; }
         public TextRange Range { get; }
-        public SymbolKind Kind { get; }
+        public SourceSymbolKind Kind { get; }
 
         public enum SymbolType
         {
        
         }
 
-        public SourceSymbol(IBaseNode node, TextRange range, SymbolKind kind)
+        public SourceSymbol(IBaseNode node, TextRange range, SourceSymbolKind kind)
         {
             Node = node;
             Range = range;

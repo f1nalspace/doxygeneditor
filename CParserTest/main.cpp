@@ -1,5 +1,16 @@
+/***
+C/C++ sandbox for testing a cpp lexer written in C++.
+Even though its C++, i am not using any object orientation concepts.
+
+Interestingly, this lexer is 3-4 times faster than the C# version - with the same result.
+Even in debug build, its faster than the C# version in release-build O_o
+In release mode this lexer requires ~60 ms to parse the "final_platform_layer.h" file - which is 20.000 lines of codes, ~750.000 characters
+
+I am not sure why this is, maybe due to the proper usage of structs here?
+***/
+
 // When COPY_TOKEN_VALUES is set, all token values are cloned (Only for debugging purposes, to see each token with proper string termination)
-//#define COPY_TOKEN_VALUES
+#define COPY_TOKEN_VALUES
 
 // When NO_MEMORY_BLOCKS is set, each memory push is a malloc() with a entry in a pointer vector -> Slow
 // When NO_MEMORY_BLOCKS is not set, custom power-of-two aligned memory blocks are allocated, which can be used like a stack -> Fast

@@ -1,6 +1,6 @@
-﻿namespace TSP.DoxygenEditor.Parsers
+﻿namespace TSP.DoxygenEditor.Symbols
 {
-    public enum ReferenceTarget
+    public enum ReferenceSymbolKind
     {
         Unknown = 0,
         Any,

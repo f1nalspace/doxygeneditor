@@ -6,6 +6,7 @@ using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.Symbols;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Languages.Cpp
@@ -130,7 +131,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     var enumValueNode = new CppNode(rootNode, enumValueEntity);
                     rootNode.AddChild(enumValueNode);
-                    SymbolCache.AddSource(Tag, enumValueName, new SourceSymbol(enumValueNode, enumValueToken, SymbolKind.CppMember));
+                    SymbolCache.AddSource(Tag, enumValueName, new SourceSymbol(enumValueNode, enumValueToken, SourceSymbolKind.CppMember));
 
                     var equalsResult = Search(stream, SearchMode.Current, CppTokenKind.EqOp);
                     if (equalsResult != null)
@@ -219,7 +220,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode enumRootNode = new CppNode(Top, enumRootEntity);
                 Add(enumRootNode);
-                SymbolCache.AddSource(Tag, enumIdent, new SourceSymbol(enumRootNode, enumIdentToken, SymbolKind.CppEnum));
+                SymbolCache.AddSource(Tag, enumIdent, new SourceSymbol(enumRootNode, enumIdentToken, SourceSymbolKind.CppEnum));
 
                 if (braceOrSemiResult.Token.Kind == CppTokenKind.LeftBrace)
                     ParseEnumValues(stream, enumRootNode);
@@ -275,7 +276,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode structNode = new CppNode(Top, structEntity);
                 Add(structNode);
-                SymbolCache.AddSource(Tag, structIdent, new SourceSymbol(structNode, identToken, SymbolKind.CppStruct));
+                SymbolCache.AddSource(Tag, structIdent, new SourceSymbol(structNode, identToken, SourceSymbolKind.CppStruct));
             }
 
             // @TODO(final): Parse struct members
@@ -360,7 +361,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     var typedefNode = new CppNode(Top, typedefEntity);
                     Add(typedefNode);
-                    SymbolCache.AddSource(Tag, typedefIdent, new SourceSymbol(typedefNode, identToken, SymbolKind.CppType));
+                    SymbolCache.AddSource(Tag, typedefIdent, new SourceSymbol(typedefNode, identToken, SourceSymbolKind.CppType));
                 }
             }
         }
@@ -398,7 +399,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         };
                         CppNode defineNode = new CppNode(Top, defineKeyEntity);
                         Add(defineNode);
-                        SymbolCache.AddSource(Tag, defineName, new SourceSymbol(defineNode, defineNameToken, SymbolKind.CppDefine));
+                        SymbolCache.AddSource(Tag, defineName, new SourceSymbol(defineNode, defineNameToken, SourceSymbolKind.CppDefine));
                     }
                     else
                         AddParseError(identToken.Position, $"Processor define has no identifier!", "Define");
@@ -510,11 +511,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Add(functionNode);
 
             if (kind == CppEntityKind.FunctionDefinition)
-                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(functionNode, functionIdentToken, SymbolKind.CppFunctionDefinition));
+                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(functionNode, functionIdentToken, SourceSymbolKind.CppFunctionDefinition));
             else if (kind == CppEntityKind.FunctionBody)
-                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(functionNode, functionIdentToken, SymbolKind.CppFunctionBody));
+                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(functionNode, functionIdentToken, SourceSymbolKind.CppFunctionBody));
             else if (Configuration.FunctionCallSymbolsEnabled)
-                SymbolCache.AddReference(Tag, functionName, new ReferenceSymbol(functionNode, functionIdentToken, ReferenceTarget.CppFunction));
+                SymbolCache.AddReference(Tag, functionName, new ReferenceSymbol(functionNode, functionIdentToken, ReferenceSymbolKind.CppFunction));
 
             return (true);
         }

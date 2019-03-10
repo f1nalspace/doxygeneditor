@@ -1,4 +1,10 @@
-﻿using System;
+﻿/***
+C# Test sandbox for comparing and validating several Cpp lexer implementations.
+From all my tests, a naive switch-by-char tokenizer is okay in performance - but not really fast.
+Parse generators, like SuperPower are super slow :-(
+The project CParserTest is a Cpp lexer written in C++ - which is pretty damn fast.
+***/
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;

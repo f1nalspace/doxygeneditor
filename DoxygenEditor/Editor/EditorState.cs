@@ -18,6 +18,8 @@ using TSP.DoxygenEditor.Languages.Cpp;
 using TSP.DoxygenEditor.Languages.Html;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Collections;
+using TSP.DoxygenEditor.Symbols;
+using TSP.DoxygenEditor.Models;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -35,11 +37,14 @@ namespace TSP.DoxygenEditor.Editor
         private IBaseNode _cppTree;
         private readonly List<BaseToken> _tokens = new List<BaseToken>();
         private readonly List<TextError> _errors = new List<TextError>();
+        private readonly List<PerformanceItemModel> _performanceItems = new List<PerformanceItemModel>();
         private readonly EditorStyler _styler = new EditorStyler();
         public IEnumerable<TextError> Errors => _errors;
+        public IEnumerable<PerformanceItemModel> PerformanceItems => _performanceItems;
         public IBaseNode DoxyTree { get { return _doxyTree; } }
         public IBaseNode CppTree { get { return _cppTree; } }
-        public object Tag { get; set; }
+        public object Tag { get; }
+        public int TabIndex { get; }
         public string FilePath { get; set; }
         public string Name { get; set; }
         public bool IsChanged { get; set; }
@@ -51,20 +56,23 @@ namespace TSP.DoxygenEditor.Editor
             set { _editor.ViewWhitespace = value ? WhitespaceMode.VisibleAlways : WhitespaceMode.Invisible; }
         }
 
-        public delegate void ParseEventHandler(object sender, bool allDone);
-        public delegate void FocusChangedEventHandler(object sender, bool focused);
+        public delegate void ParseEventHandler(EditorState sender, bool isComplete);
+        public delegate void FocusChangedEventHandler(EditorState sender, bool focused);
         public event EventHandler TabUpdating;
         public event ParseEventHandler ParseComplete;
+        public event ParseEventHandler ParseStarting;
         public event FocusChangedEventHandler FocusChanged;
 
-        public EditorState(IWin32Window window)
+        public EditorState(IWin32Window window, string name, object tag, int tabIndex)
         {
             FilePath = null;
-            Name = null;
+            Name = name;
+            Tag = tag;
             IsChanged = false;
             FileEncoding = Encoding.UTF8;
 
             _window = window;
+            TabIndex = tabIndex;
 
             _editor = new Scintilla();
             SetupEditor(_editor);
@@ -98,6 +106,7 @@ namespace TSP.DoxygenEditor.Editor
                 if (!_parseWorker.IsBusy)
                 {
                     _textChangedTimer.Enabled = false;
+                    ParseStarting?.Invoke(this, false);
                     _parseWorker.RunWorkerAsync(_editor.Text);
                 }
             };
@@ -114,8 +123,8 @@ namespace TSP.DoxygenEditor.Editor
             {
                 // @TODO(final): Dont colorize everything, just re-colorize the changes -> See "Support for continuous tokenization"
                 _editor.Colorize(0, _editor.TextLength);
-                bool allDone = Interlocked.Decrement(ref _parseCounter) == 0;
-                ParseComplete?.Invoke(this, allDone);
+                bool isComplete = Interlocked.Decrement(ref _parseCounter) == 0;
+                ParseComplete?.Invoke(this, isComplete);
             };
         }
 
@@ -426,7 +435,8 @@ namespace TSP.DoxygenEditor.Editor
             using (HtmlLexer htmlLexer = new HtmlLexer(text, pos, length))
             {
                 IEnumerable<HtmlToken> htmlTokens = htmlLexer.Tokenize();
-                result.AddTokens(htmlTokens);
+                if (htmlTokens.FirstOrDefault(d => !d.IsEOF) != null)
+                    result.AddTokens(htmlTokens);
                 result.AddErrors(htmlLexer.LexErrors);
             }
             timer.Stop();
@@ -579,6 +589,7 @@ namespace TSP.DoxygenEditor.Editor
                         {
                             result.AddTokens(htmlRes.Tokens);
                             result.AddErrors(htmlRes.Errors);
+                            result.Stats.HtmlDuration += htmlRes.Stats.HtmlDuration;
                         }
                     }
                     result.AddToken(doxyToken);
@@ -607,6 +618,7 @@ namespace TSP.DoxygenEditor.Editor
             // Clear tokens & errors
             _tokens.Clear();
             _errors.Clear();
+            _performanceItems.Clear();
             SymbolCache.Clear(this);
 
             Stopwatch totalLexTimer = Stopwatch.StartNew();
@@ -619,10 +631,12 @@ namespace TSP.DoxygenEditor.Editor
                 _tokens.AddRange(cppRes.Tokens);
                 _errors.AddRange(cppRes.Errors);
             }
-
-            // Doxy lexing
             totalLexTimer.Stop();
             Debug.WriteLine($"Lexing done (Tokens: {_tokens.Count}, Total: {totalLexTimer.Elapsed.ToMilliseconds()} ms, Insert: {totalStats.InsertDuration.ToMilliseconds()}, C++: {totalStats.CppDuration.ToMilliseconds()} ms, Doxygen: {totalStats.DoxyDuration.ToMilliseconds()} ms, Html: {totalStats.HtmlDuration.ToMilliseconds()} ms)");
+
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "C++ lexer", totalStats.CppDuration));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "Doxygen lexer", totalStats.DoxyDuration));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "Html lexer", totalStats.HtmlDuration));
 
             timer.Restart();
             _styler.Refresh(_tokens);
@@ -680,6 +694,7 @@ namespace TSP.DoxygenEditor.Editor
             }
             timer.Stop();
             Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "Doxygen parser", timer.Elapsed));
 
             // C++ parsing
             timer.Restart();
@@ -708,6 +723,7 @@ namespace TSP.DoxygenEditor.Editor
             }
             timer.Stop();
             Debug.WriteLine($"C++ parse done, took {timer.Elapsed.ToMilliseconds()} ms");
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "C++ parser", timer.Elapsed));
         }
 
         private void SetupEditor(Scintilla editor)
