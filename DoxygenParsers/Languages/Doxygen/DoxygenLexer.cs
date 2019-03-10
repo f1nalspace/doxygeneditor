@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using TSP.DoxygenEditor.Languages.Cpp;
 using TSP.DoxygenEditor.Languages.Utils;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.TextAnalysis;
@@ -161,7 +162,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     if (!arg.Flags.HasFlag(DoxygenSyntax.ArgumentFlags.DirectlyAfterCommand))
                     {
                         if (SyntaxUtils.IsSpacing(first) || first == '\t')
-                            SkipSpacings(SkipType.All);
+                            Buffer.SkipSpacings(TextStream.SkipType.All);
                         else
                         {
                             // No more arguments are following
@@ -667,14 +668,16 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             state.CurrentLineStartIndex = Buffer.StreamPosition;
             do
             {
-                char thisChar = Buffer.Peek();
-                switch (thisChar)
+                char first = Buffer.Peek();
+                char second = Buffer.Peek(1);
+                char third = Buffer.Peek(2);
+                switch (first)
                 {
                     case ' ':
                     case '\v':
                     case '\f':
                     case '\t':
-                        SkipSpacings(SkipType.All);
+                        Buffer.SkipSpacings(TextStream.SkipType.All);
                         break;
 
                     case '\r':
@@ -692,7 +695,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             bool wasEmptyLine = Buffer.MatchCharacters(state.CurrentLineStartIndex, len, char.IsWhiteSpace) || (len == 0);
 
                             Buffer.StartLexeme();
-                            SkipLineBreaks(SkipType.Single);
+                            Buffer.SkipLineBreaks(TextStream.SkipType.Single);
                             state.CurrentLineStartIndex = Buffer.StreamPosition;
                             PushToken(DoxygenTokenPool.Make(wasEmptyLine ? DoxygenTokenKind.EmptyLine : DoxygenTokenKind.EndOfLine, Buffer.LexemeRange, true));
                         }
@@ -700,18 +703,16 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
                     case '/':
                         {
-                            char n = Buffer.Peek(1);
-                            if (n == '*')
+                            if (second == '*')
                             {
                                 // Multi line
-                                char n2 = Buffer.Peek(2);
-                                if (DoxygenSyntax.MultiLineDocChars.Contains(n2))
+                                if (DoxygenSyntax.MultiLineDocChars.Contains(third))
                                 {
                                     Debug.Assert(!state.Flags.HasFlag(StateFlags.InsideBlock));
                                     Buffer.StartLexeme();
                                     Buffer.AdvanceColumns(3);
                                     state.Flags = StateFlags.InsideBlock;
-                                    if (n2 == '*')
+                                    if (third == '*')
                                     {
                                         char n3 = Buffer.Peek();
                                         if (n3 == '/')
@@ -725,8 +726,19 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     StartText(state);
                                     continue;
                                 }
+                                else
+                                {
+                                    // Just skip until normal multi-line comment ends
+                                    var r = CppLexer.LexMultiLineComment(Buffer, true);
+                                    if (!r.IsComplete)
+                                    {
+                                        PushError(Buffer.TextPosition, $"Unterminated multi-line comment, expect '*/' but got EOF", r.Kind.ToString());
+                                        return (false);
+                                    }
+                                    continue;
+                                }
                             }
-                            else if (n == '/')
+                            else if (second == '/')
                             {
                                 // Single line
                                 char n2 = Buffer.Peek(2);
@@ -740,17 +752,28 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     StartText(state);
                                     continue;
                                 }
+                                else
+                                {
+                                    // Just skip until normal single-line comment ends
+                                    var r = CppLexer.LexSingleLineComment(Buffer, true);
+                                    if (!r.IsComplete)
+                                    {
+                                        PushError(Buffer.TextPosition, $"Unterminated single-line comment, expect linebreak but got EOF", r.Kind.ToString());
+                                        return (false);
+                                    }
+                                    continue;
+                                }
                             }
-                            Buffer.AdvanceColumn();
+                            else
+                                Buffer.AdvanceColumn();
                         }
                         break;
 
                     case '*':
                         {
-                            char n = Buffer.Peek(1);
                             if (state.Flags.HasFlag(StateFlags.InsideBlock))
                             {
-                                if (n == '/')
+                                if (second == '/')
                                 {
                                     EndText(state);
                                     Buffer.StartLexeme();
@@ -777,7 +800,6 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '@':
                     case '\\':
                         {
-                            char n = Buffer.Peek(1);
                             if (state.Flags.HasFlag(StateFlags.InsideBlock))
                             {
                                 EndText(state);
