@@ -111,6 +111,7 @@ namespace TSP.DoxygenEditor.Editor
                 }
             };
             _parseWorker = new BackgroundWorker();
+            _parseWorker.WorkerSupportsCancellation = true;
             _parseWorker.DoWork += (s, e) =>
             {
                 // @TODO(final): Support for continuous tokenization, so only changes are applied

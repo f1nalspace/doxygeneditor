@@ -80,22 +80,21 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         private CommandResult LexCommandTokens()
         {
             Debug.Assert(DoxygenSyntax.IsCommandBegin(Buffer.Peek()));
-            Debug.Assert(DoxygenSyntax.IsCommandIdentStart(Buffer.Peek(1)));
 
             // Command
             Buffer.StartLexeme();
             Buffer.AdvanceColumn();
             StringBuilder commandString = new StringBuilder();
 
-            DoxygenTokenKind type = DoxygenTokenKind.Command;
+            DoxygenTokenKind kind = DoxygenTokenKind.Command;
             if (DoxygenSyntax.SpecialCommandStartChars.Contains(Buffer.Peek()))
             {
                 // Special case for { } command
                 if (Buffer.Peek() == '{' || Buffer.Peek() == '}')
                 {
-                    type = DoxygenTokenKind.GroupStart;
+                    kind = DoxygenTokenKind.GroupStart;
                     if (Buffer.Peek() == '}')
-                        type = DoxygenTokenKind.GroupEnd;
+                        kind = DoxygenTokenKind.GroupEnd;
                 }
                 // All other special case
                 while (!Buffer.IsEOF)
@@ -112,15 +111,18 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             else
             {
                 // Normal case
-                while (!Buffer.IsEOF)
+                if (DoxygenSyntax.IsCommandIdentStart(Buffer.Peek(1)))
                 {
-                    if (DoxygenSyntax.IsCommandIdent(Buffer.Peek()))
+                    while (!Buffer.IsEOF)
                     {
-                        commandString.Append(Buffer.Peek());
-                        Buffer.AdvanceColumn();
+                        if (DoxygenSyntax.IsCommandIdent(Buffer.Peek()))
+                        {
+                            commandString.Append(Buffer.Peek());
+                            Buffer.AdvanceColumn();
+                        }
+                        else
+                            break;
                     }
-                    else
-                        break;
                 }
             }
 
@@ -131,23 +133,22 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             if (rule != null)
             {
                 if (rule.Kind == DoxygenSyntax.CommandKind.StartCommandBlock)
-                    type = DoxygenTokenKind.CommandStart;
+                    kind = DoxygenTokenKind.CommandStart;
                 else if (rule.Kind == DoxygenSyntax.CommandKind.EndCommandBlock)
-                    type = DoxygenTokenKind.CommandEnd;
+                    kind = DoxygenTokenKind.CommandEnd;
             }
             else
             {
                 // @NOTE(final): Group start/end are not a "known" command
-                if (type != DoxygenTokenKind.GroupStart && type != DoxygenTokenKind.GroupEnd)
-                    type = DoxygenTokenKind.InvalidCommand;
+                if (kind != DoxygenTokenKind.GroupStart && kind != DoxygenTokenKind.GroupEnd)
+                    kind = DoxygenTokenKind.InvalidCommand;
             }
-            DoxygenToken commandToken = DoxygenTokenPool.Make(type, Buffer.LexemeRange, true);
+            DoxygenToken commandToken = DoxygenTokenPool.Make(kind, Buffer.LexemeRange, true);
             PushToken(commandToken);
 
             CommandResult result = new CommandResult(commandStart, rule, commandName);
 
             string typeName = "Command";
-
             if (rule != null)
             {
                 int argNumber = 0;
@@ -204,7 +205,10 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             foundPrefixToPostfix = true;
                                             break;
                                         }
-                                        Buffer.AdvanceColumn();
+                                        else if (SyntaxUtils.IsLineBreak(Buffer.Peek()))
+                                            break;
+                                        else
+                                            Buffer.AdvanceColumn();
                                     }
                                     if (arg.IsOptional || foundPrefixToPostfix)
                                     {
@@ -581,16 +585,6 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             CommandDone:
             result.IsValid = true;
 
-            SkipSpacings(SkipType.All);
-
-            if (SyntaxUtils.IsLineBreak(Buffer.Peek()))
-            {
-                Buffer.StartLexeme();
-                SkipLineBreaks(SkipType.Single);
-                DoxygenToken token = DoxygenTokenPool.Make(DoxygenTokenKind.EndOfLine, Buffer.LexemeRange, true);
-                PushToken(token);
-            }
-
             return (result);
         }
 
@@ -604,8 +598,14 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             var lastTextStartOrEnd = Tokens.LastOrDefault(t => t.Kind == DoxygenTokenKind.TextStart || t.Kind == DoxygenTokenKind.TextEnd);
             if (lastTextStartOrEnd != null && lastTextStartOrEnd.Kind == DoxygenTokenKind.TextStart)
             {
-                DoxygenToken token = DoxygenTokenPool.Make(DoxygenTokenKind.TextEnd, new TextRange(Buffer.TextPosition, 0), false);
-                PushToken(token);
+                int textLength = Buffer.TextPosition.Index - lastTextStartOrEnd.Index;
+                if (textLength > 0)
+                {
+                    DoxygenToken token = DoxygenTokenPool.Make(DoxygenTokenKind.TextEnd, new TextRange(Buffer.TextPosition, 0), false);
+                    PushToken(token);
+                }
+                else
+                    RemoveToken(lastTextStartOrEnd);
             }
         }
 
@@ -618,6 +618,46 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 state.Flags = StateFlags.None;
                 PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.DoxyBlockEnd, new TextRange(Buffer.TextPosition, 0), false));
             }
+        }
+
+        private bool LexUntilCodeEnd(CommandResult commandResult)
+        {
+            // Special case, we dont want to parse doxygen stuff inside a code section
+            // so we wait until a @endcode follows
+            bool isComplete = false;
+            while (!Buffer.IsEOF)
+            {
+                char c0 = Buffer.Peek();
+                char c1 = Buffer.Peek(1);
+                if ((c0 == '@' || c0 == '\\') && SyntaxUtils.IsIdentStart(c1))
+                {
+                    Buffer.StartLexeme();
+                    Buffer.AdvanceColumn();
+                    Buffer.AdvanceColumnsWhile(SyntaxUtils.IsIdentPart);
+                    string ident = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, Buffer.LexemeWidth - 1);
+                    if ("endcode".Equals(ident))
+                    {
+                        PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.CommandEnd, Buffer.LexemeRange, true));
+                        isComplete = true;
+                        break;
+                    }
+                }
+                else if (SyntaxUtils.IsLineBreak(c0))
+                {
+                    int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
+                    Buffer.AdvanceLine(lb);
+                }
+                else if ('\t'.Equals(c0))
+                    Buffer.AdvanceTab();
+                else
+                    Buffer.AdvanceColumn();
+            }
+            if (!isComplete)
+            {
+                PushError(commandResult.StartPos, $"Unterminated code-block, expect '@endcode' or '\\endcode'", "Code", commandResult.CommandName);
+                return (false);
+            }
+            return (true);
         }
 
         protected override bool LexNext(State hiddenState)
@@ -649,7 +689,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             // @NOTE(final): Detect if our line content until the line break was empty
                             Debug.Assert(Buffer.StreamPosition >= state.CurrentLineStartIndex);
                             int len = Buffer.StreamPosition - state.CurrentLineStartIndex;
-                            bool wasEmptyLine = Buffer.MatchCharacters(state.CurrentLineStartIndex, len, char.IsWhiteSpace);
+                            bool wasEmptyLine = Buffer.MatchCharacters(state.CurrentLineStartIndex, len, char.IsWhiteSpace) || (len == 0);
 
                             Buffer.StartLexeme();
                             SkipLineBreaks(SkipType.Single);
@@ -693,8 +733,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 if (DoxygenSyntax.SingleLineDocChars.Contains(n2))
                                 {
                                     Debug.Assert(!state.Flags.HasFlag(StateFlags.InsideBlock));
-                                    Buffer.StartLexeme();
                                     Buffer.AdvanceColumns(3);
+                                    Buffer.StartLexeme();
                                     state.Flags = StateFlags.InsideBlock | StateFlags.SingleLine;
                                     PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.DoxyBlockStartSingle, Buffer.LexemeRange, true));
                                     StartText(state);
@@ -738,10 +778,18 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '\\':
                         {
                             char n = Buffer.Peek(1);
-                            if (state.Flags.HasFlag(StateFlags.InsideBlock) && DoxygenSyntax.IsCommandIdentStart(n))
+                            if (state.Flags.HasFlag(StateFlags.InsideBlock))
                             {
                                 EndText(state);
-                                LexCommandTokens();
+                                var commandResult = LexCommandTokens();
+                                if (commandResult.IsValid)
+                                {
+                                    if ("code".Equals(commandResult.CommandName))
+                                    {
+                                        if (!LexUntilCodeEnd(commandResult))
+                                            return (false);
+                                    }
+                                }
                                 StartText(state);
                             }
                             else

@@ -42,6 +42,10 @@ namespace TSP.DoxygenEditor.Lexers
             _tokens.Add(token);
             return (true);
         }
+        protected void RemoveToken(T token)
+        {
+            _tokens.Remove(token);
+        }
 
         protected abstract bool LexNext(State state);
 

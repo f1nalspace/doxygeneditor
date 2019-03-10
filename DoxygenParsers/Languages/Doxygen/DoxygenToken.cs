@@ -11,7 +11,11 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         public override bool IsValid => Kind != DoxygenTokenKind.Invalid;
         public override bool IsEndOfLine => Kind == DoxygenTokenKind.EndOfLine;
         public override bool IsMarker =>
-            (Kind == DoxygenTokenKind.TextStart ||
+            (
+             Kind == DoxygenTokenKind.DoxyBlockStartSingle ||
+             Kind == DoxygenTokenKind.DoxyBlockStartMulti ||
+             Kind == DoxygenTokenKind.DoxyBlockEnd ||
+             Kind == DoxygenTokenKind.TextStart ||
              Kind == DoxygenTokenKind.TextEnd ||
              Kind == DoxygenTokenKind.ArgumentCaption ||
              Kind == DoxygenTokenKind.ArgumentFile ||
