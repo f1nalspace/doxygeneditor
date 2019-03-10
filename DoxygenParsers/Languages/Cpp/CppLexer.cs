@@ -633,6 +633,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         return (false);
                     }
                 }
+                else if (first == '#')
+                {
+                    Buffer.AdvanceColumn();
+                    PushToken(CppTokenPool.Make(CppTokenKind.PreprocessorOperator, Buffer.LexemeRange, true));
+                }
                 else if (SyntaxUtils.IsLineBreak(first))
                 {
                     int lb = SyntaxUtils.GetLineBreakChars(first, second);

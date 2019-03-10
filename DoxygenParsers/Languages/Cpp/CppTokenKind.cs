@@ -20,6 +20,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         MultiLineCommentDoc,
 
         PreprocessorStart,
+        PreprocessorOperator,
         PreprocessorKeyword,
         PreprocessorDefineSource,
         PreprocessorDefineTarget,
