@@ -246,8 +246,11 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             SymbolCache.AddReference(Tag, commandEntity.Id, new ReferenceSymbol(commandNode, nameParam.Token, ReferenceSymbolKind.DoxygenPage));
                     }
                 }
-
                 ParseBlockContent(stream, commandNode);
+            }
+            else
+            {
+                AddParseError(commandToken.Position, $"No parse rule for command '{commandName}' found", "Command", commandName);
             }
             return (true);
         }
@@ -325,6 +328,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
                     case DoxygenTokenKind.Command:
                         return ParseCommand(stream, contentRoot);
+
+                    case DoxygenTokenKind.InvalidCommand:
+                        string commandName = doxyToken.Value.Substring(1);
+                        AddParseError(doxyToken.Position, $"Unknown doxygen command '{commandName}'", "Command", commandName);
+                        stream.Next();
+                        return (true);
 
                     case DoxygenTokenKind.TextStart:
                         ParseText(stream, contentRoot);
