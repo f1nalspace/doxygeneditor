@@ -14,6 +14,7 @@ namespace TSP.DoxygenEditor.Parsers
         private readonly List<TextError> _parseErrors = new List<TextError>();
         public IEnumerable<TextError> ParseErrors => _parseErrors;
         public IBaseNode Root { get; }
+        public int TotalNodeCount { get; private set; }
 
         class RootNode : BaseNode<TEntity>
         {
@@ -102,6 +103,7 @@ namespace TSP.DoxygenEditor.Parsers
 
         protected void Add(IBaseNode node)
         {
+            ++TotalNodeCount;
             if (_stack.Count == 0)
                 Root.AddChild(node);
             else

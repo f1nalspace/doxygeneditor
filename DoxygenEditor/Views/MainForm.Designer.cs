@@ -97,6 +97,7 @@ namespace TSP.DoxygenEditor.Views
             this.miCurrentTabCloseAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miCurrentTabCloseAllButThis = new System.Windows.Forms.ToolStripMenuItem();
             this.dlgSaveFile = new System.Windows.Forms.SaveFileDialog();
+            this.columnHeader11 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.scMainAndLog)).BeginInit();
@@ -152,7 +153,7 @@ namespace TSP.DoxygenEditor.Views
             this.miFileNew.Image = global::TSP.DoxygenEditor.Properties.Resources.NewFile_16x;
             this.miFileNew.Name = "miFileNew";
             this.miFileNew.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.miFileNew.Size = new System.Drawing.Size(193, 30);
+            this.miFileNew.Size = new System.Drawing.Size(185, 22);
             this.miFileNew.Text = "New";
             this.miFileNew.Click += new System.EventHandler(this.MenuActionFileNew);
             // 
@@ -161,7 +162,7 @@ namespace TSP.DoxygenEditor.Views
             this.miFileOpen.Image = global::TSP.DoxygenEditor.Properties.Resources.OpenFile_16x;
             this.miFileOpen.Name = "miFileOpen";
             this.miFileOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.miFileOpen.Size = new System.Drawing.Size(193, 30);
+            this.miFileOpen.Size = new System.Drawing.Size(185, 22);
             this.miFileOpen.Text = "Open...";
             this.miFileOpen.Click += new System.EventHandler(this.MenuActionFileOpen);
             // 
@@ -170,7 +171,7 @@ namespace TSP.DoxygenEditor.Views
             this.miFileSave.Image = global::TSP.DoxygenEditor.Properties.Resources.Save_16x;
             this.miFileSave.Name = "miFileSave";
             this.miFileSave.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.miFileSave.Size = new System.Drawing.Size(193, 30);
+            this.miFileSave.Size = new System.Drawing.Size(185, 22);
             this.miFileSave.Text = "Save";
             this.miFileSave.Click += new System.EventHandler(this.MenuActionFileSave);
             // 
@@ -178,7 +179,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.miFileSaveAs.Image = global::TSP.DoxygenEditor.Properties.Resources.SaveAs_16x;
             this.miFileSaveAs.Name = "miFileSaveAs";
-            this.miFileSaveAs.Size = new System.Drawing.Size(193, 30);
+            this.miFileSaveAs.Size = new System.Drawing.Size(185, 22);
             this.miFileSaveAs.Text = "Save as...";
             this.miFileSaveAs.Click += new System.EventHandler(this.MenuActionFileSaveAs);
             // 
@@ -188,7 +189,7 @@ namespace TSP.DoxygenEditor.Views
             this.miFileSaveAll.Name = "miFileSaveAll";
             this.miFileSaveAll.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.S)));
-            this.miFileSaveAll.Size = new System.Drawing.Size(193, 30);
+            this.miFileSaveAll.Size = new System.Drawing.Size(185, 22);
             this.miFileSaveAll.Text = "Save all";
             this.miFileSaveAll.Click += new System.EventHandler(this.MenuActionFileSaveAll);
             // 
@@ -196,7 +197,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.miFileClose.Image = global::TSP.DoxygenEditor.Properties.Resources.CloseDocument_16x;
             this.miFileClose.Name = "miFileClose";
-            this.miFileClose.Size = new System.Drawing.Size(193, 30);
+            this.miFileClose.Size = new System.Drawing.Size(185, 22);
             this.miFileClose.Text = "Close";
             this.miFileClose.Click += new System.EventHandler(this.MenuActionFileClose);
             // 
@@ -204,7 +205,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.miFileCloseAll.Image = global::TSP.DoxygenEditor.Properties.Resources.CloseGroup_16x;
             this.miFileCloseAll.Name = "miFileCloseAll";
-            this.miFileCloseAll.Size = new System.Drawing.Size(193, 30);
+            this.miFileCloseAll.Size = new System.Drawing.Size(185, 22);
             this.miFileCloseAll.Text = "Close all";
             this.miFileCloseAll.Click += new System.EventHandler(this.MenuActionFileCloseAll);
             // 
@@ -212,32 +213,32 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.miFileRefresh.Name = "miFileRefresh";
             this.miFileRefresh.ShortcutKeys = System.Windows.Forms.Keys.F3;
-            this.miFileRefresh.Size = new System.Drawing.Size(193, 30);
+            this.miFileRefresh.Size = new System.Drawing.Size(185, 22);
             this.miFileRefresh.Text = "Refresh";
             this.miFileRefresh.Click += new System.EventHandler(this.MenuActionFileRefresh);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(190, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(182, 6);
             // 
             // miFileRecentFiles
             // 
             this.miFileRecentFiles.Name = "miFileRecentFiles";
-            this.miFileRecentFiles.Size = new System.Drawing.Size(193, 30);
+            this.miFileRecentFiles.Size = new System.Drawing.Size(185, 22);
             this.miFileRecentFiles.Text = "Recent Files";
             // 
             // toolStripMenuItem5
             // 
             this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(190, 6);
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(182, 6);
             // 
             // miFileExit
             // 
             this.miFileExit.Image = global::TSP.DoxygenEditor.Properties.Resources.Exit_16x;
             this.miFileExit.Name = "miFileExit";
             this.miFileExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.miFileExit.Size = new System.Drawing.Size(193, 30);
+            this.miFileExit.Size = new System.Drawing.Size(185, 22);
             this.miFileExit.Text = "Exit";
             // 
             // miEdit
@@ -607,7 +608,8 @@ namespace TSP.DoxygenEditor.Views
             this.columnHeader7,
             this.columnHeader8,
             this.columnHeader9,
-            this.columnHeader10});
+            this.columnHeader10,
+            this.columnHeader11});
             this.lvPerformance.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lvPerformance.FullRowSelect = true;
             this.lvPerformance.HideSelection = false;
@@ -627,18 +629,18 @@ namespace TSP.DoxygenEditor.Views
             // 
             // columnHeader8
             // 
-            this.columnHeader8.Text = "Size";
-            this.columnHeader8.Width = 70;
+            this.columnHeader8.Text = "Input";
+            this.columnHeader8.Width = 100;
             // 
             // columnHeader9
             // 
-            this.columnHeader9.Text = "What";
+            this.columnHeader9.Text = "Output";
             this.columnHeader9.Width = 100;
             // 
             // columnHeader10
             // 
-            this.columnHeader10.Text = "Duration in ms";
-            this.columnHeader10.Width = 150;
+            this.columnHeader10.Text = "What";
+            this.columnHeader10.Width = 100;
             // 
             // dlgOpenFile
             // 
@@ -694,6 +696,11 @@ namespace TSP.DoxygenEditor.Views
             this.dlgSaveFile.Filter = "Doxygen files (*.docs)|*.docs|C Header file (*.h)|*.h";
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
+            // 
+            // columnHeader11
+            // 
+            this.columnHeader11.Text = "Duration in ms";
+            this.columnHeader11.Width = 150;
             // 
             // MainForm
             // 
@@ -800,5 +807,6 @@ namespace TSP.DoxygenEditor.Views
         private System.Windows.Forms.ColumnHeader columnHeader9;
         private System.Windows.Forms.ColumnHeader columnHeader10;
         private System.Windows.Forms.ToolStripMenuItem miFileRefresh;
+        private System.Windows.Forms.ColumnHeader columnHeader11;
     }
 }

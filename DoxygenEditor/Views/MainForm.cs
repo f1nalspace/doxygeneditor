@@ -913,7 +913,8 @@ namespace TSP.DoxygenEditor.Views
         {
             ListViewItem newItem = new ListViewItem(state.Name);
             newItem.Tag = item;
-            newItem.SubItems.Add(item.Size);
+            newItem.SubItems.Add(item.Input);
+            newItem.SubItems.Add(item.Output);
             newItem.SubItems.Add(item.What);
             newItem.SubItems.Add(item.Duration.ToMilliseconds());
             lvPerformance.Items.Add(newItem);

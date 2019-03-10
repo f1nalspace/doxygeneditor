@@ -634,9 +634,12 @@ namespace TSP.DoxygenEditor.Editor
             totalLexTimer.Stop();
             Debug.WriteLine($"Lexing done (Tokens: {_tokens.Count}, Total: {totalLexTimer.Elapsed.ToMilliseconds()} ms, Insert: {totalStats.InsertDuration.ToMilliseconds()}, C++: {totalStats.CppDuration.ToMilliseconds()} ms, Doxygen: {totalStats.DoxyDuration.ToMilliseconds()} ms, Html: {totalStats.HtmlDuration.ToMilliseconds()} ms)");
 
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "C++ lexer", totalStats.CppDuration));
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "Doxygen lexer", totalStats.DoxyDuration));
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "Html lexer", totalStats.HtmlDuration));
+            int countCppTokens = _tokens.Count(t => typeof(CppToken).Equals(t.GetType()));
+            int countHtmlTokens = _tokens.Count(t => typeof(HtmlToken).Equals(t.GetType()));
+            int countDoxyTokens = _tokens.Count(t => typeof(DoxygenToken).Equals(t.GetType()));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen lexer", totalStats.DoxyDuration));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
 
             timer.Restart();
             _styler.Refresh(_tokens);
@@ -673,6 +676,7 @@ namespace TSP.DoxygenEditor.Editor
             Stopwatch timer = new Stopwatch();
 
             // Doxygen parsing
+            int doxyNodeCount = 0;
             timer.Restart();
             using (DoxygenParser doxyParser = new DoxygenParser(this, text))
             {
@@ -691,13 +695,15 @@ namespace TSP.DoxygenEditor.Editor
                 }
                 _errors.InsertRange(0, doxyParser.ParseErrors);
                 _doxyTree = doxyParser.Root;
+                doxyNodeCount = doxyParser.TotalNodeCount;
             }
             timer.Stop();
             Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "Doxygen parser", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen parser", timer.Elapsed));
 
             // C++ parsing
             timer.Restart();
+            int cppNodeCount = 0;
             using (CppParser cppParser = new CppParser(this))
             {
                 cppParser.GetDocumentationNode += (token) =>
@@ -720,10 +726,11 @@ namespace TSP.DoxygenEditor.Editor
                 }
                 _errors.InsertRange(0, cppParser.ParseErrors);
                 _cppTree = cppParser.Root;
+                cppNodeCount = cppParser.TotalNodeCount;
             }
             timer.Stop();
             Debug.WriteLine($"C++ parse done, took {timer.Elapsed.ToMilliseconds()} ms");
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, text.Length.ToString(), "C++ parser", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
         }
 
         private void SetupEditor(Scintilla editor)
