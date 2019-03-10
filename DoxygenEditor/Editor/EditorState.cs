@@ -637,9 +637,9 @@ namespace TSP.DoxygenEditor.Editor
             int countCppTokens = _tokens.Count(t => typeof(CppToken).Equals(t.GetType()));
             int countHtmlTokens = _tokens.Count(t => typeof(HtmlToken).Equals(t.GetType()));
             int countDoxyTokens = _tokens.Count(t => typeof(DoxygenToken).Equals(t.GetType()));
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen lexer", totalStats.DoxyDuration));
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
+            _performanceItems.Add(new PerformanceItemModel(this, TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
+            _performanceItems.Add(new PerformanceItemModel(this, TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen lexer", totalStats.DoxyDuration));
+            _performanceItems.Add(new PerformanceItemModel(this, TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
 
             timer.Restart();
             _styler.Refresh(_tokens);
@@ -699,7 +699,7 @@ namespace TSP.DoxygenEditor.Editor
             }
             timer.Stop();
             Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen parser", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(this, TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen parser", timer.Elapsed));
 
             // C++ parsing
             timer.Restart();
@@ -730,7 +730,7 @@ namespace TSP.DoxygenEditor.Editor
             }
             timer.Stop();
             Debug.WriteLine($"C++ parse done, took {timer.Elapsed.ToMilliseconds()} ms");
-            _performanceItems.Add(new PerformanceItemModel(TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(this, TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
         }
 
         private void SetupEditor(Scintilla editor)

@@ -113,6 +113,7 @@ namespace TSP.DoxygenEditor.Views
 
         #region Tabs
         private readonly Regex _rexIndexFromName = new Regex("(?<index>[0-9]+)$", RegexOptions.Compiled);
+        private int _tabCounter = 0;
         private string GetNextTabName(string prefix)
         {
             int highIndex = 0;
@@ -183,7 +184,7 @@ namespace TSP.DoxygenEditor.Views
 
         private EditorState AddFileTab(string name)
         {
-            int tabIndex = tcFiles.TabPages.Count;
+            int tabIndex = _tabCounter++;
             TabPage newTab = new TabPage() { Text = name };
             EditorState newState = new EditorState(this, name, newTab, tabIndex);
             newState.IsShowWhitespace = miViewShowWhitespaces.Checked;
@@ -217,12 +218,14 @@ namespace TSP.DoxygenEditor.Views
         private void RemoveFileTab(EditorState editorState)
         {
             editorState.Stop();
+            RemoveFromSymbolTree(editorState);
+            ClearPerformanceItems(editorState);
+            SymbolCache.Remove(editorState);
+
             TabPage tab = (TabPage)editorState.Tag;
             tcFiles.TabPages.Remove(tab);
-            RemoveFromSymbolTree(editorState);
-            SymbolCache.Remove(editorState);
-            ClearPerformanceItems(editorState);
             editorState.Dispose();
+
             IEnumerable<EditorState> states = GetAllEditorStates();
             RefreshIssues(states);
         }
@@ -932,13 +935,14 @@ namespace TSP.DoxygenEditor.Views
             lvPerformance.EndUpdate();
         }
 
-        private void ClearPerformanceItems(EditorState state)
+        private void ClearPerformanceItems(object tag)
         {
             List<ListViewItem> itemsToRemove = new List<ListViewItem>();
             lvPerformance.BeginUpdate();
             foreach (ListViewItem item in lvPerformance.Items)
             {
-                if (item.Tag == state)
+                PerformanceItemModel performanceItem = (PerformanceItemModel)item.Tag;
+                if (performanceItem.Tag == tag)
                     itemsToRemove.Add(item);
             }
             foreach (ListViewItem item in itemsToRemove)
