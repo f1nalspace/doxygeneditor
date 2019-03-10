@@ -257,7 +257,7 @@ namespace TSP.FastTokenizer
 
         public static CToken PeekTokenRaw(TextStream stream)
         {
-            TextPosition startPos = new TextPosition(stream.TextPosition);
+            TextPosition startPos = stream.TextPosition;
             if (stream.IsEOF)
                 return new CToken(CppTokenKind.Eof, startPos, stream.TextPosition);
             char first = stream.Peek(0);
@@ -671,7 +671,7 @@ namespace TSP.FastTokenizer
         }
         public static CToken PeekToken(TextStream cursor)
         {
-            TextPosition startPos = new TextPosition(cursor.TextPosition);
+            TextPosition startPos = cursor.TextPosition;
             CToken token = PeekTokenRaw(cursor);
             do
             {

@@ -1,6 +1,6 @@
 ﻿namespace TSP.DoxygenEditor.TextAnalysis
 {
-    public class TextPosition
+    public struct TextPosition
     {
         public int Index { get; set; }
         public int Line { get; set; }

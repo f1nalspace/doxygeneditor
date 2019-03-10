@@ -457,7 +457,7 @@ namespace TSP.DoxygenEditor.Editor
                 CommandToken = InsertToken = commandToken;
                 CommandName = commandName;
                 ArgTokens = new List<DoxygenToken>();
-                StartPosition = new TextPosition(commandToken.Position);
+                StartPosition = commandToken.Position;
             }
         }
 

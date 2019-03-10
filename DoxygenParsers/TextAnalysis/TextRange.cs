@@ -24,7 +24,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
         public TextRange(TextPosition pos, int length)
         {
-            Position = new TextPosition(pos);
+            Position = pos;
             Length = length;
         }
         public TextRange(TextRange other) : this(other.Position, other.Length)
@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
         public void Set(TextRange range)
         {
-            Position = new TextPosition(range.Position);
+            Position = range.Position;
             Length = range.Length;
         }
         public bool InterectsWith(TextRange other)

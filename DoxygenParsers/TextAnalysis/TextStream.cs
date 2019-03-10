@@ -18,7 +18,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public TextPosition LexemeStart => _lexemeStart;
         public int LexemeWidth => _lexemeStart.Index > -1 ? Math.Max(TextPosition.Index - _lexemeStart.Index, 0) : 0;
         public TextRange LexemeRange => new TextRange(LexemeStart, LexemeWidth);
-        public TextPosition TextPosition { get; }
+        public TextPosition TextPosition { get; set; }
         public int ColumnsPerTab { get; } = 4;
         public string Remaining
         {
@@ -34,7 +34,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             StreamBase = pos.Index;
             StreamLength = length;
             StreamOnePastEnd = StreamBase + StreamLength;
-            TextPosition = new TextPosition(pos);
+            TextPosition = pos;
             _lexemeStart = new TextPosition(-1);
         }
 
@@ -47,13 +47,15 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public void AdvanceColumns(int numChars)
         {
+            TextPosition p = TextPosition;
             for (int i = 0; i < numChars; ++i)
             {
                 char c = Peek(i);
                 Debug.Assert(c != '\t' && c != '\n' && c != '\r');
             }
-            TextPosition.Column += numChars;
-            TextPosition.Index += numChars;
+            p.Column += numChars;
+            p.Index += numChars;
+            TextPosition = p;
         }
 
         public void AdvanceColumn()
@@ -75,15 +77,19 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public void AdvanceTab()
         {
-            TextPosition.Column += ColumnsPerTab;
-            TextPosition.Index++;
+            TextPosition p = TextPosition;
+            p.Column += ColumnsPerTab;
+            p.Index++;
+            TextPosition = p;
         }
 
         public void AdvanceLine(int charsPerLine)
         {
-            TextPosition.Index += charsPerLine;
-            TextPosition.Line++;
-            TextPosition.Column = 0;
+            TextPosition p = TextPosition;
+            p.Index += charsPerLine;
+            p.Line++;
+            p.Column = 0;
+            TextPosition = p;
         }
 
         public void AdvanceManual(char first, char second)
@@ -103,6 +109,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         {
             // @NOTE(final): This is super slow, so only use it when needed
             Debug.Assert(numChars >= 1);
+            TextPosition p = TextPosition;
             int result = 0;
             while (result < numChars)
             {
@@ -111,37 +118,36 @@ namespace TSP.DoxygenEditor.TextAnalysis
                 if (SyntaxUtils.IsLineBreak(c0))
                 {
                     int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                    TextPosition.Line++;
-                    TextPosition.Column = 1;
-                    TextPosition.Index += lb;
+                    p.Line++;
+                    p.Column = 1;
+                    p.Index += lb;
                     result += lb;
                 }
                 if (c0 == '\t')
                 {
-                    TextPosition.Column += ColumnsPerTab;
-                    TextPosition.Index++;
+                    p.Column += ColumnsPerTab;
+                    p.Index++;
                     result++;
                 }
                 else
                 {
-                    TextPosition.Column++;
-                    TextPosition.Index++;
+                    p.Column++;
+                    p.Index++;
                     result++;
                 }
             }
+            TextPosition = p;
             return (result);
         }
 
         public void Seek(TextPosition pos)
         {
-            TextPosition.Index = pos.Index;
-            TextPosition.Column = pos.Column;
-            TextPosition.Line = pos.Line;
+            TextPosition = pos;
         }
 
         public void StartLexeme()
         {
-            _lexemeStart = new TextPosition(TextPosition);
+            _lexemeStart = TextPosition;
         }
 
     }

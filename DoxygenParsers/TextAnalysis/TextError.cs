@@ -9,7 +9,7 @@
         public string Symbol { get; }
         public TextError(TextPosition pos, string category, string message, string type, string symbol)
         {
-            Pos = new TextPosition(pos);
+            Pos = pos;
             Category = category;
             Message = message;
             Type = type;

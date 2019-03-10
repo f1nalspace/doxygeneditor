@@ -160,7 +160,7 @@ namespace TSP.FastTokenizer
                                     {
                                         if (token.Kind == CppTokenKind.Eof)
                                             break;
-                                        var start = new TextPosition(token.Position);
+                                        var start = token.Position;
                                         var end = new TextPosition(token.Position.Index + token.Length, token.Position.Line, token.Position.Column);
                                         var value = source.Substring(start.Index, end.Index - start.Index);
                                         outTokens.Add(new CToken(token.Kind, start, end, value));

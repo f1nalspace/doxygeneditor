@@ -14,8 +14,8 @@ namespace TSP.FastTokenizer
         public CToken(CppTokenKind kind, TextPosition start, TextPosition end, string value = null)
         {
             Kind = kind;
-            Start = new TextPosition(start);
-            End = new TextPosition(end);
+            Start = start;
+            End = end;
             Value = value;
         }
 
