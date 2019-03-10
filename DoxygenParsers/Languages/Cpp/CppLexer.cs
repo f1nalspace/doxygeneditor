@@ -221,10 +221,16 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 Debug.Assert(Buffer.Peek(0) == '/');
                 Debug.Assert(Buffer.Peek(1) == '*');
                 Buffer.AdvanceColumns(2);
-                if (DoxygenSyntax.MultiLineDocChars.Contains(Buffer.Peek()))
+                char n = Buffer.Peek();
+                if (DoxygenSyntax.MultiLineDocChars.Contains(n))
                 {
                     Buffer.AdvanceColumn();
                     kind = CppTokenKind.MultiLineCommentDoc;
+                    if (n == '*' && Buffer.Peek() == '/')
+                    {
+                        Buffer.AdvanceColumn();
+                        return new LexResult(kind, true);
+                    }
                 }
             }
             bool isComplete = false;
@@ -247,6 +253,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else
                     Buffer.AdvanceColumn();
             }
+            if (!isComplete)
+                PushError(Buffer.TextPosition, $"Unterminated multi-line comment, expect '*/' but found '{Buffer.Peek()}'", kind.ToString());
             return new LexResult(kind, isComplete);
         }
 

@@ -671,7 +671,16 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     Buffer.StartLexeme();
                                     Buffer.AdvanceColumns(3);
                                     state.Flags = StateFlags.InsideBlock;
-                                    if (n2 == '*') state.Flags |= StateFlags.JavaDoc;
+                                    if (n2 == '*')
+                                    {
+                                        char n3 = Buffer.Peek();
+                                        if (n3 == '/')
+                                        {
+                                            Buffer.AdvanceColumn();
+                                            return PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.DoxyBlockStartMulti, Buffer.LexemeRange, true));
+                                        }
+                                        state.Flags |= StateFlags.JavaDoc;
+                                    }
                                     PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.DoxyBlockStartMulti, Buffer.LexemeRange, true));
                                     StartText(state);
                                     continue;
