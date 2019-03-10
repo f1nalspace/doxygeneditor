@@ -3,25 +3,40 @@ using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Languages.Html
 {
-    public class HtmlToken : BaseToken
+    public class HtmlToken : IBaseToken
     {
         public HtmlTokenKind Kind { get; private set; }
-        public override bool IsEOF => Kind == HtmlTokenKind.EOF;
-        public override bool IsValid => Kind != HtmlTokenKind.Invalid;
-        public override bool IsEndOfLine => false;
-        public override bool IsMarker => false;
-        public HtmlToken() : base()
+        public bool IsEOF => Kind == HtmlTokenKind.EOF;
+        public bool IsValid => Kind != HtmlTokenKind.Invalid;
+        public bool IsEndOfLine => false;
+        public bool IsMarker => false;
+
+        public TextRange Range { get; set; }
+        public string Value { get; set; }
+        public bool IsComplete { get; set; }
+        public int Index => Range.Index;
+        public int End => Range.End;
+        public TextPosition Position => Range.Position;
+        public int Length
         {
-            Kind = HtmlTokenKind.Invalid;
+            get { return Range.Length; }
+            set { Range = new TextRange(Range.Position, value); }
         }
-        private HtmlToken(HtmlTokenKind kind, TextRange range, bool isComplete) : base(range, isComplete)
+
+        private HtmlToken(HtmlTokenKind kind, TextRange range, bool isComplete)
         {
             Kind = kind;
+            Range = range;
+            IsComplete = isComplete;
+        }
+        public HtmlToken() : this(HtmlTokenKind.Invalid, TextRange.Invalid, false)
+        {
         }
         public void Set(HtmlTokenKind kind, TextRange range, bool isComplete)
         {
-            base.Set(range, isComplete);
             Kind = kind;
+            Range = range;
+            IsComplete = isComplete;
         }
         public void ChangeKind(HtmlTokenKind kind)
         {

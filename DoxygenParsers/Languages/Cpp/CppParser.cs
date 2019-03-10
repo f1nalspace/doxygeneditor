@@ -13,7 +13,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 {
     public class CppParser : BaseParser<CppEntity>
     {
-        public delegate IBaseNode GetDocumentationNodeEventHandler(BaseToken token);
+        public delegate IBaseNode GetDocumentationNodeEventHandler(IBaseToken token);
         public event GetDocumentationNodeEventHandler GetDocumentationNode;
 
         public class CppConfiguration
@@ -28,16 +28,16 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         {
         }
 
-        private IBaseNode FindDocumentationNode(LinkedListNode<BaseToken> searchNode, int maxLineDelta)
+        private IBaseNode FindDocumentationNode(LinkedListNode<IBaseToken> searchNode, int maxLineDelta)
         {
-            BaseToken searchToken = searchNode.Value;
+            IBaseToken searchToken = searchNode.Value;
             int start = searchToken.Index;
             int startLine = searchToken.Position.Line;
             int minEndLine = startLine - maxLineDelta;
-            LinkedListNode<BaseToken> n = searchNode;
+            LinkedListNode<IBaseToken> n = searchNode;
             while (n != null)
             {
-                BaseToken baseToke = n.Value;
+                IBaseToken baseToke = n.Value;
                 if (baseToke.Position.Line >= minEndLine)
                 {
                     DoxygenToken doxyToken = baseToke as DoxygenToken;
@@ -57,7 +57,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (null);
         }
 
-        private SearchResult<CppToken> Search(LinkedListStream<BaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
+        private SearchResult<CppToken> Search(LinkedListStream<IBaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
         {
             var searchFunc = new Func<CppToken, bool>((token) =>
             {
@@ -85,7 +85,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             SearchResult<CppToken> result = Search(inResult.Node, mode, searchFunc);
             return (result);
         }
-        private bool IsToken(LinkedListStream<BaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
+        private bool IsToken(LinkedListStream<IBaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
         {
             var searchFunc = new Func<CppToken, bool>((token) =>
             {
@@ -101,7 +101,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         }
 
-        private void ParseEnumValues(LinkedListStream<BaseToken> stream, CppNode rootNode)
+        private void ParseEnumValues(LinkedListStream<IBaseToken> stream, CppNode rootNode)
         {
             CppToken leftBraceToken = stream.Peek<CppToken>();
             Debug.Assert(leftBraceToken.Kind == CppTokenKind.LeftBrace);
@@ -169,7 +169,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private void ParseEnum(LinkedListStream<BaseToken> stream, TextPosition pos)
+        private void ParseEnum(LinkedListStream<IBaseToken> stream, TextPosition pos)
         {
             CppToken enumBaseToken = stream.Peek<CppToken>();
             Debug.Assert(enumBaseToken.Kind == CppTokenKind.ReservedKeyword && "enum".Equals(enumBaseToken.Value));
@@ -235,7 +235,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private void ParseStruct(LinkedListStream<BaseToken> stream)
+        private void ParseStruct(LinkedListStream<IBaseToken> stream)
         {
             CppToken structKeywordToken = stream.Peek<CppToken>();
             Debug.Assert(structKeywordToken.Kind == CppTokenKind.ReservedKeyword && ("struct".Equals(structKeywordToken.Value) || "union".Equals(structKeywordToken.Value)));
@@ -282,7 +282,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             // @TODO(final): Parse struct members
         }
 
-        private void ParseTypedef(LinkedListStream<BaseToken> stream)
+        private void ParseTypedef(LinkedListStream<IBaseToken> stream)
         {
             CppToken typedefToken = stream.Peek<CppToken>();
             Debug.Assert(typedefToken.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(typedefToken.Value));
@@ -366,7 +366,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private bool ParsePreprocessor(LinkedListStream<BaseToken> stream)
+        private bool ParsePreprocessor(LinkedListStream<IBaseToken> stream)
         {
             CppToken token = stream.Peek<CppToken>();
             Debug.Assert(token.Kind == CppTokenKind.Raute);
@@ -408,7 +408,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (true);
         }
 
-        private bool ParseReservedKeyword(LinkedListStream<BaseToken> stream)
+        private bool ParseReservedKeyword(LinkedListStream<IBaseToken> stream)
         {
             CppToken keywordToken = stream.Peek<CppToken>();
             Debug.Assert(keywordToken.Kind == CppTokenKind.ReservedKeyword);
@@ -434,13 +434,13 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private List<CppToken> ParseType(LinkedListStream<BaseToken> stream)
+        private List<CppToken> ParseType(LinkedListStream<IBaseToken> stream)
         {
             List<CppToken> result = new List<CppToken>();
             return (result);
         }
 
-        private bool ParseFunction(LinkedListStream<BaseToken> stream)
+        private bool ParseFunction(LinkedListStream<IBaseToken> stream)
         {
             var functionIdentNode = stream.CurrentNode;
             CppToken functionIdentToken = functionIdentNode.Value as CppToken;
@@ -520,7 +520,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (true);
         }
 
-        public override bool ParseToken(LinkedListStream<BaseToken> stream)
+        public override bool ParseToken(LinkedListStream<IBaseToken> stream)
         {
             var token = stream.Peek<CppToken>();
             if (token == null) return (false);

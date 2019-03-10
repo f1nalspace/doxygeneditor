@@ -15,7 +15,7 @@ namespace TSP.DoxygenEditor.Symbols
             Range = range;
             Kind = kind;
         }
-        public ReferenceSymbol(IBaseNode node, BaseToken token, ReferenceSymbolKind kind) : this(node, token.Range, kind)
+        public ReferenceSymbol(IBaseNode node, IBaseToken token, ReferenceSymbolKind kind) : this(node, token.Range, kind)
         {
         }
         public override string ToString()

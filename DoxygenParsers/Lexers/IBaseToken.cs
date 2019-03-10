@@ -2,10 +2,26 @@
 
 namespace TSP.DoxygenEditor.Lexers
 {
-    public abstract class BaseToken
+    public interface IBaseToken
     {
+        int Index { get; }
+        int End { get; }
+        TextPosition Position { get; }
+
+        bool IsEOF { get; }
+        bool IsEndOfLine { get; }
+        bool IsValid { get; }
+        bool IsMarker { get; }
+
+        TextRange Range { get; set; }
+        string Value { get; set; }
+        bool IsComplete { get; set; }
+        int Length { get; set; }
+
+#if false
         public bool IsComplete { get; private set; }
         public TextRange Range { get; set; }
+        public string Value { get; set; }
 
         public int Index => Range.Index;
         public int End => Range.End;
@@ -18,26 +34,17 @@ namespace TSP.DoxygenEditor.Lexers
                 Range = newRange;
             }
         }
-        public string Value
-        {
-            get { return Range.Value; }
-            set {
-                TextRange newRange = new TextRange(Range.Position, Range.Length) { Value = value };
-                Range = newRange;
-            }
-        }
-
         public abstract bool IsEOF { get; }
         public abstract bool IsEndOfLine { get; }
         public abstract bool IsValid { get; }
         public abstract bool IsMarker { get; }
 
-        public BaseToken()
+        public IBaseToken()
         {
             Range = new TextRange(new TextPosition(0), 0);
             IsComplete = false;
         }
-        public BaseToken(TextRange range, bool isComplete)
+        public IBaseToken(TextRange range, bool isComplete)
         {
             Range = range;
             IsComplete = isComplete;
@@ -49,7 +56,8 @@ namespace TSP.DoxygenEditor.Lexers
         }
         public override string ToString()
         {
-            return $"{GetType().Name}, {base.ToString()}";
-        }        
+            return $"{GetType().Name}, {base.ToString()} => {Value}";
+        }
+#endif
     }
 }

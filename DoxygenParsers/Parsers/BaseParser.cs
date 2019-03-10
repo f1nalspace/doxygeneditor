@@ -47,16 +47,16 @@ namespace TSP.DoxygenEditor.Parsers
 
         protected class SearchResult<TToken>
         {
-            public LinkedListNode<BaseToken> Node { get; }
+            public LinkedListNode<IBaseToken> Node { get; }
             public TToken Token { get; }
-            public SearchResult(LinkedListNode<BaseToken> node, TToken token)
+            public SearchResult(LinkedListNode<IBaseToken> node, TToken token)
             {
                 Node = node;
                 Token = token;
             }
         }
 
-        protected SearchResult<TToken> Search<TToken>(LinkedListNode<BaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc) where TToken : BaseToken
+        protected SearchResult<TToken> Search<TToken>(LinkedListNode<IBaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc) where TToken : class
         {
             bool canTravel = (mode == SearchMode.Forward || mode == SearchMode.Backward);
             var n = inNode;
@@ -77,9 +77,10 @@ namespace TSP.DoxygenEditor.Parsers
                 }
                 if (n != null)
                 {
-                    TToken token = n.Value as TToken;
-                    if (token != null)
+                    Type type = n.Value.GetType();
+                    if (typeof(TToken).Equals(type))
                     {
+                        TToken token = (TToken)n.Value;
                         if (matchFunc(token))
                             return new SearchResult<TToken>(n, token);
                     }
@@ -97,7 +98,7 @@ namespace TSP.DoxygenEditor.Parsers
             return (null);
         }
 
-        public abstract bool ParseToken(LinkedListStream<BaseToken> stream);
+        public abstract bool ParseToken(LinkedListStream<IBaseToken> stream);
 
         protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
 

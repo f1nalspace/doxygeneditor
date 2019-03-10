@@ -12,7 +12,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         public IBaseNode DocumentationNode { get; set; }
 
-        public CppEntity(CppEntityKind kind, BaseToken token, string ident) : base(token.Range)
+        public CppEntity(CppEntityKind kind, IBaseToken token, string ident) : base(token.Range)
         {
             Kind = kind;
             Id = ident;

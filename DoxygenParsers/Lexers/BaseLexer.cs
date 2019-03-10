@@ -7,7 +7,7 @@ using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Lexers
 {
-    public abstract class BaseLexer<T> : IDisposable where T : BaseToken
+    public abstract class BaseLexer<T> : IDisposable where T : IBaseToken
     {
         internal readonly TextStream Buffer;
         private readonly List<T> _tokens = new List<T>();

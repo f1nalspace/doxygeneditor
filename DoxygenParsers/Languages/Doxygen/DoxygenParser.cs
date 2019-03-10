@@ -46,7 +46,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return (itemNode);
         }
 
-        private void ParseText(LinkedListStream<BaseToken> stream, IBaseNode contentNode)
+        private void ParseText(LinkedListStream<IBaseToken> stream, IBaseNode contentNode)
         {
             var nextToken = stream.Peek<DoxygenToken>();
             Debug.Assert(nextToken.Kind == DoxygenTokenKind.TextStart);
@@ -80,7 +80,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
         }
 
-        private bool ParseCommand(LinkedListStream<BaseToken> stream, IBaseNode contentRoot)
+        private bool ParseCommand(LinkedListStream<IBaseToken> stream, IBaseNode contentRoot)
         {
             // @NOTE(final): This must always return true, due to the fact that the stream is advanced at least once
             DoxygenToken commandToken = stream.Peek<DoxygenToken>();
@@ -252,24 +252,24 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return (true);
         }
 
-        private bool ParseSingleBlock(LinkedListStream<BaseToken> stream)
+        private bool ParseSingleBlock(LinkedListStream<IBaseToken> stream)
         {
             // @NOTE(final) Single block = auto-brief
 
-            BaseToken blockToken = stream.Peek();
+            IBaseToken blockToken = stream.Peek();
             DoxygenEntity blockEntity = new DoxygenEntity(DoxygenEntityKind.BlockSingle, blockToken);
             PushEntity(blockEntity);
             stream.Next();
 
-            BaseToken endToken = null;
-            BaseToken briefToken = DoxygenTokenPool.Make(DoxygenTokenKind.Command, blockToken.Range, true);
+            IBaseToken endToken = null;
+            IBaseToken briefToken = DoxygenTokenPool.Make(DoxygenTokenKind.Command, blockToken.Range, true);
 
             var briefEntity = new DoxygenEntity(DoxygenEntityKind.Brief, briefToken);
             var briefNode = PushEntity(briefEntity);
 
             while (!stream.IsEOF)
             {
-                BaseToken token = stream.Peek();
+                IBaseToken token = stream.Peek();
                 DoxygenToken doxyToken = token as DoxygenToken;
                 if (doxyToken != null && doxyToken.Kind == DoxygenTokenKind.DoxyBlockEnd)
                 {
@@ -311,9 +311,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
         }
 
-        private bool ParseBlockContent(LinkedListStream<BaseToken> stream, IBaseNode contentRoot)
+        private bool ParseBlockContent(LinkedListStream<IBaseToken> stream, IBaseNode contentRoot)
         {
-            BaseToken token = stream.Peek();
+            IBaseToken token = stream.Peek();
             if (typeof(DoxygenToken).Equals(token.GetType()))
             {
                 DoxygenToken doxyToken = (DoxygenToken)token;
@@ -339,9 +339,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 return (false);
         }
 
-        public override bool ParseToken(LinkedListStream<BaseToken> stream)
+        public override bool ParseToken(LinkedListStream<IBaseToken> stream)
         {
-            BaseToken token = stream.Peek();
+            IBaseToken token = stream.Peek();
             if (typeof(DoxygenToken).Equals(token.GetType()))
             {
                 DoxygenToken doxyToken = (DoxygenToken)token;

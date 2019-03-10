@@ -35,7 +35,7 @@ namespace TSP.DoxygenEditor.Editor
         private BackgroundWorker _parseWorker;
         private IBaseNode _doxyTree;
         private IBaseNode _cppTree;
-        private readonly List<BaseToken> _tokens = new List<BaseToken>();
+        private readonly List<IBaseToken> _tokens = new List<IBaseToken>();
         private readonly List<TextError> _errors = new List<TextError>();
         private readonly List<PerformanceItemModel> _performanceItems = new List<PerformanceItemModel>();
         private readonly EditorStyler _styler = new EditorStyler();
@@ -362,9 +362,9 @@ namespace TSP.DoxygenEditor.Editor
 
         class TokenizeResult : IDisposable
         {
-            private readonly List<BaseToken> _tokens = new List<BaseToken>();
+            private readonly List<IBaseToken> _tokens = new List<IBaseToken>();
             private readonly List<TextError> _errors = new List<TextError>();
-            public IEnumerable<BaseToken> Tokens => _tokens;
+            public IEnumerable<IBaseToken> Tokens => _tokens;
             public IEnumerable<TextError> Errors => _errors;
             public TokenizerTimingStats Stats { get; }
             public TokenizeResult()
@@ -375,14 +375,14 @@ namespace TSP.DoxygenEditor.Editor
             {
                 _errors.AddRange(errors);
             }
-            public void AddTokens(IEnumerable<BaseToken> inTokens)
+            public void AddTokens(IEnumerable<IBaseToken> inTokens)
             {
                 Stopwatch w = Stopwatch.StartNew();
                 _tokens.AddRange(inTokens);
                 w.Stop();
                 Stats.InsertDuration += w.Elapsed;
             }
-            public void AddToken(BaseToken token)
+            public void AddToken(IBaseToken token)
             {
                 Stopwatch w = Stopwatch.StartNew();
                 _tokens.Add(token);
@@ -680,10 +680,10 @@ namespace TSP.DoxygenEditor.Editor
             timer.Restart();
             using (DoxygenParser doxyParser = new DoxygenParser(this, text))
             {
-                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(_tokens);
                 while (!tokenStream.IsEOF)
                 {
-                    BaseToken old = tokenStream.CurrentValue;
+                    IBaseToken old = tokenStream.CurrentValue;
                     if (!typeof(DoxygenToken).Equals(old.GetType()))
                     {
                         tokenStream.Next();
@@ -711,10 +711,10 @@ namespace TSP.DoxygenEditor.Editor
                     IBaseNode result = _doxyTree.FindNodeByRange(token.Range);
                     return (result);
                 };
-                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
+                LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(_tokens);
                 while (!tokenStream.IsEOF)
                 {
-                    BaseToken old = tokenStream.CurrentValue;
+                    IBaseToken old = tokenStream.CurrentValue;
                     if (!typeof(CppToken).Equals(old.GetType()))
                     {
                         tokenStream.Next();

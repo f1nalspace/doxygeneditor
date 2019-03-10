@@ -7,7 +7,7 @@ namespace TSP.DoxygenEditor.Symbols
     public class SourceSymbol
     {
         public IBaseNode Node { get; }
-        public BaseToken Token { get; }
+        public IBaseToken Token { get; }
         public SourceSymbolKind Kind { get; }
 
         public enum SymbolType
@@ -15,7 +15,7 @@ namespace TSP.DoxygenEditor.Symbols
        
         }
 
-        public SourceSymbol(IBaseNode node, BaseToken token, SourceSymbolKind kind)
+        public SourceSymbol(IBaseNode node, IBaseToken token, SourceSymbolKind kind)
         {
             Node = node;
             Token = token;

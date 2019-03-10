@@ -83,7 +83,7 @@
     <Compile Include="Languages\Html\HtmlTokenKind.cs" />
     <Compile Include="Languages\Html\HtmlTokenPool.cs" />
     <Compile Include="Lexers\BaseLexer.cs" />
-    <Compile Include="Lexers\BaseToken.cs" />
+    <Compile Include="Lexers\IBaseToken.cs" />
     <Compile Include="Symbols\ReferenceSymbolKind.cs" />
     <Compile Include="Symbols\SourceSymbolKind.cs" />
     <Compile Include="Lexers\TokenKindAttribute.cs" />

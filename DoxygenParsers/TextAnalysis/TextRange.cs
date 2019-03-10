@@ -6,19 +6,22 @@ namespace TSP.DoxygenEditor.TextAnalysis
     {
         public TextPosition Position { get; }
         public int Length { get; }
-        public string Value { get; set; }
 
         public int Index => Position.Index;
         public int End => Index + Math.Max(0, Length - 1);
+
+        public static TextRange Invalid => new TextRange(new TextPosition(-1), 0);
+
         public TextRange(TextPosition pos, int length)
         {
             Position = pos;
             Length = length;
-            Value = null;
         }
+
         public TextRange(TextRange other) : this(other.Position, other.Length)
         {
         }
+
         public bool InterectsWith(TextRange other)
         {
             bool result = (Index <= other.End) && (End >= other.Index);
@@ -39,7 +42,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public override string ToString()
         {
-            return $"{Position}, {Length} => {Value}";
+            return $"{Position}, {Length}";
         }
     }
 }

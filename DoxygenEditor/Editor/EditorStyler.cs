@@ -103,7 +103,7 @@ namespace TSP.DoxygenEditor.Editor
                 Style = style;
             }
 
-            public StyleEntry(BaseToken token, int style) : this(token.Index, token.Length, style)
+            public StyleEntry(IBaseToken token, int style) : this(token.Index, token.Length, style)
             {
             }
 
@@ -120,7 +120,7 @@ namespace TSP.DoxygenEditor.Editor
         {
         }
 
-        public void Refresh(IEnumerable<BaseToken> tokens)
+        public void Refresh(IEnumerable<IBaseToken> tokens)
         {
             _entries.Clear();
             foreach (var token in tokens)
