@@ -11,6 +11,39 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 {
     public class DoxygenLexer : BaseLexer<DoxygenToken>
     {
+        [Flags]
+        enum StateFlags
+        {
+            None = 0,
+            InsideBlock = 1 << 0,
+            SingleLine = 1 << 1,
+            JavaDoc = 1 << 2,
+            CommandContentStarted = 1 << 3,
+        }
+
+        class DoxygenState : State
+        {
+            public StateFlags Flags { get; set; }
+            public int CurrentLineStartIndex { get; set; }
+
+            public DoxygenState()
+            {
+                Flags = StateFlags.None;
+                CurrentLineStartIndex = -1;
+            }
+
+            public override void StartLex(TextStream stream)
+            {
+                Flags = StateFlags.None;
+                CurrentLineStartIndex = stream.StreamPosition;
+            }
+        }
+
+        protected override State CreateState()
+        {
+            return new DoxygenState();
+        }
+
         public DoxygenLexer(string source, TextPosition pos, int length) : base(source, pos, length)
         {
 
@@ -545,7 +578,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 }
             }
 
-CommandDone:
+            CommandDone:
             result.IsValid = true;
 
             SkipSpacings(SkipType.All);
@@ -561,12 +594,12 @@ CommandDone:
             return (result);
         }
 
-        private void StartText(LexState state)
+        private void StartText(DoxygenState state)
         {
             DoxygenToken token = DoxygenTokenPool.Make(DoxygenTokenKind.TextStart, new TextRange(Buffer.TextPosition, 0), false);
             PushToken(token);
         }
-        private void EndText(LexState state)
+        private void EndText(DoxygenState state)
         {
             var lastTextStartOrEnd = Tokens.LastOrDefault(t => t.Kind == DoxygenTokenKind.TextStart || t.Kind == DoxygenTokenKind.TextEnd);
             if (lastTextStartOrEnd != null && lastTextStartOrEnd.Kind == DoxygenTokenKind.TextStart)
@@ -576,31 +609,7 @@ CommandDone:
             }
         }
 
-        [Flags]
-        enum StateFlags
-        {
-            None = 0,
-            InsideBlock = 1 << 0,
-            SingleLine = 1 << 1,
-            JavaDoc = 1 << 2,
-            CommandContentStarted = 1 << 3,
-        }
-
-
-
-        class LexState
-        {
-            public StateFlags Flags { get; set; }
-            public int CurrentLineStartIndex { get; set; }
-
-            public LexState()
-            {
-                Flags = StateFlags.None;
-                CurrentLineStartIndex = -1;
-            }
-        }
-
-        private void Done(LexState state)
+        private void Done(DoxygenState state)
         {
             EndText(state);
             if (state.Flags.HasFlag(StateFlags.InsideBlock))
@@ -611,9 +620,10 @@ CommandDone:
             }
         }
 
-        protected override bool LexNext()
+        protected override bool LexNext(State hiddenState)
         {
-            LexState state = new LexState();
+            DoxygenState state = (DoxygenState)hiddenState;
+            state.Flags = StateFlags.None;
             state.CurrentLineStartIndex = Buffer.StreamPosition;
             do
             {

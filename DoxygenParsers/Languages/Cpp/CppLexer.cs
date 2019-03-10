@@ -126,6 +126,44 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             "wchar_t",
         };
 
+        public static readonly HashSet<string> PreProcessorKeywords = new HashSet<string>()
+        {
+            "define",
+            "defined",
+            "undef",
+            "ifdef",
+            "ifndef",
+            "include",
+
+            "error",
+            "import",
+            "pragma",
+
+            "if",
+            "elif",
+            "else",
+            "endif",
+            "using",
+
+            "line",
+        };
+
+        class CppLexerState : State
+        {
+            public bool IsInsidePreprocessor { get; private set; }
+            public void StartPreprocessor() { IsInsidePreprocessor = true; }
+            public void EndPreprocessor() { IsInsidePreprocessor = false; }
+
+            public override void StartLex(TextStream stream)
+            {
+            }
+        }
+
+        protected override State CreateState()
+        {
+            return new CppLexerState();
+        }
+
         public CppLexer(string source, TextPosition pos, int length) : base(source, pos, length)
         {
         }
@@ -212,7 +250,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return new LexResult(kind, isComplete);
         }
 
-        private LexResult LexIdent()
+        private LexResult LexIdent(bool isPreprocessor)
         {
             Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.Peek()));
             StringBuilder identBuffer = new StringBuilder();
@@ -232,7 +270,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             int identLength = Buffer.LexemeWidth;
             string identString = identBuffer.ToString();
 
-            if (ReservedKeywords.Contains(identString))
+            if (isPreprocessor && PreProcessorKeywords.Contains(identString))
+                kind = CppTokenKind.PreprocessorKeyword;
+            else if (ReservedKeywords.Contains(identString))
                 kind = CppTokenKind.ReservedKeyword;
             else if (TypeKeywords.Contains(identString) || GlobalClassKeywords.Contains(identString))
                 kind = CppTokenKind.TypeKeyword;
@@ -560,21 +600,143 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return new LexResult(kind, true);
         }
 
-        private bool LexPreprocessor()
+        private bool LexPreprocessor(CppLexerState state)
         {
             Debug.Assert(Buffer.Peek() == '#');
+
+            state.StartPreprocessor();
+
+            // Preprocessor start
             Buffer.StartLexeme();
             Buffer.AdvanceColumn();
+            PushToken(CppTokenPool.Make(CppTokenKind.PreprocessorStart, Buffer.LexemeRange, true));
 
-            CppToken token = CppTokenPool.Make(CppTokenKind.PreprocessorStart, Buffer.LexemeRange, true);
-            PushToken(token);
+            do
+            {
+                SkipSpacings(SkipType.All);
+                Buffer.StartLexeme();
+                char first = Buffer.Peek();
+                char second = Buffer.Peek(1);
+                char third = Buffer.Peek(2);
+                if (first == '\\')
+                {
+                    if (SyntaxUtils.IsLineBreak(second))
+                    {
+                        Buffer.AdvanceColumn();
+                        int lb = SyntaxUtils.GetLineBreakChars(second, third);
+                        Buffer.AdvanceLine(lb);
+                        continue;
+                    }
+                    else
+                    {
+                        PushError(Buffer.TextPosition, $"Unterminated preprocessor next-line, expect linebreak after '\' but got '{second}'", "Preprocessor");
+                        return (false);
+                    }
+                }
+                else if (SyntaxUtils.IsLineBreak(first))
+                {
+                    int lb = SyntaxUtils.GetLineBreakChars(first, second);
+                    Buffer.AdvanceLine(lb);
+                    PushToken(CppTokenPool.Make(CppTokenKind.EndOfLine, Buffer.LexemeRange, true));
+                    break;
+                }
+                else if (SyntaxUtils.IsIdentStart(first))
+                {
+                    LexResult identResult = LexIdent(true);
+                    CppToken identToken = CppTokenPool.Make(identResult.Kind, Buffer.LexemeRange, identResult.IsComplete);
+                    PushToken(identToken);
+                    SkipSpacings(SkipType.All);
+                    Buffer.StartLexeme();
+                    if (identToken.Kind == CppTokenKind.PreprocessorKeyword)
+                    {
+                        switch (identToken.Value)
+                        {
+                            case "define":
+                                {
+                                    if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
+                                    {
+                                        PushError(Buffer.TextPosition, $"Expect identifier for define, but got '{Buffer.Peek()}'", "Preprocessor");
+                                        return (false);
+                                    }
+                                    LexResult defineValueResult = LexIdent(false);
+                                    CppToken defineValueToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineSource, Buffer.LexemeRange, defineValueResult.IsComplete);
+                                    PushToken(defineValueToken);
+                                }
+                                break;
+
+                            case "defined":
+                                {
+                                    if (Buffer.Peek() == '(')
+                                    {
+                                        Buffer.AdvanceColumn();
+                                        if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
+                                        {
+                                            PushError(Buffer.TextPosition, $"Expect identifier for defined, but got '{Buffer.Peek()}'", "Preprocessor");
+                                            return (false);
+                                        }
+                                        LexResult definedValueResult = LexIdent(false);
+                                        CppToken definedValueToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineTarget, Buffer.LexemeRange, definedValueResult.IsComplete);
+                                        PushToken(definedValueToken);
+                                        SkipSpacings(SkipType.All);
+                                        if (Buffer.Peek() != ')')
+                                        {
+                                            PushError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
+                                            return (false);
+                                        }
+                                    }
+                                }
+                                break;
+
+                            case "include":
+                                {
+                                    char n = Buffer.Peek();
+                                    if (n == '<' || n == '"')
+                                    {
+                                        bool isComplete = false;
+                                        Buffer.AdvanceColumn();
+                                        char quote = (n == '<') ? '>' : n;
+                                        while (!Buffer.IsEOF)
+                                        {
+                                            if (Buffer.Peek() == quote)
+                                            {
+                                                isComplete = true;
+                                                Buffer.AdvanceColumn();
+                                                break;
+                                            }
+                                            Buffer.AdvanceColumn();
+                                        }
+                                        CppToken includeToken = CppTokenPool.Make(CppTokenKind.PreprocessorInclude, Buffer.LexemeRange, isComplete);
+                                        PushToken(includeToken);
+                                    }
+                                    else
+                                    {
+                                        return (false);
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    if (!LexNext(state))
+                        break;
+                }
+            } while (!Buffer.IsEOF);
+
+            state.EndPreprocessor();
+
+            PushToken(CppTokenPool.Make(CppTokenKind.PreprocessorEnd, new TextRange(Buffer.TextPosition, 0), true));
 
             return (true);
         }
 
-        protected override bool LexNext()
+        protected override bool LexNext(State hiddenState)
         {
-            SkipAllWhitespaces();
+            CppLexerState state = (CppLexerState)hiddenState;
+            bool allowWhitespaces = !state.IsInsidePreprocessor;
+            if (allowWhitespaces)
+                SkipAllWhitespaces();
             if (Buffer.IsEOF)
                 return (false);
             int line = Buffer.TextPosition.Line;
@@ -838,7 +1000,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     break;
 
                 case '#':
-                    return LexPreprocessor();
+                    return LexPreprocessor(state);
 
                 case '"':
                     lexRes = LexString("string");
@@ -899,13 +1061,13 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
                 default:
                     {
-                        if (SyntaxUtils.IsLineBreak(first))
+                        if (SyntaxUtils.IsLineBreak(first) && allowWhitespaces)
                         {
                             lexRes.Kind = CppTokenKind.EndOfLine;
                             int nb = SyntaxUtils.GetLineBreakChars(first, second);
                             Buffer.AdvanceLine(nb);
                         }
-                        else if (first == '\t')
+                        else if (first == '\t' && allowWhitespaces)
                         {
                             lexRes.Kind = CppTokenKind.Spacings;
                             while (!Buffer.IsEOF)
@@ -915,20 +1077,22 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                 Buffer.AdvanceTab();
                             }
                         }
-                        else if (SyntaxUtils.IsSpacing(first))
+                        else if (SyntaxUtils.IsSpacing(first) && allowWhitespaces)
                         {
                             lexRes.Kind = CppTokenKind.Spacings;
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsSpacing);
                         }
                         else if (SyntaxUtils.IsIdentStart(first))
-                            lexRes = LexIdent();
+                        {
+                            Debug.Assert(!state.IsInsidePreprocessor);
+                            lexRes = LexIdent(false);
+                        }
                         else if (SyntaxUtils.IsNumeric(first))
                             lexRes = LexNumber();
                         else
                         {
-                            lexRes.Kind = CppTokenKind.Unknown;
-                            PushError(Buffer.TextPosition, $"Unsupported character '{first}'", "Character");
-                            Buffer.AdvanceColumn();
+                            PushError(Buffer.TextPosition, $"Unexpected character '{first}'", "Character");
+                            return (false);
                         }
                     }
                     break;

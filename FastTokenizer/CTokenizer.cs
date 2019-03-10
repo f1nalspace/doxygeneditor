@@ -577,7 +577,7 @@ namespace TSP.FastTokenizer
                     stream.AdvanceColumn();
                     break;
                 case '#':
-                    kind = CppTokenKind.Raute;
+                    kind = CppTokenKind.PreprocessorStart;
                     stream.AdvanceColumn();
                     break;
                 case ',':

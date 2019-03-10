@@ -21,6 +21,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         PreprocessorStart,
         PreprocessorKeyword,
+        PreprocessorDefineSource,
+        PreprocessorDefineTarget,
+        PreprocessorInclude,
         PreprocessorEnd,
 
         IdentLiteral,
@@ -123,8 +126,6 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         QuestionMark,
         [TokenKind(Text = ".")]
         Dot,
-        [TokenKind(Text = "#")]
-        Raute,
         [TokenKind(Text = "\\")]
         Backslash,
         [TokenKind(Text = "~")]

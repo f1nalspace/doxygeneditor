@@ -8,6 +8,18 @@ namespace TSP.DoxygenEditor.Languages.Html
 {
     public class HtmlLexer : BaseLexer<HtmlToken>
     {
+        class HtmlLexerState : State
+        {
+            public override void StartLex(TextStream stream)
+            {
+            }
+        }
+
+        protected override State CreateState()
+        {
+            return new HtmlLexerState();
+        }
+
         public HtmlLexer(string source, TextPosition pos, int length) : base(source, pos, length)
         {
         }
@@ -114,7 +126,7 @@ namespace TSP.DoxygenEditor.Languages.Html
             startTagToken.ChangeLength(tagLength);
         }
 
-        protected override bool LexNext()
+        protected override bool LexNext(State state)
         {
             do
             {

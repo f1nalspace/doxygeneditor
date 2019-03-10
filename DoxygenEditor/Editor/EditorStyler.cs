@@ -19,7 +19,10 @@ namespace TSP.DoxygenEditor.Editor
         static readonly int cppMultiLineCommentDocStyle = styleIndex++;
         static readonly int cppSingleLineCommentStyle = styleIndex++;
         static readonly int cppSingleLineCommentDocStyle = styleIndex++;
-        static readonly int cppPreprocessorStyle = styleIndex++;
+        static readonly int cppPreprocessorBasicStyle = styleIndex++;
+        static readonly int cppPreprocessorKeywordStyle = styleIndex++;
+        static readonly int cppPreprocessorDefineStyle = styleIndex++;
+        static readonly int cppPreprocessorIncludeStyle = styleIndex++;
         static readonly int cppReservedKeywordStyle = styleIndex++;
         static readonly int cppTypeKeywordStyle = styleIndex++;
         static readonly int cppStringStyle = styleIndex++;
@@ -31,8 +34,11 @@ namespace TSP.DoxygenEditor.Editor
             { CppTokenKind.SingleLineComment, cppSingleLineCommentStyle },
             //{ CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
 
-            { CppTokenKind.PreprocessorStart, cppPreprocessorStyle },
-            { CppTokenKind.PreprocessorKeyword, cppPreprocessorStyle },
+            { CppTokenKind.PreprocessorStart, cppPreprocessorBasicStyle },
+            { CppTokenKind.PreprocessorKeyword, cppPreprocessorKeywordStyle },
+            { CppTokenKind.PreprocessorDefineSource, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorDefineTarget, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorInclude, cppPreprocessorIncludeStyle },
 
             { CppTokenKind.ReservedKeyword, cppReservedKeywordStyle },
             { CppTokenKind.TypeKeyword, cppTypeKeywordStyle },
@@ -163,7 +169,10 @@ namespace TSP.DoxygenEditor.Editor
             editor.Styles[cppMultiLineCommentDocStyle].ForeColor = Color.Purple;
             editor.Styles[cppSingleLineCommentStyle].ForeColor = Color.Green;
             editor.Styles[cppSingleLineCommentDocStyle].ForeColor = Color.Purple;
-            editor.Styles[cppPreprocessorStyle].ForeColor = Color.DarkSlateGray;
+            editor.Styles[cppPreprocessorBasicStyle].ForeColor = Color.DarkSlateGray;
+            editor.Styles[cppPreprocessorKeywordStyle].ForeColor = Color.DarkSlateGray;
+            editor.Styles[cppPreprocessorDefineStyle].ForeColor = Color.Purple;
+            editor.Styles[cppPreprocessorIncludeStyle].ForeColor = Color.Brown;
             editor.Styles[cppReservedKeywordStyle].ForeColor = Color.Blue;
             editor.Styles[cppTypeKeywordStyle].ForeColor = Color.BlueViolet;
             editor.Styles[cppStringStyle].ForeColor = Color.Green;

@@ -369,22 +369,19 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         private bool ParsePreprocessor(LinkedListStream<IBaseToken> stream)
         {
             CppToken token = stream.Peek<CppToken>();
-            Debug.Assert(token.Kind == CppTokenKind.Raute);
+            Debug.Assert(token.Kind == CppTokenKind.PreprocessorStart);
             stream.Next();
-
-            var identResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
-            if (identResult != null)
+            var keywordResult = Search(stream, SearchMode.Current, CppTokenKind.PreprocessorKeyword);
+            if (keywordResult != null)
             {
-                var identToken = identResult.Token;
-                string ident = identToken.Value;
+                var keywordToken = keywordResult.Token;
                 stream.Next();
-
-                if ("define".Equals(ident))
+                if ("define".Equals(keywordResult.Token.Value))
                 {
-                    var nameResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
-                    if (nameResult != null)
+                    var defineResult = Search(stream, SearchMode.Current, CppTokenKind.PreprocessorDefineSource);
+                    if (defineResult != null)
                     {
-                        var defineNameToken = nameResult.Token;
+                        var defineNameToken = defineResult.Token;
                         string defineName = defineNameToken.Value;
                         stream.Next();
 
@@ -394,7 +391,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
                         CppEntity defineKeyEntity = new CppEntity(CppEntityKind.Define, defineNameToken, defineName)
                         {
-                            DocumentationNode = FindDocumentationNode(nameResult.Node, 1),
+                            DocumentationNode = FindDocumentationNode(defineResult.Node, 1),
                             Value = defineValueResult?.Token.Value
                         };
                         CppNode defineNode = new CppNode(Top, defineKeyEntity);
@@ -402,7 +399,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         SymbolCache.AddSource(Tag, defineName, new SourceSymbol(defineNode, defineNameToken, SourceSymbolKind.CppDefine));
                     }
                     else
-                        AddParseError(identToken.Position, $"Processor define has no identifier!", "Define");
+                        AddParseError(keywordToken.Position, $"Processor define has no identifier!", "Define");
                 }
             }
             return (true);
@@ -526,7 +523,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             if (token == null) return (false);
             switch (token.Kind)
             {
-                case CppTokenKind.Raute:
+                case CppTokenKind.PreprocessorStart:
                     return ParsePreprocessor(stream);
 
                 case CppTokenKind.ReservedKeyword:

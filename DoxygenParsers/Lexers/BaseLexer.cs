@@ -16,6 +16,12 @@ namespace TSP.DoxygenEditor.Lexers
         public bool HasTokens => _tokens.Count > 0;
         public IEnumerable<TextError> LexErrors => _lexErrors;
 
+        public abstract class State
+        {
+            public abstract void StartLex(TextStream stream);
+        }
+        protected abstract State CreateState();
+
         public BaseLexer(string source, TextPosition pos, int length)
         {
             Buffer = new BasicTextStream(source, pos, length);
@@ -37,15 +43,17 @@ namespace TSP.DoxygenEditor.Lexers
             return (true);
         }
 
-        protected abstract bool LexNext();
+        protected abstract bool LexNext(State state);
 
         public IEnumerable<T> Tokenize()
         {
             _tokens.Clear();
+            State state = CreateState();
             do
             {
                 int p = Buffer.StreamPosition;
-                bool r = LexNext();
+                state.StartLex(Buffer);
+                bool r = LexNext(state);
                 if (!r)
                     break;
                 else
