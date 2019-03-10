@@ -1,6 +1,4 @@
-﻿//#define LEX_PREPROCESSOR_ENABLED
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -132,10 +130,20 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         {
         }
 
-        private CppToken LexSingleLineComment(bool init)
+        struct LexResult
         {
-            TextPosition commentStart = new TextPosition(Buffer.TextPosition);
-            CppTokenKind type = CppTokenKind.SingleLineComment;
+            public CppTokenKind Kind { get; set; }
+            public bool IsComplete { get; set; }
+            public LexResult(CppTokenKind kind, bool isComplete)
+            {
+                Kind = kind;
+                IsComplete = isComplete;
+            }
+        }
+
+        private LexResult LexSingleLineComment(bool init)
+        {
+            CppTokenKind kind = CppTokenKind.SingleLineComment;
             if (init)
             {
                 Debug.Assert(Buffer.Peek(0) == '/');
@@ -144,7 +152,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 if (DoxygenSyntax.SingleLineDocChars.Contains(Buffer.Peek()))
                 {
                     Buffer.AdvanceColumn();
-                    type = CppTokenKind.SingleLineCommentDoc;
+                    kind = CppTokenKind.SingleLineCommentDoc;
                 }
             }
             bool isComplete = false;
@@ -164,16 +172,12 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else
                     Buffer.AdvanceColumn();
             }
-            int commentLength = Buffer.StreamPosition - commentStart.Index;
-            TextRange commandRange = new TextRange(commentStart, commentLength);
-            CppToken token = CppTokenPool.Make(type, commandRange, isComplete);
-            return (token);
+            return new LexResult(kind, isComplete);
         }
 
-        private CppToken LexMultiLineComment(bool init)
+        private LexResult LexMultiLineComment(bool init)
         {
-            TextPosition commentStart = new TextPosition(Buffer.TextPosition);
-            CppTokenKind type = CppTokenKind.MultiLineComment;
+            CppTokenKind kind = CppTokenKind.MultiLineComment;
             if (init)
             {
                 Debug.Assert(Buffer.Peek(0) == '/');
@@ -182,7 +186,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 if (DoxygenSyntax.MultiLineDocChars.Contains(Buffer.Peek()))
                 {
                     Buffer.AdvanceColumn();
-                    type = CppTokenKind.MultiLineCommentDoc;
+                    kind = CppTokenKind.MultiLineCommentDoc;
                 }
             }
             bool isComplete = false;
@@ -205,71 +209,12 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else
                     Buffer.AdvanceColumn();
             }
-            int commentLength = Buffer.StreamPosition - commentStart.Index;
-            TextRange commentRange = new TextRange(commentStart, commentLength);
-            CppToken token = CppTokenPool.Make(type, commentRange, isComplete);
-            return (token);
+            return new LexResult(kind, isComplete);
         }
 
-        private CppToken AddChar(CppTokenKind type)
-        {
-            Buffer.StartLexeme();
-            Buffer.AdvanceColumn();
-            return CppTokenPool.Make(type, Buffer.LexemeRange, true);
-        }
-
-#if LEX_PREPROCESSOR_ENABLED
-        private CppToken LexPreprocessor()
-        {
-            Debug.Assert(Buffer.Peek(0) == '#');
-            CppTokenKind type = CppTokenKind.Preprocessor;
-            TextPosition preprocessorStart = new TextPosition(Buffer.TextPosition);
-            Buffer.AdvanceColumn();
-            bool nextLine = false;
-            bool isComplete = false;
-            while (!Buffer.IsEOF)
-            {
-                char c0 = Buffer.Peek();
-                char c1 = Buffer.Peek(1);
-                if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    if (nextLine)
-                    {
-                        int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                        Buffer.AdvanceLine(lb);
-                        nextLine = false;
-                        continue;
-                    }
-                    else
-                    {
-                        isComplete = true;
-                        break;
-                    }
-                }
-                else if (c0 == '\\')
-                {
-                    Buffer.AdvanceColumn();
-                    if (!nextLine)
-                    {
-                        SkipSpacings(SkipType.All);
-                        nextLine = true;
-                        continue;
-                    }
-                }
-                else
-                    Buffer.AdvanceManual(c0, c1);
-            }
-            int preprocessorLength = Buffer.StreamPosition - preprocessorStart.Index;
-            TextRange preprocessorRange = new TextRange(preprocessorStart, preprocessorLength);
-            CppToken result = CppTokenPool.Make(type, preprocessorRange, isComplete);
-            return (result);
-        }
-#endif
-
-        private CppToken LexIdent()
+        private LexResult LexIdent()
         {
             Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.Peek()));
-            Buffer.StartLexeme();
             StringBuilder identBuffer = new StringBuilder();
             while (!Buffer.IsEOF)
             {
@@ -282,27 +227,23 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else
                     break;
             }
-
-            CppTokenKind type = CppTokenKind.IdentLiteral;
+            CppTokenKind kind = CppTokenKind.IdentLiteral;
             TextPosition identStart = Buffer.LexemeStart;
             int identLength = Buffer.LexemeWidth;
             string identString = identBuffer.ToString();
 
             if (ReservedKeywords.Contains(identString))
-                type = CppTokenKind.ReservedKeyword;
+                kind = CppTokenKind.ReservedKeyword;
             else if (TypeKeywords.Contains(identString) || GlobalClassKeywords.Contains(identString))
-                type = CppTokenKind.TypeKeyword;
+                kind = CppTokenKind.TypeKeyword;
             else
-                type = CppTokenKind.IdentLiteral;
-            TextRange identRange = new TextRange(identStart, identLength);
-            CppToken result = CppTokenPool.Make(type, identRange, true);
-            return (result);
+                kind = CppTokenKind.IdentLiteral;
+            return new LexResult(kind, true);
         }
 
-        private CppToken LexString(string typeName)
+        private LexResult LexString(string typeName)
         {
             Debug.Assert(Buffer.Peek(0) == '"' || Buffer.Peek(0) == '\'');
-            Buffer.StartLexeme();
             char quoteChar = Buffer.Peek();
             Buffer.AdvanceColumn();
             bool isComplete = false;
@@ -416,9 +357,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else if (maxCount > -1 && (count > maxCount))
                     PushError(Buffer.LexemeStart, $"Too many characters for {typeName} literal, expect {maxCount} but got {count}!", typeName);
             }
-
-            CppToken result = CppTokenPool.Make(kind, Buffer.LexemeRange, isComplete);
-            return (result);
+            return new LexResult(kind, isComplete);
         }
 
         private void AdvanceExponent(char test)
@@ -434,12 +373,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private CppToken LexNumber()
+        private LexResult LexNumber()
         {
             Debug.Assert(SyntaxUtils.IsNumeric(Buffer.Peek()) || Buffer.Peek() == '.');
-
-            Buffer.StartLexeme();
-
             CppTokenKind kind;
             char first = Buffer.Peek(0);
             char second = Buffer.Peek(1);
@@ -533,7 +469,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         if (!hadIntegerLiteral)
                         {
                             PushError(Buffer.TextPosition, $"Too many single quote escape in integer literal, expect any integer literal but got '{Buffer.Peek()}'", kind.ToString());
-                            return (null);
+                            return new LexResult(kind, false);
                         }
                         Buffer.AdvanceColumn();
                         readNextLiteral = true;
@@ -547,6 +483,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 if (firstLiteralPos == Buffer.TextPosition.Index)
                 {
                     PushError(Buffer.TextPosition, $"Expect any integer literal after starting dot, but got '{Buffer.Peek()}'", kind.ToString());
+                    return new LexResult(kind, false);
                 }
             }
 
@@ -554,7 +491,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             if ((!dotSeen) &&
                ((kind == CppTokenKind.IntegerLiteral) ||
                 (kind == CppTokenKind.HexLiteral) ||
-            (kind == CppTokenKind.OctalLiteral)
+                (kind == CppTokenKind.OctalLiteral)
             ))
             {
                 char check0 = Buffer.Peek();
@@ -620,406 +557,372 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 if (SyntaxUtils.IsFloatSuffix(Buffer.Peek()))
                     Buffer.AdvanceColumn();
             }
-
-            CppToken result = CppTokenPool.Make(kind, Buffer.LexemeRange, true);
-            return (result);
+            return new LexResult(kind, true);
         }
 
         protected override bool LexNext()
         {
             SkipAllWhitespaces();
+            if (Buffer.IsEOF)
+                return (false);
             int line = Buffer.TextPosition.Line;
-            while (!Buffer.IsEOF)
+            char first = Buffer.Peek();
+            char second = Buffer.Peek(1);
+            char third = Buffer.Peek(2);
+            Buffer.StartLexeme();
+            LexResult lexRes = new LexResult(CppTokenKind.Unknown, true);
+            switch (first)
             {
-                TextPosition startPos = new TextPosition(Buffer.TextPosition);
-                char first = Buffer.Peek();
-                char second = Buffer.Peek(1);
-                char third = Buffer.Peek(2);
-                CppTokenKind kind;
-                switch (first)
-                {
-                    case '&':
+                case '&':
+                    {
+                        if (second == '&')
                         {
-                            if (second == '&')
-                            {
-                                kind = CppTokenKind.LogicalAndOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else if (second == '=')
-                            {
-                                kind = CppTokenKind.AndAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.AndOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.LogicalAndOp;
+                            Buffer.AdvanceColumns(2);
                         }
-                        break;
-
-                    case '|':
+                        else if (second == '=')
                         {
-                            if (second == '|')
-                            {
-                                kind = CppTokenKind.LogicalOrOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else if (second == '=')
-                            {
-                                kind = CppTokenKind.OrAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.OrOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.AndAssign;
+                            Buffer.AdvanceColumns(2);
                         }
-                        break;
-
-                    case '=':
+                        else
                         {
-                            if (second == '=')
-                            {
-                                kind = CppTokenKind.LogicalEqualsOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.EqOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.AndOp;
+                            Buffer.AdvanceColumn();
                         }
-                        break;
+                    }
+                    break;
 
-                    case '!':
+                case '|':
+                    {
+                        if (second == '|')
                         {
-                            if (second == '=')
-                            {
-                                kind = CppTokenKind.LogicalNotEqualsOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.ExclationMark;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.LogicalOrOp;
+                            Buffer.AdvanceColumns(2);
                         }
-                        break;
-
-                    case '<':
+                        else if (second == '=')
                         {
-                            if (second == '<')
-                            {
-                                if (third == '=')
-                                {
-                                    kind = CppTokenKind.LeftShiftAssign;
-                                    Buffer.AdvanceColumns(3);
-                                }
-                                else
-                                {
-                                    kind = CppTokenKind.LeftShiftOp;
-                                    Buffer.AdvanceColumns(2);
-                                }
-                            }
-                            else if (second == '=')
-                            {
-                                kind = CppTokenKind.LessOrEqualOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.LessThanOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.OrAssign;
+                            Buffer.AdvanceColumns(2);
                         }
-                        break;
-
-                    case '>':
+                        else
                         {
-                            if (second == '>')
-                            {
-                                if (third == '=')
-                                {
-                                    kind = CppTokenKind.RightShiftAssign;
-                                    Buffer.AdvanceColumns(3);
-                                }
-                                else
-                                {
-                                    kind = CppTokenKind.RightShiftOp;
-                                    Buffer.AdvanceColumns(2);
-                                }
-                            }
-                            else if (second == '=')
-                            {
-                                kind = CppTokenKind.GreaterOrEqualOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.GreaterThanOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.OrOp;
+                            Buffer.AdvanceColumn();
                         }
-                        break;
+                    }
+                    break;
 
-                    case '+':
+                case '=':
+                    {
+                        if (second == '=')
                         {
-                            if (second == '+')
-                            {
-                                kind = CppTokenKind.IncOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else if (second == '=')
-                            {
-                                kind = CppTokenKind.AddAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.AddOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.LogicalEqualsOp;
+                            Buffer.AdvanceColumns(2);
                         }
-                        break;
-
-                    case '-':
+                        else
                         {
-                            if (second == '-')
-                            {
-                                kind = CppTokenKind.DecOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else if (second == '=')
-                            {
-                                kind = CppTokenKind.SubAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else if (second == '>')
-                            {
-                                kind = CppTokenKind.PtrOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.SubOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.EqOp;
+                            Buffer.AdvanceColumn();
                         }
-                        break;
+                    }
+                    break;
 
-                    case '/':
+                case '!':
+                    {
+                        if (second == '=')
                         {
-                            if (second == '=')
-                            {
-                                kind = CppTokenKind.DivAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else if (second == '/')
-                            {
-                                CppToken token = LexSingleLineComment(true);
-                                return PushToken(token);
-                            }
-                            else if (second == '*')
-                            {
-                                CppToken token = LexMultiLineComment(true);
-                                return PushToken(token);
-                            }
-                            else
-                            {
-                                Buffer.AdvanceColumn();
-                                kind = CppTokenKind.DivOp;
-                            }
+                            lexRes.Kind = CppTokenKind.LogicalNotEqualsOp;
+                            Buffer.AdvanceColumns(2);
                         }
-                        break;
-
-                    case '*':
+                        else
                         {
-                            if (second == '=')
-                            {
-                                kind = CppTokenKind.MulAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.MulOp;
-                                Buffer.AdvanceColumn();
-                            }
+                            lexRes.Kind = CppTokenKind.ExclationMark;
+                            Buffer.AdvanceColumn();
                         }
-                        break;
+                    }
+                    break;
 
-                    case '%':
+                case '<':
+                    {
+                        if (second == '<')
                         {
-                            if (second == '=')
+                            if (third == '=')
                             {
-                                kind = CppTokenKind.ModAssign;
-                                Buffer.AdvanceColumns(2);
-                            }
-                            else
-                            {
-                                kind = CppTokenKind.ModOp;
-                                Buffer.AdvanceColumn();
-                            }
-                        }
-                        break;
-
-                    case '.':
-                        {
-                            if (second == '.' && third == '.')
-                            {
-                                kind = CppTokenKind.Ellipsis;
+                                lexRes.Kind = CppTokenKind.LeftShiftAssign;
                                 Buffer.AdvanceColumns(3);
                             }
-                            else if (SyntaxUtils.IsNumeric(second))
-                            {
-                                CppToken token = LexNumber();
-                                return PushToken(token);
-                            }
                             else
                             {
-                                kind = CppTokenKind.Dot;
-                                Buffer.AdvanceColumn();
-                            }
-                        }
-                        break;
-
-                    case '^':
-                        {
-                            if (second == '=')
-                            {
-                                kind = CppTokenKind.XorAssign;
+                                lexRes.Kind = CppTokenKind.LeftShiftOp;
                                 Buffer.AdvanceColumns(2);
                             }
-                            else
-                            {
-                                kind = CppTokenKind.XorOp;
-                                Buffer.AdvanceColumn();
-                            }
                         }
-                        break;
-
-                    case '"':
+                        else if (second == '=')
                         {
-                            CppToken token = LexString("string");
-                            return PushToken(token);
+                            lexRes.Kind = CppTokenKind.LessOrEqualOp;
+                            Buffer.AdvanceColumns(2);
                         }
-
-                    case '\'':
+                        else
                         {
-                            CppToken token = LexString("char");
-                            return PushToken(token);
+                            lexRes.Kind = CppTokenKind.LessThanOp;
+                            Buffer.AdvanceColumn();
                         }
+                    }
+                    break;
 
-                    case '~':
-                        kind = CppTokenKind.Tilde;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '\\':
-                        kind = CppTokenKind.Backslash;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '#':
-#if LEX_PREPROCESSOR_ENABLED
+                case '>':
+                    {
+                        if (second == '>')
                         {
-                            CppToken token = LexPreprocessor();
-                            return PushToken(token);
-                        }
-#else
-                        kind = CppTokenKind.Raute;
-                        Buffer.AdvanceColumn();
-                        break;
-#endif
-                    case ',':
-                        kind = CppTokenKind.Comma;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case ';':
-                        kind = CppTokenKind.Semicolon;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case ':':
-                        kind = CppTokenKind.Colon;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '?':
-                        kind = CppTokenKind.QuestionMark;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '{':
-                        kind = CppTokenKind.LeftBrace;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '}':
-                        kind = CppTokenKind.RightBrace;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '[':
-                        kind = CppTokenKind.LeftBracket;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case ']':
-                        kind = CppTokenKind.RightBracket;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case '(':
-                        kind = CppTokenKind.LeftParen;
-                        Buffer.AdvanceColumn();
-                        break;
-                    case ')':
-                        kind = CppTokenKind.RightParen;
-                        Buffer.AdvanceColumn();
-                        break;
-
-                    default:
-                        {
-                            if (SyntaxUtils.IsLineBreak(first))
+                            if (third == '=')
                             {
-                                kind = CppTokenKind.EndOfLine;
-                                int nb = SyntaxUtils.GetLineBreakChars(first, second);
-                                Buffer.AdvanceLine(nb);
-                            }
-                            else if (first == '\t')
-                            {
-                                kind = CppTokenKind.Spacings;
-                                while (!Buffer.IsEOF)
-                                {
-                                    if (Buffer.Peek() != '\t')
-                                        break;
-                                    Buffer.AdvanceTab();
-                                }
-                            }
-                            else if (SyntaxUtils.IsSpacing(first))
-                            {
-                                kind = CppTokenKind.Spacings;
-                                Buffer.AdvanceColumnsWhile(SyntaxUtils.IsSpacing);
-                            }
-                            else if (SyntaxUtils.IsIdentStart(first))
-                            {
-                                CppToken token = LexIdent();
-                                return PushToken(token);
-                            }
-                            else if (SyntaxUtils.IsNumeric(first))
-                            {
-                                CppToken token = LexNumber();
-                                return PushToken(token);
+                                lexRes.Kind = CppTokenKind.RightShiftAssign;
+                                Buffer.AdvanceColumns(3);
                             }
                             else
                             {
-                                kind = CppTokenKind.Unknown;
-                                PushError(Buffer.TextPosition, $"Unsupported character '{first}'", "Character");
-                                Buffer.AdvanceColumn();
+                                lexRes.Kind = CppTokenKind.RightShiftOp;
+                                Buffer.AdvanceColumns(2);
                             }
                         }
-                        break;
-                }
+                        else if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.GreaterOrEqualOp;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.GreaterThanOp;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
 
-                {
-                    int tokenLen = Buffer.TextPosition.Index - startPos.Index;
-                    return PushToken(CppTokenPool.Make(kind, new TextRange(startPos, tokenLen), true));
-                }
+                case '+':
+                    {
+                        if (second == '+')
+                        {
+                            lexRes.Kind = CppTokenKind.IncOp;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.AddAssign;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.AddOp;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
+
+                case '-':
+                    {
+                        if (second == '-')
+                        {
+                            lexRes.Kind = CppTokenKind.DecOp;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.SubAssign;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else if (second == '>')
+                        {
+                            lexRes.Kind = CppTokenKind.PtrOp;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.SubOp;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
+
+                case '/':
+                    {
+                        if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.DivAssign;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else if (second == '/')
+                            lexRes = LexSingleLineComment(true);
+                        else if (second == '*')
+                            lexRes = LexMultiLineComment(true);
+                        else
+                        {
+                            Buffer.AdvanceColumn();
+                            lexRes.Kind = CppTokenKind.DivOp;
+                        }
+                    }
+                    break;
+
+                case '*':
+                    {
+                        if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.MulAssign;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.MulOp;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
+
+                case '%':
+                    {
+                        if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.ModAssign;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.ModOp;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
+
+                case '.':
+                    {
+                        if (second == '.' && third == '.')
+                        {
+                            lexRes.Kind = CppTokenKind.Ellipsis;
+                            Buffer.AdvanceColumns(3);
+                        }
+                        else if (SyntaxUtils.IsNumeric(second))
+                            lexRes = LexNumber();
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.Dot;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
+
+                case '^':
+                    {
+                        if (second == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.XorAssign;
+                            Buffer.AdvanceColumns(2);
+                        }
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.XorOp;
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
+
+                case '"':
+                    lexRes = LexString("string");
+                    break;
+
+                case '\'':
+                    lexRes = LexString("char");
+                    break;
+
+                case '~':
+                    lexRes.Kind = CppTokenKind.Tilde;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '\\':
+                    lexRes.Kind = CppTokenKind.Backslash;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '#':
+                    lexRes.Kind = CppTokenKind.Raute;
+                    Buffer.AdvanceColumn();
+                    break;
+                case ',':
+                    lexRes.Kind = CppTokenKind.Comma;
+                    Buffer.AdvanceColumn();
+                    break;
+                case ';':
+                    lexRes.Kind = CppTokenKind.Semicolon;
+                    Buffer.AdvanceColumn();
+                    break;
+                case ':':
+                    lexRes.Kind = CppTokenKind.Colon;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '?':
+                    lexRes.Kind = CppTokenKind.QuestionMark;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '{':
+                    lexRes.Kind = CppTokenKind.LeftBrace;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '}':
+                    lexRes.Kind = CppTokenKind.RightBrace;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '[':
+                    lexRes.Kind = CppTokenKind.LeftBracket;
+                    Buffer.AdvanceColumn();
+                    break;
+                case ']':
+                    lexRes.Kind = CppTokenKind.RightBracket;
+                    Buffer.AdvanceColumn();
+                    break;
+                case '(':
+                    lexRes.Kind = CppTokenKind.LeftParen;
+                    Buffer.AdvanceColumn();
+                    break;
+                case ')':
+                    lexRes.Kind = CppTokenKind.RightParen;
+                    Buffer.AdvanceColumn();
+                    break;
+
+                default:
+                    {
+                        if (SyntaxUtils.IsLineBreak(first))
+                        {
+                            lexRes.Kind = CppTokenKind.EndOfLine;
+                            int nb = SyntaxUtils.GetLineBreakChars(first, second);
+                            Buffer.AdvanceLine(nb);
+                        }
+                        else if (first == '\t')
+                        {
+                            lexRes.Kind = CppTokenKind.Spacings;
+                            while (!Buffer.IsEOF)
+                            {
+                                if (Buffer.Peek() != '\t')
+                                    break;
+                                Buffer.AdvanceTab();
+                            }
+                        }
+                        else if (SyntaxUtils.IsSpacing(first))
+                        {
+                            lexRes.Kind = CppTokenKind.Spacings;
+                            Buffer.AdvanceColumnsWhile(SyntaxUtils.IsSpacing);
+                        }
+                        else if (SyntaxUtils.IsIdentStart(first))
+                            lexRes = LexIdent();
+                        else if (SyntaxUtils.IsNumeric(first))
+                            lexRes = LexNumber();
+                        else
+                        {
+                            lexRes.Kind = CppTokenKind.Unknown;
+                            PushError(Buffer.TextPosition, $"Unsupported character '{first}'", "Character");
+                            Buffer.AdvanceColumn();
+                        }
+                    }
+                    break;
             }
-            return (false);
+            return PushToken(CppTokenPool.Make(lexRes.Kind, Buffer.LexemeRange, lexRes.IsComplete));
         }
     }
 }
