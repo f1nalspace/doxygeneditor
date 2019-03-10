@@ -47,20 +47,22 @@
             this.groupBox1.Controls.Add(this.comboBoxSearchType);
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox1.Location = new System.Drawing.Point(0, 0);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(5);
-            this.groupBox1.Size = new System.Drawing.Size(632, 52);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox1.Size = new System.Drawing.Size(474, 42);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Search";
             // 
             // textBoxSearch
             // 
-            this.textBoxSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.textBoxSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxSearch.Location = new System.Drawing.Point(5, 18);
+            this.textBoxSearch.Location = new System.Drawing.Point(4, 15);
+            this.textBoxSearch.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.textBoxSearch.Name = "textBoxSearch";
-            this.textBoxSearch.Size = new System.Drawing.Size(495, 22);
+            this.textBoxSearch.Size = new System.Drawing.Size(323, 20);
             this.textBoxSearch.TabIndex = 0;
             this.textBoxSearch.TextChanged += new System.EventHandler(this.textBoxSearch_TextChanged);
             this.textBoxSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxSearch_KeyDown);
@@ -69,9 +71,10 @@
             // 
             this.comboBoxSearchType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.comboBoxSearchType.FormattingEnabled = true;
-            this.comboBoxSearchType.Location = new System.Drawing.Point(506, 18);
+            this.comboBoxSearchType.Location = new System.Drawing.Point(331, 15);
+            this.comboBoxSearchType.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.comboBoxSearchType.Name = "comboBoxSearchType";
-            this.comboBoxSearchType.Size = new System.Drawing.Size(121, 24);
+            this.comboBoxSearchType.Size = new System.Drawing.Size(141, 21);
             this.comboBoxSearchType.TabIndex = 1;
             this.comboBoxSearchType.SelectedIndexChanged += new System.EventHandler(this.comboBoxSearchType_SelectedIndexChanged);
             // 
@@ -79,10 +82,11 @@
             // 
             this.groupBox2.Controls.Add(this.listViewResults);
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox2.Location = new System.Drawing.Point(0, 52);
+            this.groupBox2.Location = new System.Drawing.Point(0, 42);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(5);
-            this.groupBox2.Size = new System.Drawing.Size(632, 329);
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox2.Size = new System.Drawing.Size(474, 268);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Results";
@@ -96,10 +100,11 @@
             this.listViewResults.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listViewResults.FullRowSelect = true;
             this.listViewResults.HideSelection = false;
-            this.listViewResults.Location = new System.Drawing.Point(5, 20);
+            this.listViewResults.Location = new System.Drawing.Point(4, 17);
+            this.listViewResults.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.listViewResults.MultiSelect = false;
             this.listViewResults.Name = "listViewResults";
-            this.listViewResults.Size = new System.Drawing.Size(622, 304);
+            this.listViewResults.Size = new System.Drawing.Size(466, 247);
             this.listViewResults.TabIndex = 0;
             this.listViewResults.UseCompatibleStateImageBehavior = false;
             this.listViewResults.View = System.Windows.Forms.View.Details;
@@ -124,12 +129,13 @@
             // 
             // SymbolSearchForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(632, 381);
+            this.ClientSize = new System.Drawing.Size(474, 310);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "SymbolSearchForm";
