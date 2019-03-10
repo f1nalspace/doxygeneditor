@@ -708,7 +708,7 @@ namespace TSP.DoxygenEditor.Editor
             {
                 cppParser.GetDocumentationNode += (token) =>
                 {
-                    IBaseNode result = _doxyTree.FindNodeByRange(token);
+                    IBaseNode result = _doxyTree.FindNodeByRange(token.Range);
                     return (result);
                 };
                 LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);

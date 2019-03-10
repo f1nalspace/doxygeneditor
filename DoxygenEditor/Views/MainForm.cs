@@ -759,7 +759,7 @@ namespace TSP.DoxygenEditor.Views
                         Caption = null,
                         Id = source.Key,
                         Type = source.Value.Kind.ToString(),
-                        Position = source.Value.Range.Position,
+                        Position = source.Value.Token.Position,
                     });
                     types.Add(source.Value.Kind.ToString());
                 }

@@ -1,4 +1,5 @@
-﻿using TSP.DoxygenEditor.Parsers;
+﻿using TSP.DoxygenEditor.Lexers;
+using TSP.DoxygenEditor.Parsers;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Symbols
@@ -13,6 +14,9 @@ namespace TSP.DoxygenEditor.Symbols
             Node = node;
             Range = range;
             Kind = kind;
+        }
+        public ReferenceSymbol(IBaseNode node, BaseToken token, ReferenceSymbolKind kind) : this(node, token.Range, kind)
+        {
         }
         public override string ToString()
         {

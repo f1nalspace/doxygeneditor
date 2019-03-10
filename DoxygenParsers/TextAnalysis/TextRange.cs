@@ -2,38 +2,22 @@
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
-    public class TextRange : IEquatable<TextRange>
+    public struct TextRange : IEquatable<TextRange>
     {
-        public TextPosition Position { get; private set; }
-        public int Index => Position.Index;
-        public int Length { get; protected set; }
+        public TextPosition Position { get; }
+        public int Length { get; }
         public string Value { get; set; }
 
-        public int End
-        {
-            get
-            {
-                int result = Index + Math.Max(0, Length - 1);
-                return (result);
-            }
-        }
-        public TextRange()
-        {
-            Position = new TextPosition(-1);
-            Length = 0;
-        }
+        public int Index => Position.Index;
+        public int End => Index + Math.Max(0, Length - 1);
         public TextRange(TextPosition pos, int length)
         {
             Position = pos;
             Length = length;
+            Value = null;
         }
         public TextRange(TextRange other) : this(other.Position, other.Length)
         {
-        }
-        public void Set(TextRange range)
-        {
-            Position = range.Position;
-            Length = range.Length;
         }
         public bool InterectsWith(TextRange other)
         {

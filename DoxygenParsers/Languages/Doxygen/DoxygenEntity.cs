@@ -63,6 +63,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         {
             Kind = kind;
         }
+        public DoxygenEntity(DoxygenEntityKind kind, BaseToken token) : this(kind, token.Range)
+        {
+        }
         public override string ToString()
         {
             StringBuilder s = new StringBuilder();

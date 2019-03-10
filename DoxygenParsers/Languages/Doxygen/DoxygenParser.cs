@@ -132,7 +132,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 IEntityBaseNode<DoxygenEntity> commandNode = null;
                 if (rule.EntityKind != DoxygenEntityKind.None)
                 {
-                    commandEntity = new DoxygenEntity(rule.EntityKind, commandToken);
+                    commandEntity = new DoxygenEntity(rule.EntityKind, commandToken.Range);
                     commandEntity.Id = commandName;
                     commandNode = new DoxygenNode(Top, commandEntity);
                     if (rule.IsPush)
@@ -262,7 +262,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             stream.Next();
 
             BaseToken endToken = null;
-            BaseToken briefToken = DoxygenTokenPool.Make(DoxygenTokenKind.Command, blockToken, true);
+            BaseToken briefToken = DoxygenTokenPool.Make(DoxygenTokenKind.Command, blockToken.Range, true);
 
             var briefEntity = new DoxygenEntity(DoxygenEntityKind.Brief, briefToken);
             var briefNode = PushEntity(briefEntity);
@@ -287,7 +287,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             Pop(); // Pop block
 
             if (endToken != null)
-                blockEntity.EndRange = endToken;
+                blockEntity.EndRange = endToken.Range;
 
             return (true);
         }
@@ -365,7 +365,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             DoxygenEntity rootEntity = (DoxygenEntity)Top.Entity;
                             Debug.Assert(rootEntity.Kind == DoxygenEntityKind.BlockMulti);
                             Pop();
-                            rootEntity.EndRange = doxyToken;
+                            rootEntity.EndRange = doxyToken.Range;
                             stream.Next();
                             return (true);
                         }
