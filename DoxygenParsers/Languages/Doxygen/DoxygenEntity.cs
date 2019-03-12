@@ -50,12 +50,19 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         {
             get
             {
-                if ((Kind == DoxygenEntityKind.Page) && string.IsNullOrWhiteSpace(Id))
+                if (Kind == DoxygenEntityKind.Page && "mainpage".Equals(Id))
                     return ("Main");
-                else if (!string.IsNullOrWhiteSpace(Value))
-                    return Value;
-                else
-                return Id;
+                else {
+                    var nameValue = GetParameterValue("name", "id");
+                    var textValue = GetParameterValue("text", "title", "caption");
+                    if (!string.IsNullOrWhiteSpace(textValue))
+                        return textValue;
+                    else if (!string.IsNullOrWhiteSpace(nameValue))
+                        return nameValue;
+                    else
+                        return Id;
+
+                }
             }
         }
         public DoxygenEntity Group { get; set; }
