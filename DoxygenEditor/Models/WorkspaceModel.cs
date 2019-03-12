@@ -42,7 +42,7 @@ namespace TSP.DoxygenEditor.Models
                         _lastOpenedFiles.Add(lastOpenFilePath);
                 }
                 IsWhitespaceVisible = instance.ReadBool("View", "IsWhitespaceVisible", false);
-                RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", true);
+                RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", false);
             }
         }
         public void Save(IConfigurationService service)
