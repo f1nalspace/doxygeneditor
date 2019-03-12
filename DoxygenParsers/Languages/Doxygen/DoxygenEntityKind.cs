@@ -23,12 +23,14 @@
         // Paragraphs
         Paragraph = 500,
         Brief,
+        See,
 
         // Visual
         VisualEnhancement = 1000,
 
         // Basic
         Basic = 10000,
+        Reference,
         Text,
     }
 }

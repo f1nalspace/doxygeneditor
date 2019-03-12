@@ -10,6 +10,7 @@ namespace TSP.DoxygenEditor.Parsers
         public int Level { get; }
         private readonly List<IBaseNode> _children = new List<IBaseNode>();
         public IEnumerable<IBaseNode> Children => _children;
+        public IEnumerable<BaseNode<TEntity>> TypedChildren => _children.Select(c => (BaseNode<TEntity>)c);
         public TEntity Entity { get; }
         public TextRange StartRange => Entity.StartRange;
         public TextRange EndRange => Entity.EndRange;

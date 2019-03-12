@@ -173,6 +173,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             public BasicCommandRule(params ArgumentRule[] args) : base(CommandKind.Basic, DoxygenEntityKind.Basic, args)
             {
             }
+            public BasicCommandRule(DoxygenEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Basic, entityKind, args)
+            {
+            }
         }
         public class VisualEnhancementCommandRule : CommandRule
         {
@@ -183,6 +186,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         public class ParagraphCommandRule : CommandRule
         {
             public ParagraphCommandRule(params ArgumentRule[] args) : base(CommandKind.Paragraph, DoxygenEntityKind.Paragraph, args)
+            {
+            }
+            public ParagraphCommandRule(DoxygenEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Paragraph, entityKind, args)
             {
             }
         }
@@ -334,15 +340,15 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "public", new BasicCommandRule() },
             { "publicsection", new BasicCommandRule() },
             { "pure", new BasicCommandRule() },
-            { "ref", new BasicCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required(), new ArgumentRule(ArgumentKind.QuotedString, "text").Optional()) },
-            { "refitem", new BasicCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
-            { "relates", new BasicCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
-            { "relatesalso", new BasicCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
+            { "ref", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required(), new ArgumentRule(ArgumentKind.QuotedString, "text").Optional()) },
+            { "refitem", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
+            { "relates", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
+            { "relatesalso", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
             { "remark", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "remark text").Required()) },
             { "return", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "description of the return value").Required()) },
             { "retval", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.Identifier, "return value").Required(), new ArgumentRule(ArgumentKind.ComplexBlock, "description").Required()) },
             { "rtfonly", new StartBlockCommandRule() },
-            { "sa", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexLine, "references").AtLeastOnce()) },
+            { "sa", new ParagraphCommandRule(DoxygenEntityKind.See, new ArgumentRule(ArgumentKind.ComplexLine, "references").AtLeastOnce()) },
             { "secreflist", new StartBlockCommandRule() },
             { "section", new SectionCommandRule(DoxygenEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
             { "showinitializer", new BasicCommandRule() },

@@ -169,7 +169,9 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     var nameParam = commandEntity.FindParameterByName("name", "id");
                     var textParam = commandEntity.FindParameterByName("text", "title", "caption");
                     if (nameParam != null && !string.IsNullOrWhiteSpace(nameParam.Value))
-                        commandEntity.Id = nameParam.Value;
+                    {
+                        //commandEntity.Id = nameParam.Value;
+                    }
                     else
                     {
                         if (rule.Kind == DoxygenSyntax.CommandKind.Section)
@@ -178,18 +180,22 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 AddError(commandToken.Position, $"Missing identifier mapping for command '{commandName}'", typeName, commandName);
                         }
                     }
+#if false
                     if (textParam != null && !string.IsNullOrWhiteSpace(textParam.Value))
-                        commandEntity.Value = textParam.Value;
+                            commandEntity.Value = textParam.Value;
+                    }
+#endif
 
                     if (nameParam != null && !string.IsNullOrWhiteSpace(nameParam.Value))
                     {
+                        string symbolName = nameParam.Value;
                         Debug.Assert(commandNode != null);
                         if (rule.Kind == DoxygenSyntax.CommandKind.Section)
                         {
                             SourceSymbolKind kind = SourceSymbolKind.DoxygenSection;
                             if ("page".Equals(commandName) || "mainpage".Equals(commandName))
                                 kind = SourceSymbolKind.DoxygenPage;
-                            SymbolCache.AddSource(Tag, commandEntity.Id, new SourceSymbol(kind, nameParam.Token.Range, commandNode));
+                            SymbolCache.AddSource(Tag, symbolName, new SourceSymbol(kind, nameParam.Token.Range, commandNode));
                         }
                         else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
                         {
@@ -243,7 +249,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             }
                         }
                         else if ("subpage".Equals(commandName))
-                            SymbolCache.AddReference(Tag, commandEntity.Id, new ReferenceSymbol(ReferenceSymbolKind.DoxygenPage, nameParam.Token.Range, commandNode));
+                            SymbolCache.AddReference(Tag, symbolName, new ReferenceSymbol(ReferenceSymbolKind.DoxygenPage, nameParam.Token.Range, commandNode));
                     }
                 }
                 ParseBlockContent(stream, commandNode);
@@ -267,8 +273,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             IBaseToken endToken = null;
             IBaseToken briefToken = DoxygenTokenPool.Make(DoxygenTokenKind.Command, blockToken.Range, true);
 
-            var briefEntity = new DoxygenEntity(DoxygenEntityKind.Brief, briefToken);
-            var briefNode = PushEntity(briefEntity);
+            DoxygenEntity briefEntity = new DoxygenEntity(DoxygenEntityKind.Brief, briefToken);
+            DoxygenNode briefNode = PushEntity(briefEntity);
 
             while (!stream.IsEOF)
             {
