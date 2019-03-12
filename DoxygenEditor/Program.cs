@@ -64,17 +64,38 @@ using TSP.DoxygenEditor.Solid;
 using TSP.DoxygenEditor.Views;
 using System;
 using System.Windows.Forms;
+using TSP.DoxygenEditor.ErrorDialog;
 
 namespace TSP.DoxygenEditor
 {
     static class Program
     {
+        static void ShowUnhandledException(Exception exception)
+        {
+            ErrorDialogForm dialog = new ErrorDialogForm();
+            dialog.Title = "Unexpected Exception";
+            dialog.ShortText = exception.Message;
+            dialog.Text = exception.ToString();
+            IWin32Window owner = Application.OpenForms.Count > 0 ? Application.OpenForms[0] : null;
+            dialog.ShowDialog(owner);
+            Application.Exit();
+        }
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                ShowUnhandledException(((Exception)e.ExceptionObject));
+            };
+            Application.ThreadException += (s, e) =>
+            {
+                ShowUnhandledException(e.Exception);
+            };
             IOCContainer.Register(new XMLConfigurationService());
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
