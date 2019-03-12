@@ -39,9 +39,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\build\x64-Release\DoxygenEditor.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\x64-Release\DoxygenEditor.exe.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\x64-Release\ScintillaNET.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\x64-Release\*.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\x64-Release\*.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\x64-Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{commonprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
