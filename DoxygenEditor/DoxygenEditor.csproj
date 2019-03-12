@@ -92,7 +92,6 @@
     <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\LinkedListExtensions.cs" />
-    <Compile Include="Extensions\ListViewExtensions.cs" />
     <Compile Include="Extensions\TimeSpanExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
     <Compile Include="FilterControls\FilterBarControl.cs">
