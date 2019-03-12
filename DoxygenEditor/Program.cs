@@ -44,10 +44,15 @@ SOFTWARE.
     - Finished doxygen parser
     - Finished cpp lexer
     - Finished cpp lexer
+    - Improved highlighting performance
+    - Improved editor UI a lot
+    - Changed to store configuration into xml file instead of registry
+    - Separated c/c++ and doxygen issues
+    - Fixed a ton parsing bugs
+    - Fixed a ton editor bugs
     - Added a symbol cache for validating symbols
     - Added performance tab
-    - Added copyright file header to every source file
-    - Fixed a few editor bugs
+    - Added nice filtering for issues
 
     ## v0.7.0.0:
     - Initial version
@@ -70,7 +75,7 @@ namespace TSP.DoxygenEditor
         [STAThread]
         static void Main(string[] args)
         {
-            IOCContainer.Register(new RegistryConfigurationService());
+            IOCContainer.Register(new XMLConfigurationService());
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

@@ -1,47 +1,59 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace TSP.DoxygenEditor.Services
 {
-    class RegistryConfigurationInstance : IConfigurarionInstance
+    class RegistryConfigurationInstance : BaseConfigurationInstance
     {
-        const string Company = "TSPSoftware";
-        const string App = "DoxygenEditor";
         private RegistryKey _rootKey;
-        private bool _readOnly;
-        public RegistryConfigurationInstance(bool readOnly)
+
+        public RegistryConfigurationInstance(bool isReadOnly, ConfigurationServiceConfig config) : base(isReadOnly, config)
         {
-            _readOnly = readOnly;
-            var softwareKey = Registry.CurrentUser.OpenSubKey("Software", !readOnly);
-            var companyKey = softwareKey.OpenSubKey(Company, !readOnly);
-            if (!readOnly)
-                companyKey = softwareKey.CreateSubKey(Company);
+            var softwareKey = Registry.CurrentUser.OpenSubKey("Software", !isReadOnly);
+            var companyKey = softwareKey.OpenSubKey(config.CompanyName, !isReadOnly);
+            if (!isReadOnly)
+                companyKey = softwareKey.CreateSubKey(config.CompanyName);
             if (companyKey != null)
             {
-                _rootKey = companyKey.OpenSubKey(App, !readOnly);
-                if (!readOnly && _rootKey == null)
-                    _rootKey = companyKey.CreateSubKey(App);
+                _rootKey = companyKey.OpenSubKey(config.ProductName, !isReadOnly);
+                if (!isReadOnly && _rootKey == null)
+                    _rootKey = companyKey.CreateSubKey(config.ProductName);
             }
         }
-        internal void Write(string section, string name, object value)
+
+        protected override void ClearAll()
         {
-            Debug.Assert(!_readOnly);
+            var names = _rootKey.GetSubKeyNames();
+            foreach (var name in names)
+                _rootKey.DeleteSubKeyTree(name);
+        }
+
+        protected override void PublishWrite(string section, string name, object value)
+        {
+            Debug.Assert(!IsReadOnly);
             if (_rootKey != null)
             {
                 var sectionKey = _rootKey.OpenSubKey(section, true);
                 if (sectionKey == null)
                     sectionKey = _rootKey.CreateSubKey(section);
                 if (value != null)
-                    sectionKey.SetValue(name, value);
+                {
+                    Type valueType = value.GetType();
+                    if (typeof(bool).Equals(valueType))
+                        sectionKey.SetValue(name, (bool)value ? 1 : 0);
+                    else
+                        sectionKey.SetValue(name, value);
+                }
                 else
                     if (sectionKey.GetValue(name) != null)
-                        sectionKey.DeleteValue(name);
+                    sectionKey.DeleteValue(name);
             }
         }
-        internal object Read(string section, string name)
+        public override object ReadRaw(string section, string name)
         {
-            Debug.Assert(_readOnly);
+            Debug.Assert(IsReadOnly);
             if (_rootKey != null)
             {
                 var sectionKey = _rootKey.OpenSubKey(section, false);
@@ -53,73 +65,38 @@ namespace TSP.DoxygenEditor.Services
             }
             return (null);
         }
-        internal void Clear(string section)
+
+        public override string ReadString(string section, string name)
         {
-            Debug.Assert(!_readOnly);
-            if (_rootKey != null)
-            {
-                var sectionKey = _rootKey.OpenSubKey(section, true);
-                if (sectionKey != null)
-                {
-                    var names = sectionKey.GetValueNames();
-                    foreach (var name in names)
-                        sectionKey.DeleteValue(name);
-                }
-            }
+            string result = (string)ReadRaw(section, name);
+            return (result);
         }
-        public void Dispose()
+        public override int ReadInt(string section, string name, int defaultValue)
+        {
+            int? value = (int?)ReadRaw(section, name);
+            if (value.HasValue)
+                return (value.Value);
+            return (defaultValue);
+        }
+        public override bool ReadBool(string section, string name, bool defaultValue)
+        {
+            int? value = (int?)ReadRaw(section, name);
+            if (value.HasValue)
+                return (value.Value == 1);
+            return (defaultValue);
+        }
+
+        public override void Dispose()
         {
             _rootKey?.Dispose();
         }
     }
     class RegistryConfigurationService : IConfigurationService
     {
-        public IConfigurarionInstance Create(bool readOnly)
+        public IConfigurarionInstance Create(bool readOnly, ConfigurationServiceConfig config)
         {
-            RegistryConfigurationInstance result = new RegistryConfigurationInstance(readOnly);
+            RegistryConfigurationInstance result = new RegistryConfigurationInstance(readOnly, config);
             return (result);
-        }
-        public void Clear(IConfigurarionInstance instance, string section)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            regInstance.Clear(section);
-        }
-        public string ReadString(IConfigurarionInstance instance, string section, string name)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            string result = (string)regInstance.Read(section, name);
-            return (result);
-        }
-        public int ReadInt(IConfigurarionInstance instance, string section, string name, int defaultValue)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            int? value = (int?)regInstance.Read(section, name);
-            if (value.HasValue)
-                return (value.Value);
-            return (defaultValue);
-        }
-        public bool ReadBool(IConfigurarionInstance instance, string section, string name, bool defaultValue)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            int? value = (int?)regInstance.Read(section, name);
-            if (value.HasValue)
-                return (value.Value == 1);
-            return (defaultValue);
-        }
-        public void WriteString(IConfigurarionInstance instance, string section, string name, string value)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            regInstance.Write(section, name, value);
-        }
-        public void WriteInt(IConfigurarionInstance instance, string section, string name, int value)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            regInstance.Write(section, name, value);
-        }
-        public void WriteBool(IConfigurarionInstance instance, string section, string name, bool value)
-        {
-            var regInstance = (RegistryConfigurationInstance)instance;
-            regInstance.Write(section, name, value ? 1 : 0);
         }
     }
 }

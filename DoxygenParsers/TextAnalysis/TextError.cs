@@ -7,6 +7,7 @@
         public string Message { get; }
         public string Type { get; }
         public string Symbol { get; }
+        public object Tag { get; set; }
         public TextError(TextPosition pos, string category, string message, string type, string symbol)
         {
             Pos = pos;

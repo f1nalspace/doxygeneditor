@@ -55,6 +55,19 @@ namespace TSP.DoxygenEditor
         }
 
         [TestMethod]
+        public void TestEmptyBlocks()
+        {
+            Lex($"//!");
+            Lex($"//!{Environment.NewLine}");
+            Lex($"//!{Environment.NewLine}//!");
+            Lex($"/*");
+            Lex($"/**/");
+            Lex($"/**/{Environment.NewLine}");
+            Lex($"/**/{Environment.NewLine}/**/");
+            Lex($"/*Hello*/{Environment.NewLine}/*world*/");
+        }
+
+        [TestMethod]
         public void TestBlocks()
         {
             Lex($"//!@bri{Environment.NewLine}//!");

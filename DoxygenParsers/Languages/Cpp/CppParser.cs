@@ -129,9 +129,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     {
                         DocumentationNode = FindDocumentationNode(identResult.Node, 1),
                     };
-                    var enumValueNode = new CppNode(rootNode, enumValueEntity);
+                    CppNode enumValueNode = new CppNode(rootNode, enumValueEntity);
                     rootNode.AddChild(enumValueNode);
-                    SymbolCache.AddSource(Tag, enumValueName, new SourceSymbol(enumValueNode, enumValueToken, SourceSymbolKind.CppMember));
+                    SymbolCache.AddSource(Tag, enumValueName, new SourceSymbol(SourceSymbolKind.CppMember, enumValueToken.Range, enumValueNode));
 
                     var equalsResult = Search(stream, SearchMode.Current, CppTokenKind.EqOp);
                     if (equalsResult != null)
@@ -144,7 +144,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             stream.Seek(tmpResult.Node);
                         else
                         {
-                            AddParseError(equalsResult.Token.Position, $"Expect assignment token, but got token '{stream.Peek()}' for enum member '{enumValueName}'", "Enum", enumValueName);
+                            AddError(equalsResult.Token.Position, $"Expect assignment token, but got token '{stream.Peek()}' for enum member '{enumValueName}'", "Enum", enumValueName);
                             break;
                         }
                     }
@@ -161,7 +161,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     {
                         var tok = stream.Peek<CppToken>();
                         if (tok != null)
-                            AddParseError(tok.Position, $"Unexpected token '{tok.Kind}'", "EnumValue");
+                            AddError(tok.Position, $"Unexpected token '{tok.Kind}'", "EnumValue");
                         break;
                     }
                 }
@@ -189,7 +189,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     if (enumIdentResult == null)
                     {
                         var token = stream.Peek<CppToken>();
-                        AddParseError(pos, $"Expect identifier token, but got token kind {token?.Kind} for enum", "enum");
+                        AddError(pos, $"Expect identifier token, but got token kind {token?.Kind} for enum", "enum");
                         return;
                     }
                 }
@@ -220,7 +220,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode enumRootNode = new CppNode(Top, enumRootEntity);
                 Add(enumRootNode);
-                SymbolCache.AddSource(Tag, enumIdent, new SourceSymbol(enumRootNode, enumIdentToken, SourceSymbolKind.CppEnum));
+                SymbolCache.AddSource(Tag, enumIdent, new SourceSymbol(SourceSymbolKind.CppEnum, enumIdentToken.Range, enumRootNode));
 
                 if (braceOrSemiResult.Token.Kind == CppTokenKind.LeftBrace)
                     ParseEnumValues(stream, enumRootNode);
@@ -230,7 +230,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             else
             {
                 var token = stream.Peek<CppToken>();
-                AddParseError(pos, $"Expect identifier token, but got token kind {token?.Kind} for enum", "enum");
+                AddError(pos, $"Expect identifier token, but got token kind {token?.Kind} for enum", "enum");
                 return;
             }
         }
@@ -276,7 +276,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode structNode = new CppNode(Top, structEntity);
                 Add(structNode);
-                SymbolCache.AddSource(Tag, structIdent, new SourceSymbol(structNode, identToken, SourceSymbolKind.CppStruct));
+                SymbolCache.AddSource(Tag, structIdent, new SourceSymbol(SourceSymbolKind.CppStruct, identToken.Range, structNode));
             }
 
             // @TODO(final): Parse struct members
@@ -361,7 +361,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     var typedefNode = new CppNode(Top, typedefEntity);
                     Add(typedefNode);
-                    SymbolCache.AddSource(Tag, typedefIdent, new SourceSymbol(typedefNode, identToken, SourceSymbolKind.CppType));
+                    SymbolCache.AddSource(Tag, typedefIdent, new SourceSymbol(SourceSymbolKind.CppType, identToken.Range));
                 }
             }
         }
@@ -396,10 +396,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         };
                         CppNode defineNode = new CppNode(Top, defineKeyEntity);
                         Add(defineNode);
-                        SymbolCache.AddSource(Tag, defineName, new SourceSymbol(defineNode, defineNameToken, SourceSymbolKind.CppDefine));
+                        SymbolCache.AddSource(Tag, defineName, new SourceSymbol(SourceSymbolKind.CppDefine, defineNameToken.Range, defineNode));
                     }
                     else
-                        AddParseError(keywordToken.Position, $"Processor define has no identifier!", "Define");
+                        AddError(keywordToken.Position, $"Processor define has no identifier!", "Define");
                 }
             }
             return (true);
@@ -477,7 +477,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             var closeParenResult = Search(stream, SearchMode.Forward, CppTokenKind.RightParen);
             if (closeParenResult == null)
             {
-                AddParseError(openParenToken.Position, $"Unterminated function '{functionName}'", "Function", functionName);
+                AddError(openParenToken.Position, $"Unterminated function '{functionName}'", "Function", functionName);
                 return (true);
             }
             stream.Seek(closeParenResult.Node);
@@ -508,11 +508,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Add(functionNode);
 
             if (kind == CppEntityKind.FunctionDefinition)
-                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(functionNode, functionIdentToken, SourceSymbolKind.CppFunctionDefinition));
+                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(SourceSymbolKind.CppFunctionDefinition, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionBody)
-                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(functionNode, functionIdentToken, SourceSymbolKind.CppFunctionBody));
+                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(SourceSymbolKind.CppFunctionBody, functionIdentToken.Range, functionNode));
             else if (Configuration.FunctionCallSymbolsEnabled)
-                SymbolCache.AddReference(Tag, functionName, new ReferenceSymbol(functionNode, functionIdentToken, ReferenceSymbolKind.CppFunction));
+                SymbolCache.AddReference(Tag, functionName, new ReferenceSymbol(ReferenceSymbolKind.CppFunction, functionIdentToken.Range, functionNode));
 
             return (true);
         }

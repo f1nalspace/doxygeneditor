@@ -193,15 +193,12 @@ namespace TSP.DoxygenEditor.Editor
             editor.Styles[htmlAttrValueStyle].ForeColor = Color.CornflowerBlue;
         }
 
-        public int Highlight(Scintilla editor, int startPos, int endPos)
+        public void Highlight(Scintilla editor, int startPos, int endPos)
         {
             int length = (endPos - startPos) + 1;
 
-            int result = 0;
-
             editor.StartStyling(startPos);
             editor.SetStyling(length, 0);
-            ++result;
 
             var rangeEntry = new StyleEntry(startPos, length, 0);
             var intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
@@ -213,10 +210,7 @@ namespace TSP.DoxygenEditor.Editor
                 int l = (e - s) + 1;
                 editor.StartStyling(s);
                 editor.SetStyling(l, entry.Style);
-                ++result;
             }
-
-            return (result);
         }
     }
 }

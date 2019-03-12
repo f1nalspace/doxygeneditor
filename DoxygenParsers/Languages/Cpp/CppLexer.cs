@@ -168,7 +168,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         {
         }
 
-        struct LexResult
+        public struct LexResult
         {
             public CppTokenKind Kind { get; set; }
             public bool IsComplete { get; set; }
@@ -179,82 +179,77 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private LexResult LexSingleLineComment(bool init)
+        public static LexResult LexSingleLineComment(TextStream stream, bool init)
         {
             CppTokenKind kind = CppTokenKind.SingleLineComment;
             if (init)
             {
-                Debug.Assert(Buffer.Peek(0) == '/');
-                Debug.Assert(Buffer.Peek(1) == '/');
-                Buffer.AdvanceColumns(2);
-                if (DoxygenSyntax.SingleLineDocChars.Contains(Buffer.Peek()))
+                Debug.Assert(stream.Peek(0) == '/');
+                Debug.Assert(stream.Peek(1) == '/');
+                stream.AdvanceColumns(2);
+                if (DoxygenSyntax.SingleLineDocChars.Contains(stream.Peek()))
                 {
-                    Buffer.AdvanceColumn();
+                    stream.AdvanceColumn();
                     kind = CppTokenKind.SingleLineCommentDoc;
                 }
             }
-            bool isComplete = false;
-            while (!Buffer.IsEOF)
+            while (!stream.IsEOF)
             {
-                char c0 = Buffer.Peek();
-                char c1 = Buffer.Peek(1);
+                char c0 = stream.Peek();
+                char c1 = stream.Peek(1);
                 if (c0 == TextStream.InvalidCharacter)
                     break;
                 else if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    isComplete = true;
                     break;
-                }
                 else if (c0 == '\t')
-                    Buffer.AdvanceTab();
+                    stream.AdvanceTab();
                 else
-                    Buffer.AdvanceColumn();
+                    stream.AdvanceColumn();
             }
+            bool isComplete = stream.IsEOF || SyntaxUtils.IsLineBreak(stream.Peek());
             return new LexResult(kind, isComplete);
         }
 
-        private LexResult LexMultiLineComment(bool init)
+        public static LexResult LexMultiLineComment(TextStream stream, bool init)
         {
             CppTokenKind kind = CppTokenKind.MultiLineComment;
             if (init)
             {
-                Debug.Assert(Buffer.Peek(0) == '/');
-                Debug.Assert(Buffer.Peek(1) == '*');
-                Buffer.AdvanceColumns(2);
-                char n = Buffer.Peek();
+                Debug.Assert(stream.Peek(0) == '/');
+                Debug.Assert(stream.Peek(1) == '*');
+                stream.AdvanceColumns(2);
+                char n = stream.Peek();
                 if (DoxygenSyntax.MultiLineDocChars.Contains(n))
                 {
-                    Buffer.AdvanceColumn();
+                    stream.AdvanceColumn();
                     kind = CppTokenKind.MultiLineCommentDoc;
-                    if (n == '*' && Buffer.Peek() == '/')
+                    if (n == '*' && stream.Peek() == '/')
                     {
-                        Buffer.AdvanceColumn();
+                        stream.AdvanceColumn();
                         return new LexResult(kind, true);
                     }
                 }
             }
             bool isComplete = false;
-            while (!Buffer.IsEOF)
+            while (!stream.IsEOF)
             {
-                char c0 = Buffer.Peek();
+                char c0 = stream.Peek();
                 if (c0 == '*')
                 {
-                    char c1 = Buffer.Peek(1);
+                    char c1 = stream.Peek(1);
                     if (c1 == '/')
                     {
-                        Buffer.AdvanceColumns(2);
+                        stream.AdvanceColumns(2);
                         isComplete = true;
                         break;
                     }
-                    else Buffer.AdvanceColumn();
+                    else stream.AdvanceColumn();
                 }
                 else if (char.IsWhiteSpace(c0))
-                    SkipAllWhitespaces();
+                    stream.SkipAllWhitespaces();
                 else
-                    Buffer.AdvanceColumn();
+                    stream.AdvanceColumn();
             }
-            if (!isComplete)
-                PushError(Buffer.TextPosition, $"Unterminated multi-line comment, expect '*/' but found '{Buffer.Peek()}'", kind.ToString());
             return new LexResult(kind, isComplete);
         }
 
@@ -352,7 +347,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                 }
                                 else
                                 {
-                                    PushError(Buffer.TextPosition, $"Unsupported hex escape character '{Buffer.Peek()}'!", typeName);
+                                    AddError(Buffer.TextPosition, $"Unsupported hex escape character '{Buffer.Peek()}'!", typeName);
                                     break;
                                 }
                                 ++count;
@@ -375,7 +370,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             }
                             else
                             {
-                                PushError(Buffer.TextPosition, $"Not supported escape character '{Buffer.Peek()}'!", typeName);
+                                AddError(Buffer.TextPosition, $"Not supported escape character '{Buffer.Peek()}'!", typeName);
                                 break;
                             }
                     }
@@ -397,13 +392,13 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
 
             if (!isComplete)
-                PushError(Buffer.LexemeStart, $"Unterminated {typeName} literal!", typeName);
+                AddError(Buffer.LexemeStart, $"Unterminated {typeName} literal!", typeName);
             else
             {
                 if (minCount > 0 && count < minCount)
-                    PushError(Buffer.LexemeStart, $"Not enough characters for {typeName} literal, expect {minCount} but got {count}!", typeName);
+                    AddError(Buffer.LexemeStart, $"Not enough characters for {typeName} literal, expect {minCount} but got {count}!", typeName);
                 else if (maxCount > -1 && (count > maxCount))
-                    PushError(Buffer.LexemeStart, $"Too many characters for {typeName} literal, expect {maxCount} but got {count}!", typeName);
+                    AddError(Buffer.LexemeStart, $"Too many characters for {typeName} literal, expect {maxCount} but got {count}!", typeName);
             }
             return new LexResult(kind, isComplete);
         }
@@ -479,32 +474,32 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         if (SyntaxUtils.IsNumeric(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsNumeric);
                         else
-                            PushError(Buffer.TextPosition, $"Expect integer literal, but got '{Buffer.Peek()}'", kind.ToString());
+                            AddError(Buffer.TextPosition, $"Expect integer literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     case CppTokenKind.OctalLiteral:
                         if (SyntaxUtils.IsOctal(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsOctal);
                         else
-                            PushError(Buffer.TextPosition, $"Expect octal literal, but got '{Buffer.Peek()}'", kind.ToString());
+                            AddError(Buffer.TextPosition, $"Expect octal literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     case CppTokenKind.HexLiteral:
                         if (SyntaxUtils.IsHex(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsHex);
                         else
-                            PushError(Buffer.TextPosition, $"Expect hex literal, but got '{Buffer.Peek()}'", kind.ToString());
+                            AddError(Buffer.TextPosition, $"Expect hex literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     case CppTokenKind.BinaryLiteral:
                         if (SyntaxUtils.IsBinary(Buffer.Peek()))
                             Buffer.AdvanceColumnsWhile(SyntaxUtils.IsBinary);
                         else
-                            PushError(Buffer.TextPosition, $"Expect binary literal, but got '{Buffer.Peek()}'", kind.ToString());
+                            AddError(Buffer.TextPosition, $"Expect binary literal, but got '{Buffer.Peek()}'", kind.ToString());
                         break;
 
                     default:
-                        PushError(Buffer.TextPosition, $"Unsupported token kind '{kind}' for integer literal on {Buffer}", kind.ToString());
+                        AddError(Buffer.TextPosition, $"Unsupported token kind '{kind}' for integer literal on {Buffer}", kind.ToString());
                         break;
                 }
                 bool hadIntegerLiteral = Buffer.TextPosition.Index > s;
@@ -516,7 +511,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     {
                         if (!hadIntegerLiteral)
                         {
-                            PushError(Buffer.TextPosition, $"Too many single quote escape in integer literal, expect any integer literal but got '{Buffer.Peek()}'", kind.ToString());
+                            AddError(Buffer.TextPosition, $"Too many single quote escape in integer literal, expect any integer literal but got '{Buffer.Peek()}'", kind.ToString());
                             return new LexResult(kind, false);
                         }
                         Buffer.AdvanceColumn();
@@ -530,7 +525,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             {
                 if (firstLiteralPos == Buffer.TextPosition.Index)
                 {
-                    PushError(Buffer.TextPosition, $"Expect any integer literal after starting dot, but got '{Buffer.Peek()}'", kind.ToString());
+                    AddError(Buffer.TextPosition, $"Expect any integer literal after starting dot, but got '{Buffer.Peek()}'", kind.ToString());
                     return new LexResult(kind, false);
                 }
             }
@@ -621,7 +616,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
             do
             {
-                SkipSpacings(SkipType.All);
+                Buffer.SkipSpacings(TextStream.SkipType.All);
                 Buffer.StartLexeme();
                 char first = Buffer.Peek();
                 char second = Buffer.Peek(1);
@@ -637,7 +632,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     }
                     else
                     {
-                        PushError(Buffer.TextPosition, $"Unterminated preprocessor next-line, expect linebreak after '\' but got '{second}'", "Preprocessor");
+                        AddError(Buffer.TextPosition, $"Unterminated preprocessor next-line, expect linebreak after '\' but got '{second}'", "Preprocessor");
                         return (false);
                     }
                 }
@@ -658,7 +653,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     LexResult identResult = LexIdent(true);
                     CppToken identToken = CppTokenPool.Make(identResult.Kind, Buffer.LexemeRange, identResult.IsComplete);
                     PushToken(identToken);
-                    SkipSpacings(SkipType.All);
+                    Buffer.SkipSpacings(TextStream.SkipType.All);
                     Buffer.StartLexeme();
                     if (identToken.Kind == CppTokenKind.PreprocessorKeyword)
                     {
@@ -668,7 +663,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                 {
                                     if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
                                     {
-                                        PushError(Buffer.TextPosition, $"Expect identifier for define, but got '{Buffer.Peek()}'", "Preprocessor");
+                                        AddError(Buffer.TextPosition, $"Expect identifier for define, but got '{Buffer.Peek()}'", "Preprocessor");
                                         return (false);
                                     }
                                     LexResult defineValueResult = LexIdent(false);
@@ -684,16 +679,16 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                         Buffer.AdvanceColumn();
                                         if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
                                         {
-                                            PushError(Buffer.TextPosition, $"Expect identifier for defined, but got '{Buffer.Peek()}'", "Preprocessor");
+                                            AddError(Buffer.TextPosition, $"Expect identifier for defined, but got '{Buffer.Peek()}'", "Preprocessor");
                                             return (false);
                                         }
                                         LexResult definedValueResult = LexIdent(false);
                                         CppToken definedValueToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineTarget, Buffer.LexemeRange, definedValueResult.IsComplete);
                                         PushToken(definedValueToken);
-                                        SkipSpacings(SkipType.All);
+                                        Buffer.SkipSpacings(TextStream.SkipType.All);
                                         if (Buffer.Peek() != ')')
                                         {
-                                            PushError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
+                                            AddError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
                                             return (false);
                                         }
                                     }
@@ -727,6 +722,22 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                     }
                                 }
                                 break;
+
+                            case "pragma":
+                                {
+                                    // @NOTE(final): Just skip until end-of-line
+                                    while (!Buffer.IsEOF)
+                                    {
+                                        char c = Buffer.Peek();
+                                        if (SyntaxUtils.IsLineBreak(c))
+                                            break;
+                                        if (c == '\t')
+                                            Buffer.AdvanceTab();
+                                        else
+                                            Buffer.AdvanceColumn();
+                                    }
+                                }
+                                break;
                         }
                     }
                 }
@@ -749,7 +760,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppLexerState state = (CppLexerState)hiddenState;
             bool allowWhitespaces = !state.IsInsidePreprocessor;
             if (allowWhitespaces)
-                SkipAllWhitespaces();
+                Buffer.SkipAllWhitespaces();
             if (Buffer.IsEOF)
                 return (false);
             int line = Buffer.TextPosition.Line;
@@ -939,9 +950,17 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             Buffer.AdvanceColumns(2);
                         }
                         else if (second == '/')
-                            lexRes = LexSingleLineComment(true);
+                        {
+                            lexRes = LexSingleLineComment(Buffer, true);
+                            if (!lexRes.IsComplete)
+                                AddError(Buffer.LexemeStart, $"Unterminated single-line comment, expect '\n' or '\r' but found '{Buffer.Peek()}'", lexRes.Kind.ToString());
+                        }
                         else if (second == '*')
-                            lexRes = LexMultiLineComment(true);
+                        {
+                            lexRes = LexMultiLineComment(Buffer, true);
+                            if (!lexRes.IsComplete)
+                                AddError(Buffer.LexemeStart, $"Unterminated single-line comment, expect '*/' but found '{Buffer.Peek()}'", lexRes.Kind.ToString());
+                        }
                         else
                         {
                             Buffer.AdvanceColumn();
@@ -1104,7 +1123,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             lexRes = LexNumber();
                         else
                         {
-                            PushError(Buffer.TextPosition, $"Unexpected character '{first}'", "Character");
+                            AddError(Buffer.TextPosition, $"Unexpected character '{first}'", "Character");
                             return (false);
                         }
                     }

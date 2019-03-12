@@ -25,7 +25,6 @@ namespace TSP.DoxygenEditor.Editor
 {
     class EditorState : IDisposable
     {
-        private static int _parseCounter = 0;
         private readonly IWin32Window _window;
         private Panel _containerPanel;
         private SearchReplaceControl _searchControl;
@@ -50,13 +49,20 @@ namespace TSP.DoxygenEditor.Editor
         public bool IsChanged { get; set; }
         public Encoding FileEncoding { get; set; }
         public Panel Container { get { return _containerPanel; } }
+        struct StyleNeededState
+        {
+            public int Has { get; set; }
+            public int StartPos { get; set; }
+            public int EndPos { get; set; }
+        }
+        private StyleNeededState _styleNeededState;
         public bool IsShowWhitespace
         {
             get { return _editor.ViewWhitespace != WhitespaceMode.Invisible; }
             set { _editor.ViewWhitespace = value ? WhitespaceMode.VisibleAlways : WhitespaceMode.Invisible; }
         }
 
-        public delegate void ParseEventHandler(EditorState sender, bool isComplete);
+        public delegate void ParseEventHandler(EditorState sender);
         public delegate void FocusChangedEventHandler(EditorState sender, bool focused);
         public event EventHandler TabUpdating;
         public event ParseEventHandler ParseComplete;
@@ -70,6 +76,8 @@ namespace TSP.DoxygenEditor.Editor
             Tag = tag;
             IsChanged = false;
             FileEncoding = Encoding.UTF8;
+
+            _styleNeededState = new StyleNeededState();
 
             _window = window;
             TabIndex = tabIndex;
@@ -106,7 +114,7 @@ namespace TSP.DoxygenEditor.Editor
                 if (!_parseWorker.IsBusy)
                 {
                     _textChangedTimer.Enabled = false;
-                    ParseStarting?.Invoke(this, false);
+                    ParseStarting?.Invoke(this);
                     _parseWorker.RunWorkerAsync(_editor.Text);
                 }
             };
@@ -114,8 +122,7 @@ namespace TSP.DoxygenEditor.Editor
             _parseWorker.WorkerSupportsCancellation = true;
             _parseWorker.DoWork += (s, e) =>
             {
-                // @TODO(final): Support for continuous tokenization, so only changes are applied
-                Interlocked.Increment(ref _parseCounter);
+                // @TODO(final): Support for incremental parsing, so only changes are applied
                 string text = (string)e.Argument;
                 Tokenize(text);
                 Parse(text);
@@ -123,9 +130,17 @@ namespace TSP.DoxygenEditor.Editor
             _parseWorker.RunWorkerCompleted += (s, e) =>
             {
                 // @TODO(final): Dont colorize everything, just re-colorize the changes -> See "Support for continuous tokenization"
-                _editor.Colorize(0, _editor.TextLength);
-                bool isComplete = Interlocked.Decrement(ref _parseCounter) == 0;
-                ParseComplete?.Invoke(this, isComplete);
+                if (_styleNeededState.Has > 0)
+                    _editor.Colorize(_styleNeededState.StartPos, _styleNeededState.EndPos);
+                else
+                {
+                    int firstLine = _editor.FirstVisibleLine;
+                    int lastLine = firstLine + _editor.LinesOnScreen;
+                    int start = _editor.Lines[firstLine].Index;
+                    int end = _editor.Lines[lastLine].Index;
+                    _editor.Colorize(start, end);
+                }
+                ParseComplete?.Invoke(this);
             };
         }
 
@@ -451,11 +466,10 @@ namespace TSP.DoxygenEditor.Editor
             public string CommandName { get; }
             public List<DoxygenToken> ArgTokens { get; }
             public DoxygenToken CommandToken { get; }
-            public DoxygenToken InsertToken { get; set; }
 
             public CommandStartState(DoxygenToken commandToken, string commandName)
             {
-                CommandToken = InsertToken = commandToken;
+                CommandToken = commandToken;
                 CommandName = commandName;
                 ArgTokens = new List<DoxygenToken>();
                 StartPosition = commandToken.Position;
@@ -487,12 +501,8 @@ namespace TSP.DoxygenEditor.Editor
                 if (doxyToken.Kind == DoxygenTokenKind.CommandStart)
                 {
                     result.AddToken(doxyToken);
-
                     string commandName = text.Substring(doxyToken.Index + 1, doxyToken.Length - 1);
-
                     List<DoxygenToken> argTokens = new List<DoxygenToken>();
-
-                    // Save argument tokens
                     if (curLink.Next != null)
                     {
                         LinkedListNode<DoxygenToken> nextLink = curLink.Next;
@@ -501,11 +511,6 @@ namespace TSP.DoxygenEditor.Editor
                             if (nextLink.Value.IsArgument)
                             {
                                 argTokens.Add(nextLink.Value);
-                            }
-                            else if (nextLink.Value.IsEndOfLine || nextLink.Value.IsEOF)
-                            {
-                                nextLink = nextLink.Next;
-                                break;
                             }
                             else
                                 break;
@@ -522,12 +527,13 @@ namespace TSP.DoxygenEditor.Editor
                     startState.ArgTokens.AddRange(argTokens);
                     startStates.Push(startState);
 
-                    if (curLink != null)
+                    if (argTokens.Count > 0)
                     {
-                        // Now we have the real start of the command content
-                        startState.InsertToken = curLink.Value;
-                        startState.StartPosition = curLink.Value.Position;
+                        var last = argTokens.Last();
+                        startState.StartPosition = new TextPosition(last.End, last.Position.Line, last.Position.Column);
                     }
+                    else
+                        startState.StartPosition = new TextPosition(doxyToken.End, doxyToken.Position.Line, doxyToken.Position.Column);
 
                     continue;
                 }
@@ -759,13 +765,16 @@ namespace TSP.DoxygenEditor.Editor
                 EditorState editorState = (EditorState)thisEditor.Parent.Tag;
                 int startPos = thisEditor.GetEndStyled();
                 int endPos = Math.Min(e.Position, thisEditor.TextLength - 1);
-                int length = (endPos - startPos) + 1;
                 if (!_parseWorker.IsBusy)
                 {
-                    Stopwatch timer = Stopwatch.StartNew();
-                    int styleCount = _styler.Highlight(thisEditor, startPos, endPos);
-                    timer.Stop();
-                    Debug.WriteLine($"Styled {styleCount} parts ({startPos} to {endPos}) done, took {timer.Elapsed.ToMilliseconds()} ms");
+                    _styler.Highlight(thisEditor, startPos, endPos);
+                    _styleNeededState.Has = 0;
+                }
+                else
+                {
+                    _styleNeededState.StartPos = startPos;
+                    _styleNeededState.EndPos = endPos;
+                    _styleNeededState.Has++;
                 }
             };
 

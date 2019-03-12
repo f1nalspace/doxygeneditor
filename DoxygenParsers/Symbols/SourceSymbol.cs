@@ -6,24 +6,24 @@ namespace TSP.DoxygenEditor.Symbols
 {
     public class SourceSymbol
     {
-        public IBaseNode Node { get; }
-        public IBaseToken Token { get; }
+        public TextRange Range { get; }
         public SourceSymbolKind Kind { get; }
+        public IBaseNode Node { get; }
 
         public enum SymbolType
         {
        
         }
 
-        public SourceSymbol(IBaseNode node, IBaseToken token, SourceSymbolKind kind)
+        public SourceSymbol(SourceSymbolKind kind, TextRange range, IBaseNode node = null)
         {
-            Node = node;
-            Token = token;
             Kind = kind;
+            Range = range;
+            Node = node;
         }
         public override string ToString()
         {
-            return Node.ToString();
+            return $"{Range} as {Kind} => {Node}";
         }
     }
 }

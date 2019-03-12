@@ -145,7 +145,7 @@ namespace TSP.DoxygenEditor.Symbols
                     foreach (var reference in names.Value)
                     {
                         if (!HasReference(name))
-                            result.Add(new KeyValuePair<object, TextError>(tag, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name)));
+                            result.Add(new KeyValuePair<object, TextError>(tag, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name) { Tag = reference }));
                     }
                 }
             }

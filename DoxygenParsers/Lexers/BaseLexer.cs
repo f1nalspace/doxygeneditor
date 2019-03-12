@@ -27,10 +27,10 @@ namespace TSP.DoxygenEditor.Lexers
             Buffer = new BasicTextStream(source, pos, length);
         }
 
-        protected void PushError(TextPosition pos, string message, string type, string symbol = null)
+        protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {
             string category = GetType().Name;
-            _lexErrors.Add(new TextError(pos, category, message, type, symbol));
+            _lexErrors.Add(new TextError(pos, category, message, type, symbol) { Tag = this });
         }
 
         protected bool PushToken(T token)
@@ -64,76 +64,7 @@ namespace TSP.DoxygenEditor.Lexers
                     Debug.Assert(Buffer.StreamPosition > p);
             } while (!Buffer.IsEOF);
             return (_tokens);
-        }
-
-        public enum SkipType
-        {
-            Single,
-            All
-        }
-
-        protected void SkipAllWhitespaces()
-        {
-            do
-            {
-                char c0 = Buffer.Peek();
-                char c1 = Buffer.Peek(1);
-                if (c0 == TextStream.InvalidCharacter)
-                    break;
-                else if (c0 == '\t')
-                    Buffer.AdvanceTab();
-                else if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    int nb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                    Buffer.AdvanceLine(nb);
-                }
-                else if (char.IsWhiteSpace(c0))
-                    Buffer.AdvanceColumn();
-                else
-                    break;
-            } while (!Buffer.IsEOF);
-        }
-        protected void SkipSpacings(SkipType type)
-        {
-            do
-            {
-                char c = Buffer.Peek();
-                if (c == TextStream.InvalidCharacter)
-                    break;
-                else if (c == '\t')
-                    Buffer.AdvanceTab();
-                else if (SyntaxUtils.IsSpacing(c))
-                    Buffer.AdvanceColumn();
-                else
-                    break;
-            } while (!Buffer.IsEOF && type == SkipType.All);
-        }
-        protected void SkipLineBreaks(SkipType type)
-        {
-            do
-            {
-                char c0 = Buffer.Peek();
-                char c1 = Buffer.Peek(1);
-                if (c0 == TextStream.InvalidCharacter)
-                    break;
-                else if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                    Buffer.AdvanceLine(lb);
-                }
-                else break;
-            } while (!Buffer.IsEOF && type == SkipType.All);
-        }
-
-        protected void SkipUntil(char c)
-        {
-            while (!Buffer.IsEOF)
-            {
-                if (Buffer.Peek() == c)
-                    break;
-                Buffer.AdvanceAuto();
-            }
-        }
+        }      
 
         public void Dispose()
         {

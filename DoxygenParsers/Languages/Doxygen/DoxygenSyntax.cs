@@ -356,7 +356,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "snippetlineno", new BasicCommandRule(new ArgumentRule(ArgumentKind.HeaderFile, "file-name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "block_id").Required()) },
             { "startuml", new StartBlockCommandRule(new ArgumentRule(ArgumentKind.PrefixToPostfix, "file", "{", "}").Optional(), new ArgumentRule(ArgumentKind.QuotedString, "caption").Optional(), new ArgumentRule(ArgumentKind.Size, "sizeindication").Optional()) },
             { "struct", new BasicCommandRule(new ArgumentRule(ArgumentKind.Identifier, "name").Optional(), new ArgumentRule(ArgumentKind.HeaderFile, "header-file").Optional(), new ArgumentRule(ArgumentKind.HeaderName, "header-name").Optional()) },
-            { "subpage", new BasicCommandRule(new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "text").Optional()) },
+            { "subpage", new BasicCommandRule(new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.QuotedString, "text").Optional()) },
             { "subsection", new SectionCommandRule(DoxygenEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
             { "subsubsection", new SectionCommandRule(DoxygenEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
             { "tableofcontents", new BasicCommandRule(new ArgumentRule(ArgumentKind.PrefixToPostfix, "option", "{", "}", ArgumentFlags.DirectlyAfterCommand).Optional()) },
@@ -428,10 +428,10 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         }
         public static bool IsCommandIdentStart(char c)
         {
-            bool result = SyntaxUtils.IsIdentStart(c) || (c == '{' || c == '}');
+            bool result = SyntaxUtils.IsIdentStart(c);
             return (result);
         }
-        public static bool IsCommandIdent(char c)
+        public static bool IsCommandIdentPart(char c)
         {
             bool result = SyntaxUtils.IsIdentPart(c);
             return (result);

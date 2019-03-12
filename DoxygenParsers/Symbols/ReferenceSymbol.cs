@@ -6,21 +6,18 @@ namespace TSP.DoxygenEditor.Symbols
 {
     public class ReferenceSymbol
     {
-        public IBaseNode Node { get; }
-        public TextRange Range { get; }
         public ReferenceSymbolKind Kind { get; }
-        public ReferenceSymbol(IBaseNode node, TextRange range, ReferenceSymbolKind kind)
+        public TextRange Range { get; }
+        public IBaseNode Node { get; }
+        public ReferenceSymbol(ReferenceSymbolKind kind, TextRange range, IBaseNode node)
         {
-            Node = node;
-            Range = range;
             Kind = kind;
-        }
-        public ReferenceSymbol(IBaseNode node, IBaseToken token, ReferenceSymbolKind kind) : this(node, token.Range, kind)
-        {
+            Range = range;
+            Node = node;
         }
         public override string ToString()
         {
-            return Node.ToString();
+            return $"{Range} as {Kind} => {Node}";
         }
     }
 }

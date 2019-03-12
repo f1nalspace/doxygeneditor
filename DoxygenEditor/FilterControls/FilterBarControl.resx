@@ -117,68 +117,60 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="Copy_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Copy_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="CollapseArrow_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\CollapseArrow_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Undo_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Undo_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SaveAs_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SaveAs_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Exit_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Exit_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Paste_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Paste_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="CloseGroup_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\CloseGroup_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="QuickReplace_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\QuickReplace_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="CloseDocument_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\CloseDocument_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="NewFile_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\NewFile_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OpenFile_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenFile_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SelectAll_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SelectAll_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Save_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Save_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Redo_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Redo_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Cut_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Cut_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="QuickFind_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\QuickFind_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ExpandArrow_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ExpandArrow_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="LICENSE" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\LICENSE.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
-  </data>
-  <data name="SaveAll_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SaveAll_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Refresh_16x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Refresh_16x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="StatusCriticalError_32x" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\StatusCriticalError_32x.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <metadata name="imglstButtons.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="imglstButtons.ImageStream" mimetype="application/x-microsoft.net.object.binary.base64">
+    <value>
+        AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj00LjAuMC4w
+        LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAACZTeXN0
+        ZW0uV2luZG93cy5Gb3Jtcy5JbWFnZUxpc3RTdHJlYW1lcgEAAAAERGF0YQcCAgAAAAkDAAAADwMAAACw
+        CgAAAk1TRnQBSQFMAgEBBAEAATABAAEwAQABEAEAARABAAT/ASEBAAj/AUIBTQE2BwABNgMAASgDAAFA
+        AwABIAMAAQEBAAEgBgABIP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8AwgAD9gH/A/YB/wP2
+        Af8D9gH/HAAD9gH/A/YB/wP2Af/IAAP2Af8DPAH/AzwB/wP2Af8cAAP2Af8DPAH/A/YB/8gAA/YB/wM8
+        Af8DPAH/A/YB/xQAA/YB/wP2Af8D9gH/AzwB/wP2Af8D9gH/A/YB/wP2Af8D9gH/A/YB/wP2Af8D9gH/
+        A/YB/wP2Af8D9gH/EAADDAEQA0cBgBQAA0ABcAMXASBsAAP2Af8DPAH/AzwB/wP2Af8UAAP2Af8D9gH/
+        A5YB/wM8Af8DiwH/A84B/wNGAf8DPAH/AzwB/wM8Af8DPAH/AzwB/wM8Af8DPAH/A/YB/wwAAwwBEANq
+        Ac8D5QH/A1EBnwwAA0cBgAPlAf8DfQHfAxcBICQAAwYBCAMuAUg4AAMhATAD6wH/AzwB/wM8Af8D6wH/
+        AyEBMBAAA/YB/wOWAf8DPAH/AzwB/wM8Af8DiwH/A/YB/wP2Af8B8QHvAfAB/wHxAe8B8AH/AfEB7wHw
+        Af8B8QHvAfAB/wHxAe8B8AH/AzwB/wP2Af8MAANqAc8DpwH/A0cB/wPUAf8DUQGfBAADRwGAA98B/wNT
+        Af8DkQH/A30B3wMMARAcAAMGAQgDWgG3A+sB/wNDAXgwAAMMARADagHQA4UB/wM8Af8DPAH/A4UB/wNq
+        AdADDAEQCAAD9gH/A5YB/wM8Af8DPAH/AzwB/wM8Af8DPAH/A4sB/wP2Af8B5AHiAeMB/wHlAeMB5AH/
+        AfEB7wHwAf8B8QHvAfAB/wHxAe8B8AH/AzwB/wP2Af8MAAM6AWAD3wH/A1MB/wNHAf8D1AH/A2oBzwPf
+        Af8DUwH/A0cB/wPUAf8DRwGAHAADBgEIA1oBtwOyAf8DRwH/A9QB/wNMAY8sAANWAbADsgH/AzwB/wM8
+        Af8DPAH/AzwB/wOnAf8DVgGwCAAD9gH/A/YB/wP2Af8D9gH/A/YB/wP2Af8D9gH/A/YB/wP2Af8DYgH/
+        AzwB/wHZAtgB/wM8Af8B8QHvAfAB/wM8Af8D9gH/EAADOgFgA98B/wNTAf8DRwH/A7gB/wNTAf8DRwH/
+        A9QB/wNHAYAcAAMGAQgDWgG3A7IB/wM8Af8DUwH/A0cB/wPEAf8DUQGfFAADIQEwAyEBMAgAA0cBgAPU
+        Af8DPAH/AzwB/wM8Af8DPAH/AzwB/wM8Af8DyQH/A0cBgAgAA/YB/wM8Af8B8QHvAfAB/wM8Af8B0wHS
+        AdMB/wM8Af8B2wHZAdoB/wM8Af8B4wHhAeIB/wGqAakBqgH/A0cB/wM8Af8B8QHvAfAB/wM8Af8D9gH/
+        FAADOgFgA98B/wNTAf8DPAH/A0cB/wPUAf8DRwGAHAADBgEIA1oBtwOyAf8DPAH/A5wB/wPwAf8DhgH/
+        A0IB/wO+Af8DWgG3AwYBCAgAAyEBMAKmAaoB8QKmAaoB8QMhATADOgFgAecB6QHxAf8DvgH/AzwB/wM8
+        Af8DPAH/AzwB/wM8Af8DPAH/A0cB/wPfAf8DMgFQBAAD9gH/AzwB/wHxAe8B8AH/AcIBwQHCAf8DjgH/
+        A0cB/wHbAdkB2gH/AzwB/wHlAeMB5AH/AbQBswG0Af8DRwH/AzwB/wHxAe8B8AH/AzwB/wP2Af8YAAM6
+        AWAD3wH/A14B/wPUAf8DRwGAIAADOgFgA+sB/wNHAf8DnAH/A2oBzwMqAUADfQHfA4sB/wNHAf8D6wH/
+        AzoBYAgAAqYBqgHxATIBRgGxAf8BMgFGAbEB/wKmAaoB8QHnAekB8QH/ATIBRgGxAf8BXgFtAcEB/wOy
+        Af8DPAH/AzwB/wM8Af8DPAH/AzwB/wM8Af8DXQH/A6YB8AQAA/YB/wM8Af8B8QHvAfAB/wM8Af8DPAH/
+        AzwB/wHtAesB7AH/AzwB/wFyAnEB/wM8Af8BxAHCAcMB/wM8Af8B8QHvAfAB/wM8Af8D9gH/HAADOgFg
+        A/YB/wNHAYAoAANHAYAD5QH/A2oBzwMMARAEAAMXASADagHPA+UB/wNHAYAMAAKmAaoB8QEyAUYBsQH/
+        AQcBIAGhAf8BMgFGAbEB/wEyAUYBsQH/AQcBIAGhAf8BXgFtAcEB/wP2Af8D9gH/A/YB/wP2Af8D9gH/
+        A/YB/wP2Af8D9gH/A/YB/wQAA/YB/wM8Af8B8QHvAfAB/wHlAeMB5AH/AccCxgH/AeMB4QHiAf8B8QHv
+        AfAB/wM8Af8B0QHPAdAB/wHOAs0B/wHxAe8B8AH/AzwB/wHxAe8B8AH/AzwB/wP2Af8gAAMhATAwAAM9
+        AWgDDAEQDAADDAEQAz0BaBAAAyEBMAKmAaoB8QEyAUYBsQH/AQcBIAGhAf8BBwEgAaEB/wFeAW0BwQH/
+        A6YB8AMhATAkAAP2Af8DPAH/AfEB7wHwAf8B8QHvAfAB/wHxAe8B8AH/AfEB7wHwAf8B8QHvAfAB/wM8
+        Af8B5gHkAeUB/wHxAe8B8AH/AfEB7wHwAf8DPAH/AfEB7wHwAf8DPAH/A/YB/4AAAzoBYAHnAekB8QH/
+        ATIBRgGxAf8BBwEgAaEB/wEHASABoQH/ATIBRgGxAf8CpgGqAfEDIQEwJAAD9gH/AzwB/wHxAe8B8AH/
+        AfEB7wHwAf8B8QHvAfAB/wHxAe8B8AH/AfEB7wHwAf8DswH/AfEB7wHwAf8B8QHvAfAB/wHxAe8B8AH/
+        AfEB7wHwAf8B8QHvAfAB/wM8Af8D9gH/gAAB5wHpAfEB/wEyAUYBsQH/AQcBIAGhAf8BXgFtAcEB/wEy
+        AUYBsQH/AQcBIAGhAf8BMgFGAbEB/wOmAfADIQEwIAAD9gH/AzwB/wHxAe8B8AH/AfEB7wHwAf8B8QHv
+        AfAB/wHxAe8B8AH/AfEB7wHwAf8B8QHvAfAB/wHxAe8B8AH/AfEB7wHwAf8B8QHvAfAB/wHxAe8B8AH/
+        AfEB7wHwAf8DPAH/A/YB/4AAA6YB8AFeAW0BwQH/AV4BbQHBAf8DpgHwAqYBqgHxATIBRgGxAf8BXgFt
+        AcEB/wOmAfADIQEwIAAD9gH/AzwB/wM8Af8DPAH/AzwB/wM8Af8DPAH/AzwB/wM8Af8DPAH/AzwB/wM8
+        Af8DPAH/AzwB/wP2Af+AAAMhATADpgHwA6YB8AMhATADIQEwA6YB8AOmAfADIQEwJAAD9gH/A/YB/wP2
+        Af8D9gH/A/YB/wP2Af8D9gH/A/YB/wP2Af8D9gH/A/YB/wP2Af8D9gH/A/YB/wP2Af8BQgFNAT4HAAE+
+        AwABKAMAAUADAAEgAwABAQEAAQEGAAEBFgAD/4EABf8BDwHjBv8BDwHjBv8BDwGAAQAB8wHnA/8BDwGA
+        AQAB4QHDAf4BfwH+AQcBgAEAAeABgQH8AT8B/AEDAgAB4AEDAfgBHwH8AQMCAAHwAQcB8AEPAZgBAQGA
+        AQAB+AEPAeABAwIAAYABAAH8AR8B4AEDAgABgAEAAf4BPwHwAYcCAAGAAQAB/wF/AfkBzwEAAf8BgAEA
+        BP8BAAH/AYABAAT/AQABfwGAAQAE/wEAAX8BgAEABP8BAAH/AYABAAs=
+</value>
   </data>
 </root>

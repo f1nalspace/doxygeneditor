@@ -140,6 +140,77 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return (result);
         }
 
+        public enum SkipType
+        {
+            Single,
+            All
+        }
+
+        public void SkipAllWhitespaces()
+        {
+            do
+            {
+                char c0 = Peek();
+                char c1 = Peek(1);
+                if (c0 == InvalidCharacter)
+                    break;
+                else if (c0 == '\t')
+                    AdvanceTab();
+                else if (SyntaxUtils.IsLineBreak(c0))
+                {
+                    int nb = SyntaxUtils.GetLineBreakChars(c0, c1);
+                    AdvanceLine(nb);
+                }
+                else if (char.IsWhiteSpace(c0))
+                    AdvanceColumn();
+                else
+                    break;
+            } while (!IsEOF);
+        }
+
+        public void SkipSpacings(SkipType type)
+        {
+            do
+            {
+                char c = Peek();
+                if (c == InvalidCharacter)
+                    break;
+                else if (c == '\t')
+                    AdvanceTab();
+                else if (SyntaxUtils.IsSpacing(c))
+                    AdvanceColumn();
+                else
+                    break;
+            } while (!IsEOF && type == SkipType.All);
+        }
+
+        public void SkipLineBreaks(SkipType type)
+        {
+            do
+            {
+                char c0 = Peek();
+                char c1 = Peek(1);
+                if (c0 == InvalidCharacter)
+                    break;
+                else if (SyntaxUtils.IsLineBreak(c0))
+                {
+                    int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
+                    AdvanceLine(lb);
+                }
+                else break;
+            } while (!IsEOF && type == SkipType.All);
+        }
+
+        public void SkipUntil(char c)
+        {
+            while (!IsEOF)
+            {
+                if (Peek() == c)
+                    break;
+                AdvanceAuto();
+            }
+        }
+
         public void Seek(TextPosition pos)
         {
             TextPosition = pos;

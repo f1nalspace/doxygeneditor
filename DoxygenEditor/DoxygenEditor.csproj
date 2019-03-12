@@ -65,7 +65,9 @@
       <HintPath>..\packages\jacobslusser.ScintillaNET.3.6.3\lib\net40\ScintillaNET.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -86,12 +88,28 @@
       <DependentUpon>ErrorDialogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Extensions\DictionaryExtensions.cs" />
+    <Compile Include="Extensions\DirectoryInfoExtensions.cs" />
     <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\LinkedListExtensions.cs" />
+    <Compile Include="Extensions\ListViewExtensions.cs" />
     <Compile Include="Extensions\TimeSpanExtensions.cs" />
     <Compile Include="Extensions\UIExtensions.cs" />
+    <Compile Include="FilterControls\FilterBarControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FilterControls\FilterBarControl.Designer.cs">
+      <DependentUpon>FilterBarControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FilterControls\FilterListView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FilterControls\FilterListView.Designer.cs">
+      <DependentUpon>FilterListView.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\PerformanceItemModel.cs" />
+    <Compile Include="Services\BaseConfigurationInstance.cs" />
+    <Compile Include="Services\XMLConfigurationService.cs" />
     <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
@@ -107,7 +125,7 @@
     <Compile Include="SearchReplace\SearchReplaceTypes.cs" />
     <Compile Include="Services\IConfigurationService.cs" />
     <Compile Include="Services\RegistryConfigurationService.cs" />
-    <Compile Include="Models\ConfigurationModel.cs" />
+    <Compile Include="Models\WorkspaceModel.cs" />
     <Compile Include="Models\TypeStringModel.cs" />
     <Compile Include="Views\AboutForm.cs">
       <SubType>Form</SubType>
@@ -131,6 +149,9 @@
     </Compile>
     <EmbeddedResource Include="ErrorDialog\ErrorDialogForm.resx">
       <DependentUpon>ErrorDialogForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FilterControls\FilterBarControl.resx">
+      <DependentUpon>FilterBarControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SearchReplace\SearchReplaceControl.resx">
       <DependentUpon>SearchReplaceControl.cs</DependentUpon>
@@ -172,10 +193,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
+    <None Include="Resources\StatusCriticalError_32x.png" />
+    <None Include="Resources\Refresh_16x.png" />
     <None Include="Resources\CollapseArrow_16x.png" />
     <None Include="Resources\ExpandArrow_16x.png" />
-    <None Include="Resources\StatusCriticalError_32x.png" />
-    <None Include="Resources\StatusCriticalError_64x.png" />
     <None Include="Resources\LICENSE.txt" />
     <None Include="Resources\SelectAll_16x.png" />
     <None Include="Resources\Paste_16x.png" />

@@ -23,13 +23,15 @@ using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Languages.Cpp;
 using TSP.DoxygenEditor.Symbols;
 using System.Collections;
+using TSP.DoxygenEditor.FilterControls;
+using System.Threading;
 
 namespace TSP.DoxygenEditor.Views
 {
     public partial class MainForm : Form
     {
         private readonly IConfigurationService _configService;
-        private readonly ConfigurationModel _config;
+        private readonly WorkspaceModel _workspace;
         private readonly string _appName;
 
         class PerformanceListViewItemComparer : IComparer
@@ -47,9 +49,50 @@ namespace TSP.DoxygenEditor.Views
             }
         }
 
+        private readonly FilterBarControl _doxygenIssuesFilterControl;
+        private readonly FilterBarControl _cppIssuesFilterControl;
+        private readonly FilterListView lvDoxygenIssues;
+        private readonly FilterListView lvCppIssues;
+
+        private void SetupIssueColumns(FilterListView listview)
+        {
+            listview.ImageList = imglstIcons;
+            listview.AddColumn("Name", 150);
+            listview.AddColumn("Symbol", 150);
+            listview.AddColumn("Type", 100);
+            listview.AddColumn("Category", 150);
+            listview.AddColumn("Line", 100);
+            listview.AddColumn("File", 200);
+        }
+
         public MainForm()
         {
             InitializeComponent();
+
+            // @STUPID(final): Visual studio designer is so stupid, it cannot recognize usercontrols properly
+            // so we need to manually add it ourself -.-
+            lvDoxygenIssues = new FilterListView();
+            lvDoxygenIssues.Dock = DockStyle.Fill;
+            lvDoxygenIssues.ItemDoubleClick += Issues_ItemDoubleClick;
+            SetupIssueColumns(lvDoxygenIssues);
+            tpDoxygenIssues.Controls.Add(lvDoxygenIssues);
+            _doxygenIssuesFilterControl = new FilterBarControl(lvDoxygenIssues);
+            _doxygenIssuesFilterControl.ChangedFilter += (s, e) =>
+            {
+                lvDoxygenIssues.FilterText = e;
+            };
+
+            lvCppIssues = new FilterListView();
+            lvCppIssues.Dock = DockStyle.Fill;
+            lvCppIssues.ItemDoubleClick += Issues_ItemDoubleClick;
+            SetupIssueColumns(lvCppIssues);
+            tpCppIssues.Controls.Add(lvCppIssues);
+
+            _cppIssuesFilterControl = new FilterBarControl(lvCppIssues);
+            _cppIssuesFilterControl.ChangedFilter += (s, e) =>
+            {
+                lvCppIssues.FilterText = e;
+            };
 
             lvPerformance.ListViewItemSorter = new PerformanceListViewItemComparer();
 
@@ -57,11 +100,11 @@ namespace TSP.DoxygenEditor.Views
             _appName = verInfo.ProductName;
 
             _configService = IOCContainer.Get<IConfigurationService>();
-            _config = new ConfigurationModel();
-            _config.Load(_configService);
+            _workspace = new WorkspaceModel();
+            _workspace.Load(_configService);
 
             // Update UI from config settings
-            miViewShowWhitespaces.Checked = _config.IsWhitespaceVisible;
+            miViewShowWhitespaces.Checked = _workspace.IsWhitespaceVisible;
             RefreshRecentFiles();
 
             _searchControl = new SearchReplace.SearchReplaceControl();
@@ -79,6 +122,11 @@ namespace TSP.DoxygenEditor.Views
                 else UpdateMenuSelection(null);
             };
             NativeMethods.AddClipboardFormatListener(Handle);
+        }
+
+        private void SetParseStatus(string status)
+        {
+            tsParseStatusLabel.Text = status;
         }
 
         private void ShowError(string caption, string shortText, string details)
@@ -113,7 +161,9 @@ namespace TSP.DoxygenEditor.Views
 
         #region Tabs
         private readonly Regex _rexIndexFromName = new Regex("(?<index>[0-9]+)$", RegexOptions.Compiled);
-        private int _tabCounter = 0;
+        private int _newTabCounter = 0;
+        private int _parseTotalCount = 0;
+        private int _parseProgressCount = 0;
         private string GetNextTabName(string prefix)
         {
             int highIndex = 0;
@@ -164,9 +214,9 @@ namespace TSP.DoxygenEditor.Views
             IEnumerable<EditorState> changedEditorStates = GetChangedEditorStates();
             bool anyChanges = changedEditorStates.Count() > 0;
 
-            miFileRefresh.Enabled = editorState != null;
-            miFileSave.Enabled = editorState != null && editorState.IsChanged;
-            miFileSaveAll.Enabled = anyChanges;
+            miFileRefresh.Enabled = tbtnFileRefresh.Enabled = editorState != null;
+            miFileSave.Enabled = tbtnFileSave.Enabled = editorState != null && editorState.IsChanged;
+            miFileSaveAll.Enabled = tbtnFileSaveAll.Enabled = anyChanges;
             miFileClose.Enabled = tcFiles.SelectedTab != null;
             miFileCloseAll.Enabled = tcFiles.TabCount > 0;
 
@@ -184,7 +234,7 @@ namespace TSP.DoxygenEditor.Views
 
         private EditorState AddFileTab(string name)
         {
-            int tabIndex = _tabCounter++;
+            int tabIndex = _newTabCounter++;
             TabPage newTab = new TabPage() { Text = name };
             EditorState newState = new EditorState(this, name, newTab, tabIndex);
             newState.IsShowWhitespace = miViewShowWhitespaces.Checked;
@@ -194,19 +244,27 @@ namespace TSP.DoxygenEditor.Views
                 UpdateMenuEditChange(newState);
                 UpdateMenuSelection(newState);
             };
-            newState.ParseComplete += (EditorState editorState, bool isComplete) =>
+            newState.ParseComplete += (EditorState editorState) =>
             {
                 RebuildSymbolTree(editorState, editorState.DoxyTree);
                 AddPerformanceItems(editorState);
+                bool isComplete = Interlocked.Decrement(ref _parseProgressCount) == 0;
                 if (isComplete)
                 {
+                    Interlocked.Exchange(ref _parseTotalCount, 0);
                     IEnumerable<EditorState> states = GetAllEditorStates();
                     RefreshIssues(states);
+                    SetParseStatus("");
                 }
+                else
+                    SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
-            newState.ParseStarting += (EditorState editorState, bool isComplete) =>
+            newState.ParseStarting += (EditorState editorState) =>
             {
+                Interlocked.Increment(ref _parseTotalCount);
+                Interlocked.Increment(ref _parseProgressCount);
                 ClearPerformanceItems(editorState);
+                SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
             newTab.Tag = newState;
             newTab.Controls.Add(newState.Container);
@@ -266,7 +324,7 @@ namespace TSP.DoxygenEditor.Views
                 }
                 else
                 {
-                    _config.PushRecentFiles(filePath);
+                    _workspace.PushRecentFiles(filePath);
 
                     // Remove first tab when it was a "New" and is still unchanged
                     if (tcFiles.TabPages.Count == 2)
@@ -274,7 +332,7 @@ namespace TSP.DoxygenEditor.Views
                         TabPage firstTab = tcFiles.TabPages[0];
                         EditorState existingState = (EditorState)firstTab.Tag;
                         if (existingState.FilePath == null && !existingState.IsChanged)
-                            tcFiles.TabPages.Remove(firstTab);
+                            RemoveFileTab(existingState);
                     }
 
                     // Focus new tab/state
@@ -297,6 +355,34 @@ namespace TSP.DoxygenEditor.Views
                 RemoveFileTab(editorState);
             }
             return (true);
+        }
+
+        private void tcFiles_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                for (int i = 0; i < tcFiles.TabCount; ++i)
+                {
+                    Rectangle r = tcFiles.GetTabRect(i);
+                    if (r.Contains(e.Location))
+                    {
+                        cmsTabActions.Show(tcFiles, e.Location);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void tcFiles_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tcFiles.SelectedIndex == -1)
+                UpdateTabState(null);
+            else
+            {
+                TabPage selectedTab = tcFiles.TabPages[tcFiles.SelectedIndex];
+                EditorState editorState = (EditorState)selectedTab.Tag;
+                UpdateTabState(editorState);
+            }
         }
         #endregion
 
@@ -343,36 +429,10 @@ namespace TSP.DoxygenEditor.Views
         }
         #endregion
 
-        private void tcFiles_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right)
-            {
-                for (int i = 0; i < tcFiles.TabCount; ++i)
-                {
-                    Rectangle r = tcFiles.GetTabRect(i);
-                    if (r.Contains(e.Location))
-                    {
-                        cmsTabActions.Show(tcFiles, e.Location);
-                        break;
-                    }
-                }
-            }
-        }
-
-        private void tcFiles_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (tcFiles.SelectedIndex == -1)
-                UpdateTabState(null);
-            else
-            {
-                TabPage selectedTab = tcFiles.TabPages[tcFiles.SelectedIndex];
-                EditorState editorState = (EditorState)selectedTab.Tag;
-                UpdateTabState(editorState);
-            }
-        }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            _workspace.UpdateLastOpenedFiles(GetAllEditorStates().Select(f => f.FilePath));
             IEnumerable<EditorState> changes = GetChangedEditorStates();
             if (changes.Count() > 0)
                 e.Cancel = !CloseTabs(changes);
@@ -380,7 +440,7 @@ namespace TSP.DoxygenEditor.Views
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            _config.Save(_configService);
+            _workspace.Save(_configService);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -392,6 +452,14 @@ namespace TSP.DoxygenEditor.Views
                     OpenFileTab(args[i]);
             }
             else
+            {
+                if (_workspace.RestoreLastOpenedFiles && _workspace.LastOpenedFileCount > 0)
+                {
+                    foreach (var lastOpenedFilePath in _workspace.LastOpenedFiles)
+                        OpenFileTab(lastOpenedFilePath);
+                }
+            }
+            if (tcFiles.TabPages.Count == 0)
                 MenuActionFileNew(this, new EventArgs());
         }
 
@@ -628,7 +696,7 @@ namespace TSP.DoxygenEditor.Views
             EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
             Tuple<bool, Exception> r = SaveWithConfirmation(editorState, true);
             if (r.Item1)
-                _config.PushRecentFiles(editorState.FilePath);
+                _workspace.PushRecentFiles(editorState.FilePath);
         }
         private void MenuActionFileSaveAs(object sender, EventArgs e)
         {
@@ -646,7 +714,7 @@ namespace TSP.DoxygenEditor.Views
                     ShowError(msg.Caption, msg.ShortText, msg.Details);
                 }
                 else
-                    _config.PushRecentFiles(filePath);
+                    _workspace.PushRecentFiles(filePath);
 
             }
         }
@@ -693,6 +761,11 @@ namespace TSP.DoxygenEditor.Views
             ToolStripMenuItem item = (ToolStripMenuItem)sender;
             string filePath = (string)item.Tag;
             OpenFileTab(filePath);
+        }
+
+        private void MenuActionFileExit(object sender, EventArgs e)
+        {
+            Close();
         }
 
         private void MenuActionEditSearchAndReplaceQuickSearch(object sender, EventArgs e)
@@ -757,12 +830,13 @@ namespace TSP.DoxygenEditor.Views
                 var allSources = SymbolCache.GetSources(editorState);
                 foreach (var source in allSources)
                 {
+                    if (source.Value.Node == null) continue;
                     symbols.Add(new SymbolItemModel()
                     {
                         Caption = null,
                         Id = source.Key,
                         Type = source.Value.Kind.ToString(),
-                        Position = source.Value.Token.Position,
+                        Position = source.Value.Range.Position,
                     });
                     types.Add(source.Value.Kind.ToString());
                 }
@@ -786,7 +860,7 @@ namespace TSP.DoxygenEditor.Views
                 editorState.IsShowWhitespace = enabled;
             }
             item.Checked = enabled;
-            _config.IsWhitespaceVisible = enabled;
+            _workspace.IsWhitespaceVisible = enabled;
         }
 
         private void MenuActionHelpAbout(object sender, EventArgs e)
@@ -803,14 +877,14 @@ namespace TSP.DoxygenEditor.Views
 
         private void UpdateMenuEditChange(EditorState editorState)
         {
-            miEditUndo.Enabled = editorState != null && editorState.CanUndo();
-            miEditRedo.Enabled = editorState != null && editorState.CanRedo();
+            miEditUndo.Enabled = tbtnEditUndo.Enabled = editorState != null && editorState.CanUndo();
+            miEditRedo.Enabled = tbtnEditRedo.Enabled = editorState != null && editorState.CanRedo();
             miEditPaste.Enabled = editorState != null && editorState.CanPaste();
         }
         private void RefreshRecentFiles()
         {
             miFileRecentFiles.DropDownItems.Clear();
-            foreach (string recentFile in _config.RecentFiles)
+            foreach (string recentFile in _workspace.RecentFiles)
             {
                 ToolStripMenuItem newItem = new ToolStripMenuItem(recentFile);
                 newItem.Tag = recentFile;
@@ -837,7 +911,7 @@ namespace TSP.DoxygenEditor.Views
                 Pos = pos;
             }
         }
-        private void AddIssue(IssueTag tag, IssueType type, string message, string symbolName, string symbolType, string group, int line, string file)
+        private void AddIssue(FilterListView listView, IssueTag tag, IssueType type, string message, string symbolName, string symbolType, string group, int line, string file)
         {
             ListViewItem newItem = new ListViewItem(message);
             newItem.Tag = tag;
@@ -847,7 +921,7 @@ namespace TSP.DoxygenEditor.Views
             newItem.SubItems.Add(group);
             newItem.SubItems.Add(line.ToString());
             newItem.SubItems.Add(file);
-            lvIssues.Items.Add(newItem);
+            listView.AddItem(newItem);
         }
         private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
         private void AddIssuesFromNode(IEnumerable<EditorState> states, EditorState state, IBaseNode rootNode, string fileName, string groupName)
@@ -858,7 +932,7 @@ namespace TSP.DoxygenEditor.Views
                 CppEntity cppEntity = cppNode.Entity;
                 if (cppEntity.DocumentationNode != null)
                 {
-                    AddIssue(new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Id, cppEntity.Kind.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
+                    AddIssue(lvCppIssues, new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Id, cppEntity.Kind.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
                 }
             }
             foreach (var child in rootNode.Children)
@@ -868,8 +942,19 @@ namespace TSP.DoxygenEditor.Views
         }
         private void RefreshIssues(IEnumerable<EditorState> states)
         {
-            lvIssues.BeginUpdate();
-            lvIssues.Items.Clear();
+            int selectedCppIssueIndex = lvCppIssues.SelectedIndex;
+            int selectedDoxyIssueIndex = lvCppIssues.SelectedIndex;
+            IssueTag selectedCppIssue = lvCppIssues.SelectedItem?.Tag as IssueTag;
+            IssueTag selectedDoxyIssue = lvDoxygenIssues.SelectedItem?.Tag as IssueTag;
+
+            lvCppIssues.BeginUpdate();
+            lvDoxygenIssues.BeginUpdate();
+
+            lvCppIssues.ClearSelection();
+            lvDoxygenIssues.ClearSelection();
+
+            lvCppIssues.ClearItems();
+            lvDoxygenIssues.ClearItems();
 
             // Validate symbols from cache
             var symbolErrors = SymbolCache.Validate();
@@ -877,36 +962,54 @@ namespace TSP.DoxygenEditor.Views
             {
                 var error = errorPair.Value;
                 var state = (EditorState)errorPair.Key;
-                AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, error.Symbol, error.Type, error.Category, error.Pos.Line + 1, state.Name);
+                var symbol = (ReferenceSymbol)error.Tag;
+                var nodeType = symbol.Node.GetType();
+                if (typeof(CppNode).Equals(nodeType))
+                    AddIssue(lvCppIssues, new IssueTag(state, error.Pos), IssueType.Error, error.Message, error.Symbol, error.Type, error.Category, error.Pos.Line + 1, state.Name);
+                else if (typeof(DoxygenNode).Equals(nodeType))
+                    AddIssue(lvDoxygenIssues, new IssueTag(state, error.Pos), IssueType.Error, error.Message, error.Symbol, error.Type, error.Category, error.Pos.Line + 1, state.Name);
             }
 
             foreach (EditorState state in states)
             {
                 foreach (var error in state.Errors)
-                    AddIssue(new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
+                {
+                    var errorType = error.Tag.GetType();
+                    if (typeof(CppLexer).Equals(errorType) || typeof(CppParser).Equals(errorType))
+                        AddIssue(lvCppIssues, new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
+                    else if (typeof(DoxygenLexer).Equals(errorType) || typeof(DoxygenParser).Equals(errorType))
+                        AddIssue(lvDoxygenIssues, new IssueTag(state, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, state.Name);
+                }
+
                 if (state.CppTree != null)
                 {
                     AddIssuesFromNode(states, state, state.CppTree, state.Name, "Root");
                 }
             }
-            lvIssues.EndUpdate();
-            tpIssues.Text = $"Issues [{lvIssues.Items.Count}]";
+
+            lvCppIssues.RefreshItems();
+            lvDoxygenIssues.RefreshItems();
+
+            lvCppIssues.SelectItemOrIndex(selectedCppIssue, selectedCppIssueIndex);
+            lvDoxygenIssues.SelectItemOrIndex(selectedDoxyIssue, selectedDoxyIssueIndex);
+
+            lvCppIssues.EndUpdate();
+            lvDoxygenIssues.EndUpdate();
+
+            tpCppIssues.Text = $"C/C++ Issues [{lvCppIssues.ItemCount}]";
+            tpDoxygenIssues.Text = $"Doxygen Issues [{lvDoxygenIssues.ItemCount}]";
         }
 
-        private void lvIssues_DoubleClick(object sender, EventArgs e)
+        private void Issues_ItemDoubleClick(object sender, ListViewItem item)
         {
-            if (lvIssues.SelectedItems.Count > 0)
+            if (item != null && item.Tag != null)
             {
-                ListViewItem item = lvIssues.SelectedItems[0];
-                if (item.Tag != null)
-                {
-                    IssueTag tag = (IssueTag)item.Tag;
-                    TextPosition pos = tag.Pos;
-                    EditorState state = tag.State;
-                    TabPage tab = (TabPage)state.Tag;
-                    tcFiles.SelectedTab = tab;
-                    state.GoToPosition(pos.Index);
-                }
+                IssueTag tag = (IssueTag)item.Tag;
+                TextPosition pos = tag.Pos;
+                EditorState state = tag.State;
+                TabPage tab = (TabPage)state.Tag;
+                tcFiles.SelectedTab = tab;
+                state.GoToPosition(pos.Index);
             }
         }
         #endregion

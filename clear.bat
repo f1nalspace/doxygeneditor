@@ -4,6 +4,7 @@ del /q *.ghostdoc*
 del /q *.sdf
 rmdir /q /s .vs
 rmdir /q /s build
+rmdir /q /s immediates
 rmdir /q /s setup
 rmdir /q /s packages
 rmdir /q /s Debug
@@ -16,3 +17,5 @@ rmdir /q /s DoxygenParsers\obj
 rmdir /q /s FastTokenizer\bin
 rmdir /q /s FastTokenizer\obj
 rmdir /q /s CParserTest\x64
+rmdir /q /s DoxygenEditorUnitTest\bin
+rmdir /q /s DoxygenEditorUnitTest\obj

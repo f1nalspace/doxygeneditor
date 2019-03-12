@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using TSP.DoxygenEditor.Languages.Cpp;
 using TSP.DoxygenEditor.Languages.Utils;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.TextAnalysis;
@@ -84,51 +85,53 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             // Command
             Buffer.StartLexeme();
             Buffer.AdvanceColumn();
-            StringBuilder commandString = new StringBuilder();
 
             DoxygenTokenKind kind = DoxygenTokenKind.Command;
-            if (DoxygenSyntax.SpecialCommandStartChars.Contains(Buffer.Peek()))
             {
-                // Special case for { } command
-                if (Buffer.Peek() == '{' || Buffer.Peek() == '}')
+                char first = Buffer.Peek();
+                switch (first)
                 {
-                    kind = DoxygenTokenKind.GroupStart;
-                    if (Buffer.Peek() == '}')
-                        kind = DoxygenTokenKind.GroupEnd;
-                }
-                // All other special case
-                while (!Buffer.IsEOF)
-                {
-                    if (DoxygenSyntax.SpecialCommandStartChars.Contains(Buffer.Peek()))
-                    {
-                        commandString.Append(Buffer.Peek());
+                    case '{':
+                    case '}':
+                        kind = (first == '{') ? DoxygenTokenKind.GroupStart : DoxygenTokenKind.GroupEnd;
                         Buffer.AdvanceColumn();
-                    }
-                    else
                         break;
-                }
-            }
-            else
-            {
-                // Normal case
-                if (DoxygenSyntax.IsCommandIdentStart(Buffer.Peek(1)))
-                {
-                    while (!Buffer.IsEOF)
-                    {
-                        if (DoxygenSyntax.IsCommandIdent(Buffer.Peek()))
+
+                    case '$':
+                    case '@':
+                    case '\\':
+                    case '~':
+                    case '<':
+                    case '=':
+                    case '>':
+                    case '#':
+                    case '"':
+                        Buffer.AdvanceColumn();
+                        break;
+
+                    case ':':
+                    case '|':
+                    case '-':
+                        Buffer.AdvanceColumnsWhile(d => d.Equals(first));
+                        break;
+
+                    default:
+                        if (DoxygenSyntax.IsCommandIdentStart(first))
                         {
-                            commandString.Append(Buffer.Peek());
-                            Buffer.AdvanceColumn();
+                            while (!Buffer.IsEOF)
+                            {
+                                if (!DoxygenSyntax.IsCommandIdentPart(Buffer.Peek()))
+                                    break;
+                                Buffer.AdvanceColumn();
+                            }
                         }
-                        else
-                            break;
-                    }
+                        break;
                 }
             }
 
             TextPosition commandStart = Buffer.LexemeStart;
             int commandLen = Buffer.LexemeWidth;
-            string commandName = commandString.ToString();
+            string commandName = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, commandLen - 1);
             var rule = DoxygenSyntax.GetCommandRule(commandName);
             if (rule != null)
             {
@@ -161,7 +164,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     if (!arg.Flags.HasFlag(DoxygenSyntax.ArgumentFlags.DirectlyAfterCommand))
                     {
                         if (SyntaxUtils.IsSpacing(first) || first == '\t')
-                            SkipSpacings(SkipType.All);
+                            Buffer.SkipSpacings(TextStream.SkipType.All);
                         else
                         {
                             // No more arguments are following
@@ -217,7 +220,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     }
                                     else if (arg.IsRequired)
                                     {
-                                        PushError(Buffer.TextPosition, $"Expected postfix '{postfix}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                        AddError(Buffer.TextPosition, $"Expected postfix '{postfix}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                         return (result);
                                     }
                                 }
@@ -228,7 +231,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Expected prefix '{prefix}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Expected prefix '{prefix}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -311,7 +314,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                                     }
                                                     if (!terminatedFunc)
                                                     {
-                                                        PushError(Buffer.TextPosition, $"Unterminated function reference for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                                        AddError(Buffer.TextPosition, $"Unterminated function reference for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                                         return (result);
                                                     }
                                                 }
@@ -320,7 +323,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             }
                                             else
                                             {
-                                                PushError(Buffer.TextPosition, $"Requires identifier, but found '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                                AddError(Buffer.TextPosition, $"Requires identifier, but found '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                                 return (result);
                                             }
                                         }
@@ -340,7 +343,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -383,7 +386,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -416,7 +419,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                         }
                                         if (!foundFilename)
                                         {
-                                            PushError(Buffer.TextPosition, $"Unterminated filename, expect quote char '{quoteChar}' but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                            AddError(Buffer.TextPosition, $"Unterminated filename, expect quote char '{quoteChar}' but got '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                             return (result);
                                         }
                                     }
@@ -441,7 +444,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -469,7 +472,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -508,7 +511,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     }
                                     if (!isComplete)
                                     {
-                                        PushError(Buffer.TextPosition, $"Unterminated quote string for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                        AddError(Buffer.TextPosition, $"Unterminated quote string for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                         return (result);
                                     }
                                 }
@@ -519,7 +522,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Unexpected character '{Buffer.Peek()}' for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -549,7 +552,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 }
                                 else if (arg.IsRequired)
                                 {
-                                    PushError(Buffer.TextPosition, $"Unterminated end-of-line for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                                    AddError(Buffer.TextPosition, $"Unterminated end-of-line for argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                                     return (result);
                                 }
                             }
@@ -561,7 +564,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             goto CommandDone;
 
                         default:
-                            PushError(Buffer.TextPosition, $"Unsupported argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                            AddError(Buffer.TextPosition, $"Unsupported argument ({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                             return (result);
                     }
 
@@ -574,7 +577,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         }
                         else
                         {
-                            PushError(Buffer.TextPosition, $"Expected postfix '{postfix}' for pp-argument({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
+                            AddError(Buffer.TextPosition, $"Expected postfix '{postfix}' for pp-argument({argNumber}:{arg}) in command '{commandName}'", typeName, commandName);
                             return (result);
                         }
                     }
@@ -582,7 +585,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 }
             }
 
-            CommandDone:
+CommandDone:
             result.IsValid = true;
 
             return (result);
@@ -654,7 +657,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
             if (!isComplete)
             {
-                PushError(commandResult.StartPos, $"Unterminated code-block, expect '@endcode' or '\\endcode'", "Code", commandResult.CommandName);
+                AddError(commandResult.StartPos, $"Unterminated code-block, expect '@endcode' or '\\endcode'", "Code", commandResult.CommandName);
                 return (false);
             }
             return (true);
@@ -667,14 +670,16 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             state.CurrentLineStartIndex = Buffer.StreamPosition;
             do
             {
-                char thisChar = Buffer.Peek();
-                switch (thisChar)
+                char first = Buffer.Peek();
+                char second = Buffer.Peek(1);
+                char third = Buffer.Peek(2);
+                switch (first)
                 {
                     case ' ':
                     case '\v':
                     case '\f':
                     case '\t':
-                        SkipSpacings(SkipType.All);
+                        Buffer.SkipSpacings(TextStream.SkipType.All);
                         break;
 
                     case '\r':
@@ -692,7 +697,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             bool wasEmptyLine = Buffer.MatchCharacters(state.CurrentLineStartIndex, len, char.IsWhiteSpace) || (len == 0);
 
                             Buffer.StartLexeme();
-                            SkipLineBreaks(SkipType.Single);
+                            Buffer.SkipLineBreaks(TextStream.SkipType.Single);
                             state.CurrentLineStartIndex = Buffer.StreamPosition;
                             PushToken(DoxygenTokenPool.Make(wasEmptyLine ? DoxygenTokenKind.EmptyLine : DoxygenTokenKind.EndOfLine, Buffer.LexemeRange, true));
                         }
@@ -700,18 +705,16 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
                     case '/':
                         {
-                            char n = Buffer.Peek(1);
-                            if (n == '*')
+                            if (second == '*')
                             {
                                 // Multi line
-                                char n2 = Buffer.Peek(2);
-                                if (DoxygenSyntax.MultiLineDocChars.Contains(n2))
+                                if (DoxygenSyntax.MultiLineDocChars.Contains(third))
                                 {
                                     Debug.Assert(!state.Flags.HasFlag(StateFlags.InsideBlock));
                                     Buffer.StartLexeme();
                                     Buffer.AdvanceColumns(3);
                                     state.Flags = StateFlags.InsideBlock;
-                                    if (n2 == '*')
+                                    if (third == '*')
                                     {
                                         char n3 = Buffer.Peek();
                                         if (n3 == '/')
@@ -725,32 +728,54 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     StartText(state);
                                     continue;
                                 }
+                                else
+                                {
+                                    // Just skip until normal multi-line comment ends
+                                    var r = CppLexer.LexMultiLineComment(Buffer, true);
+                                    if (!r.IsComplete)
+                                    {
+                                        AddError(Buffer.TextPosition, $"Unterminated multi-line comment, expect '*/' but got EOF", r.Kind.ToString());
+                                        return (false);
+                                    }
+                                    continue;
+                                }
                             }
-                            else if (n == '/')
+                            else if (second == '/')
                             {
                                 // Single line
                                 char n2 = Buffer.Peek(2);
                                 if (DoxygenSyntax.SingleLineDocChars.Contains(n2))
                                 {
                                     Debug.Assert(!state.Flags.HasFlag(StateFlags.InsideBlock));
-                                    Buffer.AdvanceColumns(3);
                                     Buffer.StartLexeme();
+                                    Buffer.AdvanceColumns(3);
                                     state.Flags = StateFlags.InsideBlock | StateFlags.SingleLine;
                                     PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.DoxyBlockStartSingle, Buffer.LexemeRange, true));
                                     StartText(state);
                                     continue;
                                 }
+                                else
+                                {
+                                    // Just skip until normal single-line comment ends
+                                    var r = CppLexer.LexSingleLineComment(Buffer, true);
+                                    if (!r.IsComplete)
+                                    {
+                                        AddError(Buffer.TextPosition, $"Unterminated single-line comment, expect linebreak but got EOF", r.Kind.ToString());
+                                        return (false);
+                                    }
+                                    continue;
+                                }
                             }
-                            Buffer.AdvanceColumn();
+                            else
+                                Buffer.AdvanceColumn();
                         }
                         break;
 
                     case '*':
                         {
-                            char n = Buffer.Peek(1);
                             if (state.Flags.HasFlag(StateFlags.InsideBlock))
                             {
-                                if (n == '/')
+                                if (second == '/')
                                 {
                                     EndText(state);
                                     Buffer.StartLexeme();
@@ -777,7 +802,6 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '@':
                     case '\\':
                         {
-                            char n = Buffer.Peek(1);
                             if (state.Flags.HasFlag(StateFlags.InsideBlock))
                             {
                                 EndText(state);
