@@ -2,6 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define AppExe '..\build\x64-Release\DoxygenEditor.exe'
+#define AppId "DoxygenEditor"
 #define MyAppName "Doxygen Editor"
 #define MyAppVersion GetFileVersion(AppExe)
 #define MyAppPublisher "Torsten Spaete"
@@ -25,8 +26,8 @@ DefaultDirName={pf}\{#MyAppName}
 DisableProgramGroupPage=yes
 DisableWelcomePage=no
 LicenseFile=..\LICENSE
-OutputDir=..\setup\{#MyAppName}
-OutputBaseFilename={#MyAppName}-Setup
+OutputDir=..\setup
+OutputBaseFilename={#AppId}-Setup-v{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
