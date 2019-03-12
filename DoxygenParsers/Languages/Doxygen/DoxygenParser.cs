@@ -168,11 +168,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     // Get name and text parameter (Some commands, have different names and text parameters, so there is a variable list of strings)
                     var nameParam = commandEntity.FindParameterByName("name", "id");
                     var textParam = commandEntity.FindParameterByName("text", "title", "caption");
-                    if (nameParam != null && !string.IsNullOrWhiteSpace(nameParam.Value))
-                    {
-                        //commandEntity.Id = nameParam.Value;
-                    }
-                    else
+                    if (nameParam == null || string.IsNullOrWhiteSpace(nameParam.Value))
                     {
                         if (rule.Kind == DoxygenSyntax.CommandKind.Section)
                         {
@@ -180,11 +176,6 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 AddError(commandToken.Position, $"Missing identifier mapping for command '{commandName}'", typeName, commandName);
                         }
                     }
-#if false
-                    if (textParam != null && !string.IsNullOrWhiteSpace(textParam.Value))
-                            commandEntity.Value = textParam.Value;
-                    }
-#endif
 
                     if (nameParam != null && !string.IsNullOrWhiteSpace(nameParam.Value))
                     {
