@@ -932,7 +932,25 @@ namespace TSP.DoxygenEditor.Views
                 CppEntity cppEntity = cppNode.Entity;
                 if (cppEntity.DocumentationNode != null)
                 {
-                    AddIssue(lvCppIssues, new IssueTag(state, cppEntity.StartRange.Position), IssueType.Info, "Test", cppEntity.Id, cppEntity.Kind.ToString(), groupName, cppEntity.StartRange.Position.Line + 1, fileName);
+                    DoxygenNode doxyNode = (DoxygenNode)cppEntity.DocumentationNode;
+                    if (doxyNode.Entity.Kind == DoxygenEntityKind.BlockMulti)
+                    {
+                        DoxygenNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenEntityKind.See) as DoxygenNode;
+                        bool hasDocumented = false;
+                        if (seeNode != null)
+                        {
+                            DoxygenNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenEntityKind.Reference) as DoxygenNode;
+                            if (refNode != null)
+                            {
+                                hasDocumented = true;
+                            }
+                        }
+
+                        if (!hasDocumented)
+                        {
+                            AddIssue(lvCppIssues, new IssueTag(state, cppEntity.StartRange.Position), IssueType.Warning, "Not documented (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++", cppEntity.StartRange.Position.Line + 1, fileName);
+                        }
+                    }
                 }
             }
             foreach (var child in rootNode.Children)
