@@ -135,7 +135,25 @@ namespace TSP.DoxygenEditor.FilterControls
 
         public void SelectItemOrIndex(object tag, int index)
         {
-            _listView.SelectItemOrIndex(tag, index);
+            ListViewItem foundItem = null;
+            if (tag != null)
+            {
+                foreach (ListViewItem item in _filteredItems)
+                {
+                    if (item.Tag == tag)
+                    {
+                        foundItem = item;
+                        break;
+                    }
+                }
+            }
+            if (foundItem == null && index > -1)
+            {
+                if (_filteredItems.Count > 0)
+                    foundItem = _filteredItems[Math.Min(index, _filteredItems.Count - 1)];
+            }
+            if (foundItem != null)
+                foundItem.Selected = true;
         }
 
         public void ClearSelection()
