@@ -39,6 +39,11 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
 
         public abstract string GetSourceText(int index, int length);
+        public string GetSourceText(TextRange range)
+        {
+            string result = GetSourceText(range.Index, range.Length);
+            return (result);
+        }
         public abstract char Peek();
         public abstract char Peek(int delta);
         public abstract int CompareText(int delta, string match, bool ignoreCase = false);

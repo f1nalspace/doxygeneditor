@@ -659,11 +659,13 @@ namespace TSP.DoxygenEditor.Editor
             // Clear stream from all invalid tokens
             _tokens.RemoveAll(d => d.IsEOF || (!d.IsMarker && d.Length == 0));
 
-            // @FIXME(final): Right know, the tokens are not in a valid range
-            // Reason is: No tokens gets replaced by another range.
-            // Also there are zero-length tokens or start/end tokens
+            // @NOTE(final): Right know, the tokens are not in incremental range
+            // Several reasons for this:
+            // - No tokens gets replaced by another range
+            // - Start/End marker tokens
+            // - Zero-length tokens
 #if false
-            // Validate stream
+            // Validate token stream
             {
                 LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
                 while (!tokenStream.IsEOF)
