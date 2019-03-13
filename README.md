@@ -3,7 +3,7 @@ A visual tool for editing & validating doxygen documentations based on C# and Sc
 
 Its main purpose is helping you in writing & validating doxygen-based documentations for C/C++ projects. 
 
-Features:
+## Features:
 - Tabbed file editor with standard mechanics (New, Open, Save, Reload, Undo/Redo, etc.) 
 - Treeview for fast-navigating inside doxygen pages & sections 
 - Symbol search inside the code-editor for C/C++ and doxygen symbols 
@@ -23,10 +23,10 @@ Features:
 
 - Special validations for my needs
 
-Limitations:
+## Limitations:
 - The c++ lexer & parser does not implement the full grammar of C99 or C++, but it gets close
 - Its slow like hell (Will transform the lexer into a FSM in the future)
 
-Screenshot:
+## Screenshots:
 
 ![Doxygen Editor v0.8.1 Screenshot](https://www.libfpl.org/doxygeneditor/doxygeneditor_v0_8_1_shot2.jpg "Doxygen Editor v0.8.1 Screenshot")
