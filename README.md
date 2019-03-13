@@ -1,5 +1,5 @@
 # doxygeneditor
-A editor for editing & validating doxygen documentations written in C# based on Scintilla
+A visual tool for editing & validating doxygen documentations based on C# and Scintilla.NET.
 
 Its main purpose is helping you in writing & validating doxygen-based documentations for C/C++ projects. 
 
@@ -8,7 +8,7 @@ Features:
 - Treeview for fast-navigating inside doxygen pages & sections 
 - Symbol search inside the code-editor for C/C++ and doxygen symbols 
 
-- Basic lexical analysis of C/C++ 
+- Basic lexical analysis of C/C++
 - Full lexical analysis of Doxygen 
 
 - Syntax Highlighting of C/C++ 
@@ -22,6 +22,10 @@ Features:
 - Symbol reference validation for doxygen elements (ref, subpage, etc.) 
 
 - Special validations for my needs
+
+Limitations:
+- The c++ lexer & parser does not implement the full grammar of C99 or C++, but it gets close
+- Its slow like hell (Will transform the lexer into a FSM in the future)
 
 Screenshot:
 
