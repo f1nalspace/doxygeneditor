@@ -39,6 +39,13 @@ SOFTWARE.
 	Version History
 -------------------------------------------------------------------------------
 
+    ## v0.8.2.0:
+    - Proper #define argument parsing & highlighting
+    - Lex multi & single line comments inside preprocessor
+
+    ## v0.8.1.0:
+    - Bugfixes
+
     ## v0.8.0.0:
     - Finished doxygen lexer
     - Finished doxygen parser
@@ -56,6 +63,37 @@ SOFTWARE.
 
     ## v0.7.0.0:
     - Initial version
+
+-------------------------------------------------------------------------------
+	TODO
+-------------------------------------------------------------------------------
+
+Cpp:
+    - Function argument parsing (@param validation)
+    - Function return parsing (@return validation -> void or not void)
+    - C++ namespace symbol parsing
+    - Types parsing (C99)
+    - Types parsing (C++ templates)
+    - Struct member parsing
+    - Highlighting of C++ symbols (Types, Functions)
+
+Doxygen:
+    - Group parsing
+    - Better command arguments validation (Invalid character inside a identifier)
+    - Code completion
+
+Lexers:
+    - Incremental lexing for very fast syntax highlighting (Remove position from token)
+
+Editor:
+    - Spellchecking (I am still looking for a existing library for that)
+
+UI:
+    - Button for generating & viewing doxygen documentation
+
+Workspace:
+    - Support for multi workspaces (Switching projects)
+    - Custom symbol tables (Auto parsed header files or manually created)
 
 ***/
 

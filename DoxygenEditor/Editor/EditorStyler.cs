@@ -22,6 +22,7 @@ namespace TSP.DoxygenEditor.Editor
         static readonly int cppPreprocessorBasicStyle = styleIndex++;
         static readonly int cppPreprocessorKeywordStyle = styleIndex++;
         static readonly int cppPreprocessorDefineStyle = styleIndex++;
+        static readonly int cppPreprocessorDefineArgumentStyle = styleIndex++;
         static readonly int cppPreprocessorIncludeStyle = styleIndex++;
         static readonly int cppReservedKeywordStyle = styleIndex++;
         static readonly int cppTypeKeywordStyle = styleIndex++;
@@ -39,6 +40,7 @@ namespace TSP.DoxygenEditor.Editor
             { CppTokenKind.PreprocessorKeyword, cppPreprocessorKeywordStyle },
             { CppTokenKind.PreprocessorDefineSource, cppPreprocessorDefineStyle },
             { CppTokenKind.PreprocessorDefineTarget, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorDefineArgument, cppPreprocessorDefineArgumentStyle },
             { CppTokenKind.PreprocessorInclude, cppPreprocessorIncludeStyle },
 
             { CppTokenKind.ReservedKeyword, cppReservedKeywordStyle },
@@ -173,6 +175,7 @@ namespace TSP.DoxygenEditor.Editor
             editor.Styles[cppPreprocessorBasicStyle].ForeColor = Color.DarkSlateGray;
             editor.Styles[cppPreprocessorKeywordStyle].ForeColor = Color.DarkSlateGray;
             editor.Styles[cppPreprocessorDefineStyle].ForeColor = Color.Purple;
+            editor.Styles[cppPreprocessorDefineArgumentStyle].ForeColor = Color.Magenta;
             editor.Styles[cppPreprocessorIncludeStyle].ForeColor = Color.Brown;
             editor.Styles[cppReservedKeywordStyle].ForeColor = Color.Blue;
             editor.Styles[cppTypeKeywordStyle].ForeColor = Color.BlueViolet;

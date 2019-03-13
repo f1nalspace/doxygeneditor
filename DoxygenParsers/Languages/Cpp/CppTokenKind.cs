@@ -24,6 +24,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         PreprocessorKeyword,
         PreprocessorDefineSource,
         PreprocessorDefineTarget,
+        PreprocessorDefineArgument,
         PreprocessorInclude,
         PreprocessorEnd,
 
