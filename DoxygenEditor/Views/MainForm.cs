@@ -100,8 +100,8 @@ namespace TSP.DoxygenEditor.Views
             _appName = verInfo.ProductName;
 
             _configService = IOCContainer.Get<IConfigurationService>();
-            _workspace = new WorkspaceModel();
-            _workspace.Load(_configService);
+            _workspace = new WorkspaceModel(_configService);
+            _workspace.Load();
 
             // Update UI from config settings
             miViewShowWhitespaces.Checked = _workspace.IsWhitespaceVisible;
@@ -441,7 +441,7 @@ namespace TSP.DoxygenEditor.Views
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            _workspace.Save(_configService);
+            _workspace.Save();
         }
 
         private void MainForm_Load(object sender, EventArgs e)

@@ -1,5 +1,6 @@
 ﻿using TSP.DoxygenEditor.Services;
 using System.Collections.Generic;
+using TSP.DoxygenEditor.Solid;
 
 namespace TSP.DoxygenEditor.Models
 {
@@ -21,11 +22,18 @@ namespace TSP.DoxygenEditor.Models
         public bool IsWhitespaceVisible { get; set; }
         public bool RestoreLastOpenedFiles { get; set; }
 
-        public void Load(IConfigurationService service)
+        private IConfigurationService ConfigService { get; }
+
+        public WorkspaceModel(IConfigurationService configService)
+        {
+            ConfigService = configService;
+        }
+
+        public void Load()
         {
             _recentFiles.Clear();
             _lastOpenedFiles.Clear();
-            using (var instance = service.CreateReader(ProductConfig))
+            using (var instance = ConfigService.CreateReader(ProductConfig))
             {
                 int recentFileCount = instance.ReadInt("RecentFiles", "Count", 0);
                 for (int i = 0; i < recentFileCount; ++i)
@@ -45,9 +53,9 @@ namespace TSP.DoxygenEditor.Models
                 RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", false);
             }
         }
-        public void Save(IConfigurationService service)
+        public void Save()
         {
-            using (var instance = service.CreateWriter(ProductConfig))
+            using (var instance = ConfigService.CreateWriter(ProductConfig))
             {
                 instance.BeginPublish();
 
