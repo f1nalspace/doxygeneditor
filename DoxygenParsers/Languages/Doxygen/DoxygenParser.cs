@@ -186,7 +186,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             SourceSymbolKind kind = SourceSymbolKind.DoxygenSection;
                             if ("page".Equals(commandName) || "mainpage".Equals(commandName))
                                 kind = SourceSymbolKind.DoxygenPage;
-                            SymbolCache.AddSource(Tag, symbolName, new SourceSymbol(kind, nameParam.Token.Range, commandNode));
+                            SymbolTable.AddSource(new SourceSymbol(kind, symbolName, nameParam.Token.Range, commandNode));
                         }
                         else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
                         {
@@ -223,7 +223,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             }
                                         }
                                         var symbolRange = new TextRange(new TextPosition(nameParam.Token.Position.Index + refRange.Position.Index, refRange.Position.Line, refRange.Position.Column), refRange.Length);
-                                        SymbolCache.AddReference(Tag, singleRereference, new ReferenceSymbol(referenceTarget, symbolRange, commandNode));
+                                        SymbolTable.AddReference(new ReferenceSymbol(referenceTarget, singleRereference, symbolRange, commandNode));
                                     }
                                     else if (first == '#' || first == '.')
                                     {
@@ -240,7 +240,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             }
                         }
                         else if ("subpage".Equals(commandName))
-                            SymbolCache.AddReference(Tag, symbolName, new ReferenceSymbol(ReferenceSymbolKind.DoxygenPage, nameParam.Token.Range, commandNode));
+                            SymbolTable.AddReference(new ReferenceSymbol(ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
                     }
                 }
                 ParseBlockContent(stream, commandNode);

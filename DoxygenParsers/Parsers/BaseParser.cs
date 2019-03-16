@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Lexers;
+using TSP.DoxygenEditor.Symbols;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers
@@ -16,6 +17,8 @@ namespace TSP.DoxygenEditor.Parsers
         public IEnumerable<TextError> ParseErrors => _parseErrors;
         public IBaseNode Root { get; }
         public int TotalNodeCount { get; private set; }
+
+        public SymbolTable SymbolTable { get; }
 
         class RootNode : BaseNode<TEntity>
         {
@@ -32,6 +35,7 @@ namespace TSP.DoxygenEditor.Parsers
         {
             Tag = tag;
             Root = new RootNode();
+            SymbolTable = new SymbolTable(tag);
         }
         protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {

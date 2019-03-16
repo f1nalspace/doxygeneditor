@@ -32,16 +32,15 @@ namespace TSP.DoxygenEditor.Editor
         private int _maxLineNumberCharLength;
         private System.Windows.Forms.Timer _textChangedTimer;
         private BackgroundWorker _parseWorker;
-        private IBaseNode _doxyTree;
-        private IBaseNode _cppTree;
         private readonly List<IBaseToken> _tokens = new List<IBaseToken>();
         private readonly List<TextError> _errors = new List<TextError>();
         private readonly List<PerformanceItemModel> _performanceItems = new List<PerformanceItemModel>();
         private readonly EditorStyler _styler = new EditorStyler();
         public IEnumerable<TextError> Errors => _errors;
         public IEnumerable<PerformanceItemModel> PerformanceItems => _performanceItems;
-        public IBaseNode DoxyTree { get { return _doxyTree; } }
-        public IBaseNode CppTree { get { return _cppTree; } }
+        public IBaseNode DoxyTree { get; private set; }
+        public IBaseNode CppTree { get; private set; }
+        public SymbolTable SymbolTable { get; private set; }
         public object Tag { get; }
         public int TabIndex { get; }
         public string FilePath { get; set; }
@@ -76,6 +75,7 @@ namespace TSP.DoxygenEditor.Editor
             Tag = tag;
             IsChanged = false;
             FileEncoding = Encoding.UTF8;
+            SymbolTable = new SymbolTable(this);
 
             _styleNeededState = new StyleNeededState();
 
@@ -626,7 +626,7 @@ namespace TSP.DoxygenEditor.Editor
             _tokens.Clear();
             _errors.Clear();
             _performanceItems.Clear();
-            SymbolCache.Clear(this);
+            SymbolTable.Clear();
 
             Stopwatch totalLexTimer = Stopwatch.StartNew();
 
@@ -691,8 +691,9 @@ namespace TSP.DoxygenEditor.Editor
             {
                 doxyParser.ParseTokens(_tokens);
                 _errors.InsertRange(0, doxyParser.ParseErrors);
-                _doxyTree = doxyParser.Root;
+                DoxyTree = doxyParser.Root;
                 doxyNodeCount = doxyParser.TotalNodeCount;
+                SymbolTable.AddTable(doxyParser.SymbolTable);
             }
             timer.Stop();
             Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
@@ -705,13 +706,14 @@ namespace TSP.DoxygenEditor.Editor
             {
                 cppParser.GetDocumentationNode += (token) =>
                 {
-                    IBaseNode result = _doxyTree.FindNodeByRange(token.Range);
+                    IBaseNode result = DoxyTree.FindNodeByRange(token.Range);
                     return (result);
                 };
                 cppParser.ParseTokens(_tokens);
                 _errors.InsertRange(0, cppParser.ParseErrors);
-                _cppTree = cppParser.Root;
+                CppTree = cppParser.Root;
                 cppNodeCount = cppParser.TotalNodeCount;
+                SymbolTable.AddTable(cppParser.SymbolTable);
             }
             timer.Stop();
             Debug.WriteLine($"C++ parse done, took {timer.Elapsed.ToMilliseconds()} ms");

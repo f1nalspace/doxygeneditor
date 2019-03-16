@@ -131,7 +131,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     CppNode enumValueNode = new CppNode(rootNode, enumValueEntity);
                     rootNode.AddChild(enumValueNode);
-                    SymbolCache.AddSource(Tag, enumValueName, new SourceSymbol(SourceSymbolKind.CppMember, enumValueToken.Range, enumValueNode));
+                    SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppMember, enumValueName, enumValueToken.Range, enumValueNode));
 
                     var equalsResult = Search(stream, SearchMode.Current, CppTokenKind.EqOp);
                     if (equalsResult != null)
@@ -220,7 +220,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode enumRootNode = new CppNode(Top, enumRootEntity);
                 Add(enumRootNode);
-                SymbolCache.AddSource(Tag, enumIdent, new SourceSymbol(SourceSymbolKind.CppEnum, enumIdentToken.Range, enumRootNode));
+                SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppEnum, enumIdent, enumIdentToken.Range, enumRootNode));
 
                 if (braceOrSemiResult.Token.Kind == CppTokenKind.LeftBrace)
                     ParseEnumValues(stream, enumRootNode);
@@ -276,7 +276,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode structNode = new CppNode(Top, structEntity);
                 Add(structNode);
-                SymbolCache.AddSource(Tag, structIdent, new SourceSymbol(SourceSymbolKind.CppStruct, identToken.Range, structNode));
+                SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppStruct, structIdent, identToken.Range, structNode));
             }
 
             // @TODO(final): Parse struct members
@@ -361,7 +361,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     var typedefNode = new CppNode(Top, typedefEntity);
                     Add(typedefNode);
-                    SymbolCache.AddSource(Tag, typedefIdent, new SourceSymbol(SourceSymbolKind.CppType, identToken.Range));
+                    SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppType, typedefIdent, identToken.Range));
                 }
             }
         }
@@ -396,7 +396,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         };
                         CppNode defineNode = new CppNode(Top, defineKeyEntity);
                         Add(defineNode);
-                        SymbolCache.AddSource(Tag, defineName, new SourceSymbol(SourceSymbolKind.CppDefine, defineNameToken.Range, defineNode));
+                        SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppDefine, defineName, defineNameToken.Range, defineNode));
                     }
                     else
                         AddError(keywordToken.Position, $"Processor define has no identifier!", "Define");
@@ -508,11 +508,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Add(functionNode);
 
             if (kind == CppEntityKind.FunctionDefinition)
-                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(SourceSymbolKind.CppFunctionDefinition, functionIdentToken.Range, functionNode));
+                SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionBody)
-                SymbolCache.AddSource(Tag, functionName, new SourceSymbol(SourceSymbolKind.CppFunctionBody, functionIdentToken.Range, functionNode));
+                SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppFunctionBody, functionName, functionIdentToken.Range, functionNode));
             else if (Configuration.FunctionCallSymbolsEnabled)
-                SymbolCache.AddReference(Tag, functionName, new ReferenceSymbol(ReferenceSymbolKind.CppFunction, functionIdentToken.Range, functionNode));
+                SymbolTable.AddReference(new ReferenceSymbol(ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
 
             return (true);
         }

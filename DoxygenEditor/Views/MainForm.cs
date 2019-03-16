@@ -248,6 +248,7 @@ namespace TSP.DoxygenEditor.Views
             {
                 RebuildSymbolTree(editorState, editorState.DoxyTree);
                 AddPerformanceItems(editorState);
+                GlobalSymbolCache.AddOrReplaceTable(editorState.SymbolTable);
                 bool isComplete = Interlocked.Decrement(ref _parseProgressCount) == 0;
                 if (isComplete)
                 {
@@ -278,7 +279,7 @@ namespace TSP.DoxygenEditor.Views
             editorState.Stop();
             RemoveFromSymbolTree(editorState);
             ClearPerformanceItems(editorState);
-            SymbolCache.Remove(editorState);
+            GlobalSymbolCache.Remove(editorState);
 
             TabPage tab = (TabPage)editorState.Tag;
             tcFiles.TabPages.Remove(tab);
@@ -823,24 +824,22 @@ namespace TSP.DoxygenEditor.Views
             EditorState editorState = (EditorState)tcFiles.SelectedTab.Tag;
             if (editorState.DoxyTree != null)
             {
+                // @SPEED(final): Cache conversion to SymbolItemModel and types as well
                 List<SymbolItemModel> symbols = new List<SymbolItemModel>();
                 HashSet<string> types = new HashSet<string>();
-
-                // @TODO(final): Implement this for BaseTree!
-                var allSources = SymbolCache.GetSources(editorState);
+                var allSources = GlobalSymbolCache.GetSources(editorState);
                 foreach (var source in allSources)
                 {
-                    if (source.Value.Node == null) continue;
+                    if (source.Node == null) continue;
                     symbols.Add(new SymbolItemModel()
                     {
                         Caption = null,
-                        Id = source.Key,
-                        Type = source.Value.Kind.ToString(),
-                        Position = source.Value.Range.Position,
+                        Id = source.Name,
+                        Type = source.Kind.ToString(),
+                        Position = source.Range.Position,
                     });
-                    types.Add(source.Value.Kind.ToString());
+                    types.Add(source.Kind.ToString());
                 }
-
                 SymbolSearchForm form = new SymbolSearchForm(symbols, types);
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
@@ -975,7 +974,7 @@ namespace TSP.DoxygenEditor.Views
             lvDoxygenIssues.ClearItems();
 
             // Validate symbols from cache
-            var symbolErrors = SymbolCache.Validate();
+            var symbolErrors = GlobalSymbolCache.Validate();
             foreach (var errorPair in symbolErrors)
             {
                 var error = errorPair.Value;
