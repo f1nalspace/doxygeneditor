@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Doxygen Editor")]
+[assembly: AssemblyTitle("DoxygenEditor")]
 [assembly: AssemblyDescription("A visual editor for authoring/validating doxygen documentation files")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("TSPSoftware")]
 [assembly: AssemblyProduct("Doxygen Editor")]
 [assembly: AssemblyCopyright("Copyright (c) 2018 Torsten Spaete")]
 [assembly: AssemblyTrademark("")]

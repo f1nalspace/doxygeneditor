@@ -106,9 +106,13 @@
     <Compile Include="FilterControls\FilterListView.Designer.cs">
       <DependentUpon>FilterListView.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\GlobalConfigModel.cs" />
     <Compile Include="Models\PerformanceItemModel.cs" />
     <Compile Include="Services\BaseConfigurationInstance.cs" />
-    <Compile Include="Services\XMLConfigurationService.cs" />
+    <Compile Include="Services\IConfigurarionReader.cs" />
+    <Compile Include="Services\IConfigurarionWriter.cs" />
+    <Compile Include="Services\RegistryConfigurationStore.cs" />
+    <Compile Include="Services\XMLConfigurationStore.cs" />
     <Compile Include="Utils\RexUtils.cs" />
     <Compile Include="Models\ErrorMessageModel.cs" />
     <Compile Include="Models\SymbolItemModel.cs" />
@@ -122,8 +126,6 @@
     </Compile>
     <Compile Include="Models\LogItemModel.cs" />
     <Compile Include="SearchReplace\SearchReplaceTypes.cs" />
-    <Compile Include="Services\IConfigurationService.cs" />
-    <Compile Include="Services\RegistryConfigurationService.cs" />
     <Compile Include="Models\WorkspaceModel.cs" />
     <Compile Include="Models\TypeStringModel.cs" />
     <Compile Include="Views\AboutForm.cs">

@@ -30,9 +30,11 @@ namespace TSP.DoxygenEditor.Views
 {
     public partial class MainForm : Form
     {
-        private readonly IConfigurationService _configService;
+        private readonly GlobalConfigModel _globalConfig;
         private readonly WorkspaceModel _workspace;
         private readonly string _appName;
+        private readonly string _dataPath;
+        private readonly string _defaultWorkspaceFilePath;
 
         class PerformanceListViewItemComparer : IComparer
         {
@@ -69,6 +71,36 @@ namespace TSP.DoxygenEditor.Views
         {
             InitializeComponent();
 
+            var assembly = Assembly.GetExecutingAssembly();
+            var asmName = assembly.GetName();
+            FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+            string companyName = verInfo.CompanyName;
+            string appId = verInfo.FileDescription;
+            _appName = verInfo.ProductName;
+
+            if (string.IsNullOrWhiteSpace(companyName))
+                throw new Exception("Company name is missing in assembly!");
+            if (string.IsNullOrWhiteSpace(appId))
+                throw new Exception("Title is missing in assembly!");
+
+            _dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), companyName, appId);
+            if (!Directory.Exists(_dataPath)) Directory.CreateDirectory(_dataPath);
+            _defaultWorkspaceFilePath = Path.Combine(_dataPath, "DefaultWorkspace.xml");
+
+            _globalConfig = new GlobalConfigModel(companyName, appId);
+            _globalConfig.Load();
+
+            _workspace = new WorkspaceModel(_globalConfig.WorkspacePath);
+            if (!string.IsNullOrWhiteSpace(_workspace.FilePath))
+                _workspace.Load(_globalConfig.WorkspacePath);
+            else
+            {
+                _workspace.FilePath = _defaultWorkspaceFilePath;
+                _globalConfig.WorkspacePath = _defaultWorkspaceFilePath;
+            }
+            UpdatedWorkspaceFile();
+
+
             // @STUPID(final): Visual studio designer is so stupid, it cannot recognize usercontrols properly
             // so we need to manually add it ourself -.-
             lvDoxygenIssues = new FilterListView();
@@ -96,13 +128,6 @@ namespace TSP.DoxygenEditor.Views
 
             lvPerformance.ListViewItemSorter = new PerformanceListViewItemComparer();
 
-            FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-            _appName = verInfo.ProductName;
-
-            _configService = IOCContainer.Get<IConfigurationService>();
-            _workspace = new WorkspaceModel(_configService);
-            _workspace.Load();
-
             // Update UI from config settings
             miViewShowWhitespaces.Checked = _workspace.IsWhitespaceVisible;
             RefreshRecentFiles();
@@ -122,6 +147,14 @@ namespace TSP.DoxygenEditor.Views
                 else UpdateMenuSelection(null);
             };
             NativeMethods.AddClipboardFormatListener(Handle);
+        }
+
+        private void UpdatedWorkspaceFile()
+        {
+            if (_defaultWorkspaceFilePath.Equals(_workspace.FilePath))
+                Text = $"{_appName} - Default Workspace";
+            else
+                Text = $"{_appName} - {Path.GetFileName(_workspace.FilePath)}";
         }
 
         private void SetParseStatus(string status)
@@ -442,6 +475,7 @@ namespace TSP.DoxygenEditor.Views
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             _workspace.Save();
+            _globalConfig.Save();
         }
 
         private void MainForm_Load(object sender, EventArgs e)

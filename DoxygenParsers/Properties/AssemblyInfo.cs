@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Parsers for Doxygen Editor")]
 [assembly: AssemblyDescription("Contains cpp, html and doxygen lexers and parsers")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("TSPSoftware")]
 [assembly: AssemblyProduct("DoxygenParsers")]
 [assembly: AssemblyCopyright("Copyright © 2019 Torsten Spaete")]
 [assembly: AssemblyTrademark("")]

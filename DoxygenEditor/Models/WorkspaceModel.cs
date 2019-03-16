@@ -1,15 +1,11 @@
 ﻿using TSP.DoxygenEditor.Services;
 using System.Collections.Generic;
-using TSP.DoxygenEditor.Solid;
+using System.Diagnostics;
 
 namespace TSP.DoxygenEditor.Models
 {
     public class WorkspaceModel
     {
-        const string CompanyName = "TSPSoftware";
-        const string ProductName = "DoxygenEditor";
-        private static readonly ConfigurationServiceConfig ProductConfig = new ConfigurationServiceConfig(CompanyName, ProductName);
-
         const int MaxRecentFileCount = 10;
 
         public readonly List<string> _recentFiles = new List<string>();
@@ -25,20 +21,22 @@ namespace TSP.DoxygenEditor.Models
         private readonly List<string> _includeDirectories = new List<string>();
         public ICollection<string> IncludeDirectories => _includeDirectories;
 
-        private IConfigurationService ConfigService { get; }
+        public string FilePath { get; set; }
 
-        public WorkspaceModel(IConfigurationService configService)
+        public WorkspaceModel(string filePath)
         {
-            ConfigService = configService;
+            FilePath = filePath;
         }
 
-        public void Load()
+        public void Load(string filePath)
         {
+            FilePath = filePath;
             _recentFiles.Clear();
             _lastOpenedFiles.Clear();
             _includeDirectories.Clear();
-            using (var instance = ConfigService.CreateReader(ProductConfig))
+            using (IConfigurarionReader instance = new XMLConfigurationStore("Workspace"))
             {
+                instance.Load(filePath);
                 IsWhitespaceVisible = instance.ReadBool("View", "IsWhitespaceVisible", false);
                 RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", false);
                 _recentFiles.AddRange(instance.ReadList("History", "RecentFiles"));
@@ -48,16 +46,21 @@ namespace TSP.DoxygenEditor.Models
         }
         public void Save()
         {
-            using (var instance = ConfigService.CreateWriter(ProductConfig))
+            Debug.Assert(!string.IsNullOrWhiteSpace(FilePath));
+            using (IConfigurarionWriter instance = new XMLConfigurationStore("Workspace"))
             {
-                instance.BeginPublish();
                 instance.WriteBool("View", "IsWhitespaceVisible", IsWhitespaceVisible);
                 instance.WriteBool("Startup", "RestoreLastOpenedFiles", RestoreLastOpenedFiles);
                 instance.WriteList("History", "RecentFiles", _recentFiles);
                 instance.WriteList("History", "LastOpenedFiles", _lastOpenedFiles);
                 instance.WriteList("Sources", "IncludeDirectories", _includeDirectories);
-                instance.EndPublish();
+                instance.Save(FilePath);
             }
+        }
+        public void SaveAs(string filePath)
+        {
+            FilePath = filePath;
+            Save();
         }
         public void ClearRecentFiles()
         {

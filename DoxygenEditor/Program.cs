@@ -134,7 +134,6 @@ namespace TSP.DoxygenEditor
             {
                 ShowUnhandledException(e.Exception);
             };
-            IOCContainer.Register(new XMLConfigurationService());
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
