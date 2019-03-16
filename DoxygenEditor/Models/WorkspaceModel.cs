@@ -22,6 +22,9 @@ namespace TSP.DoxygenEditor.Models
         public bool IsWhitespaceVisible { get; set; }
         public bool RestoreLastOpenedFiles { get; set; }
 
+        private readonly List<string> _includeDirectories = new List<string>();
+        public ICollection<string> IncludeDirectories => _includeDirectories;
+
         private IConfigurationService ConfigService { get; }
 
         public WorkspaceModel(IConfigurationService configService)
@@ -33,24 +36,14 @@ namespace TSP.DoxygenEditor.Models
         {
             _recentFiles.Clear();
             _lastOpenedFiles.Clear();
+            _includeDirectories.Clear();
             using (var instance = ConfigService.CreateReader(ProductConfig))
             {
-                int recentFileCount = instance.ReadInt("RecentFiles", "Count", 0);
-                for (int i = 0; i < recentFileCount; ++i)
-                {
-                    string recentFilePath = instance.ReadString("RecentFiles", $"File{i}");
-                    if (!string.IsNullOrEmpty(recentFilePath))
-                        _recentFiles.Add(recentFilePath);
-                }
-                int lastOpenFileCount = instance.ReadInt("LastOpenedFiles", "Count", 0);
-                for (int i = 0; i < lastOpenFileCount; ++i)
-                {
-                    string lastOpenFilePath = instance.ReadString("LastOpenedFiles", $"File{i}");
-                    if (!string.IsNullOrEmpty(lastOpenFilePath))
-                        _lastOpenedFiles.Add(lastOpenFilePath);
-                }
                 IsWhitespaceVisible = instance.ReadBool("View", "IsWhitespaceVisible", false);
                 RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", false);
+                _recentFiles.AddRange(instance.ReadList("History", "RecentFiles"));
+                _lastOpenedFiles.AddRange(instance.ReadList("History", "LastOpenedFiles"));
+                _includeDirectories.AddRange(instance.ReadList("Sources", "IncludeDirectories"));
             }
         }
         public void Save()
@@ -58,25 +51,11 @@ namespace TSP.DoxygenEditor.Models
             using (var instance = ConfigService.CreateWriter(ProductConfig))
             {
                 instance.BeginPublish();
-
-                instance.PushInt("RecentFiles", "Count", _recentFiles.Count);
-                for (int i = 0; i < _recentFiles.Count; ++i)
-                {
-                    string recentFilePath = _recentFiles[i];
-                    instance.PushString("RecentFiles", $"File{i}", recentFilePath);
-                }
-
-                instance.PushInt("LastOpenedFiles", "Count", _lastOpenedFiles.Count);
-                for (int i = 0; i < _lastOpenedFiles.Count; ++i)
-                {
-                    string lastOpenedFilePath = _lastOpenedFiles[i];
-                    instance.PushString("LastOpenedFiles", $"File{i}", lastOpenedFilePath);
-                }
-
-                instance.PushBool("View", "IsWhitespaceVisible", IsWhitespaceVisible);
-
-                instance.PushBool("Startup", "RestoreLastOpenedFiles", RestoreLastOpenedFiles);
-
+                instance.WriteBool("View", "IsWhitespaceVisible", IsWhitespaceVisible);
+                instance.WriteBool("Startup", "RestoreLastOpenedFiles", RestoreLastOpenedFiles);
+                instance.WriteList("History", "RecentFiles", _recentFiles);
+                instance.WriteList("History", "LastOpenedFiles", _lastOpenedFiles);
+                instance.WriteList("Sources", "IncludeDirectories", _includeDirectories);
                 instance.EndPublish();
             }
         }

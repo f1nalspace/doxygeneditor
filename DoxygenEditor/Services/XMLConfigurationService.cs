@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using TSP.DoxygenEditor.Extensions;
 
@@ -12,7 +10,7 @@ namespace TSP.DoxygenEditor.Services
 {
     class XMLConfigurationService : IConfigurationService
     {
-        class XMLConfigurationInstance : BaseConfigurationWriter, IConfigurarionReader
+        class XMLConfigurationInstance : AbstractConfigurationPublisher, IConfigurarionReader
         {
             private readonly XmlDocument _doc;
             private XmlNode _rootNode;
@@ -95,7 +93,7 @@ namespace TSP.DoxygenEditor.Services
                     _rootNode.RemoveAll();
             }
 
-            protected override void PublishWrite(string section, string name, object value)
+            protected override void PublishWrite(WriteKind kind, string section, string name, object value)
             {
                 Debug.Assert(!IsReadOnly);
                 XmlNode sectionNode = null;
@@ -114,28 +112,46 @@ namespace TSP.DoxygenEditor.Services
                     sectionNode = thisNode;
                 }
                 Debug.Assert(sectionNode != null);
-                XmlNode valueNode = sectionNode.SelectSingleNode(name);
+                XmlNode nameNode = sectionNode.SelectSingleNode(name);
                 if (value != null)
                 {
-                    if (valueNode == null)
+                    if (nameNode == null)
                     {
-                        valueNode = _doc.CreateElement(name);
-                        sectionNode.AppendChild(valueNode);
+                        nameNode = _doc.CreateElement(name);
+                        sectionNode.AppendChild(nameNode);
                     }
-                    Type valueType = value.GetType();
-                    if (typeof(string).Equals(valueType))
-                        valueNode.InnerText = (string)value;
-                    else if (typeof(int).Equals(valueType))
-                        valueNode.InnerText = $"{(int)value}";
-                    else if (typeof(bool).Equals(valueType))
-                        valueNode.InnerText = (bool)value ? "true" : "false";
-                    else
-                        valueNode.InnerText = value.ToString();
+                    switch (kind)
+                    {
+                        case WriteKind.Bool:
+                            nameNode.InnerText = (bool)value ? "true" : "false";
+                            break;
+                        case WriteKind.Int:
+                            nameNode.InnerText = $"{(int)value}";
+                            break;
+                        case WriteKind.String:
+                            nameNode.InnerText = (string)value;
+                            break;
+                        case WriteKind.List:
+                            {
+                                var list = (List<string>)value;
+                                nameNode.RemoveAll();
+                                foreach (var item in list)
+                                {
+                                    XmlNode itemNode = _doc.CreateElement("Item");
+                                    itemNode.InnerText = item;
+                                    nameNode.AppendChild(itemNode);
+                                }
+                            }
+                            break;
+                        default:
+                            nameNode.InnerText = value.ToString();
+                            break;
+                    }
                 }
                 else
                 {
-                    if (valueNode != null)
-                        sectionNode.RemoveChild(valueNode);
+                    if (nameNode != null)
+                        sectionNode.RemoveChild(nameNode);
                 }
             }
 
@@ -178,6 +194,24 @@ namespace TSP.DoxygenEditor.Services
             {
                 string rawValue = ReadRaw(section, name) as string;
                 return (rawValue);
+            }
+
+            public IEnumerable<string> ReadList(string section, string name)
+            {
+                Debug.Assert(IsReadOnly);
+                if (_rootNode != null)
+                {
+                    var nameNode = _rootNode.SelectSingleNode($"{section}/{name}");
+                    if (nameNode != null)
+                    {
+                        XmlNodeList itemsNodeList = nameNode.SelectNodes("Item");
+                        foreach (XmlNode itemNode in itemsNodeList)
+                        {
+                            string item = itemNode.InnerText;
+                            yield return item;
+                        }
+                    }
+                }
             }
 
             public override void Dispose()

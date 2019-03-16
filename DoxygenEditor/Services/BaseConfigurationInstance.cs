@@ -2,15 +2,25 @@
 
 namespace TSP.DoxygenEditor.Services
 {
-    abstract class BaseConfigurationWriter : IConfigurarionWriter
+    abstract class AbstractConfigurationPublisher : IConfigurarionWriter
     {
-        public class WriteEntry
+        public enum WriteKind
         {
+            Bool,
+            Int,
+            String,
+            List,
+        }
+
+        public struct WriteEntry
+        {
+            public WriteKind Kind { get; }
             public string Section { get; }
             public string Name { get; }
             public object Value { get; }
-            public WriteEntry(string section, string name, object value)
+            public WriteEntry(WriteKind kind, string section, string name, object value)
             {
+                Kind = kind;
                 Section = section;
                 Name = name;
                 Value = value;
@@ -20,12 +30,12 @@ namespace TSP.DoxygenEditor.Services
         private readonly List<WriteEntry> _writeEntries = new List<WriteEntry>();
 
         protected abstract void ClearAll();
-        protected abstract void PublishWrite(string section, string name, object value);
+        protected abstract void PublishWrite(WriteKind kind, string section, string name, object value);
 
         protected bool IsReadOnly { get; }
         protected ConfigurationServiceConfig Config { get; }
 
-        public BaseConfigurationWriter(bool isReadOnly, ConfigurationServiceConfig config)
+        public AbstractConfigurationPublisher(bool isReadOnly, ConfigurationServiceConfig config)
         {
             IsReadOnly = isReadOnly;
             Config = config;
@@ -37,7 +47,7 @@ namespace TSP.DoxygenEditor.Services
         {
             ClearAll();
             foreach (var writeEntry in _writeEntries)
-                PublishWrite(writeEntry.Section, writeEntry.Name, writeEntry.Value);
+                PublishWrite(writeEntry.Kind, writeEntry.Section, writeEntry.Name, writeEntry.Value);
         }
 
         protected void ClearWrites()
@@ -45,22 +55,26 @@ namespace TSP.DoxygenEditor.Services
             _writeEntries.Clear();
         }
 
-        private void PushWrite(string section, string name, object value)
+        private void PushWrite(WriteKind kind, string section, string name, object value)
         {
-            _writeEntries.Add(new WriteEntry(section, name, value));
+            _writeEntries.Add(new WriteEntry(kind, section, name, value));
         }
 
-        public void PushString(string section, string name, string value)
+        public void WriteString(string section, string name, string value)
         {
-            PushWrite(section, name, value);
+            PushWrite(WriteKind.String, section, name, value);
         }
-        public void PushInt(string section, string name, int value)
+        public void WriteInt(string section, string name, int value)
         {
-            PushWrite(section, name, value);
+            PushWrite(WriteKind.Int, section, name, value);
         }
-        public void PushBool(string section, string name, bool value)
+        public void WriteBool(string section, string name, bool value)
         {
-            PushWrite(section, name, value);
+            PushWrite(WriteKind.Bool, section, name, value);
+        }
+        public void WriteList(string section, string name, IEnumerable<string> list)
+        {
+            PushWrite(WriteKind.List, section, name, new List<string>(list));
         }
 
         public void BeginPublish()

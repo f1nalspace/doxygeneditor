@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace TSP.DoxygenEditor.Services
 {
@@ -19,14 +20,16 @@ namespace TSP.DoxygenEditor.Services
     {
         object ReadRaw(string section, string name);
         string ReadString(string section, string name);
+        IEnumerable<string> ReadList(string section, string name);
         int ReadInt(string section, string name, int defaultValue);
         bool ReadBool(string section, string name, bool defaultValue);
     }
     public interface IConfigurarionWriter : IDisposable
     {
-        void PushString(string section, string name, string value);
-        void PushInt(string section, string name, int value);
-        void PushBool(string section, string name, bool value);
+        void WriteString(string section, string name, string value);
+        void WriteInt(string section, string name, int value);
+        void WriteBool(string section, string name, bool value);
+        void WriteList(string section, string name, IEnumerable<string> list);
         void BeginPublish();
         void EndPublish();
     }

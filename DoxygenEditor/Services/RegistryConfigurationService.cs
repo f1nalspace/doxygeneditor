@@ -1,12 +1,14 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace TSP.DoxygenEditor.Services
 {
     class RegistryConfigurationService : IConfigurationService
     {
-        class RegistryConfiguration : BaseConfigurationWriter, IConfigurarionReader
+        class RegistryConfiguration : AbstractConfigurationPublisher, IConfigurarionReader
         {
             private RegistryKey _rootKey;
 
@@ -31,7 +33,7 @@ namespace TSP.DoxygenEditor.Services
                     _rootKey.DeleteSubKeyTree(name);
             }
 
-            protected override void PublishWrite(string section, string name, object value)
+            protected override void PublishWrite(WriteKind kind, string section, string name, object value)
             {
                 Debug.Assert(!IsReadOnly);
                 if (_rootKey != null)
@@ -41,15 +43,40 @@ namespace TSP.DoxygenEditor.Services
                         sectionKey = _rootKey.CreateSubKey(section);
                     if (value != null)
                     {
-                        Type valueType = value.GetType();
-                        if (typeof(bool).Equals(valueType))
-                            sectionKey.SetValue(name, (bool)value ? 1 : 0);
-                        else
-                            sectionKey.SetValue(name, value);
+                        switch (kind)
+                        {
+                            case WriteKind.Bool:
+                                sectionKey.SetValue(name, (bool)value ? 1 : 0);
+                                break;
+                            case WriteKind.Int:
+                                sectionKey.SetValue(name, (int)value);
+                                break;
+                            case WriteKind.String:
+                                sectionKey.SetValue(name, (string)value);
+                                break;
+                            case WriteKind.List:
+                                {
+                                    var list = (List<string>)value;
+                                    var listKey = sectionKey.OpenSubKey(name, true);
+                                    sectionKey.DeleteSubKeyTree(name);
+                                    listKey = sectionKey.CreateSubKey(name);
+                                    listKey.SetValue("Count", list.Count);
+                                    for (int i = 0; i < list.Count; ++i)
+                                        listKey.SetValue("Item", list[i]);
+                                }
+                                break;
+                            default:
+                                sectionKey.SetValue(name, value.ToString());
+                                break;
+                        }
                     }
                     else
+                    {
+                        if (sectionKey.GetSubKeyNames().Contains(name))
+                            sectionKey.DeleteSubKeyTree(name);
                         if (sectionKey.GetValue(name) != null)
-                        sectionKey.DeleteValue(name);
+                            sectionKey.DeleteValue(name);
+                    }
                 }
             }
             public object ReadRaw(string section, string name)
@@ -85,6 +112,30 @@ namespace TSP.DoxygenEditor.Services
                 if (value.HasValue)
                     return (value.Value == 1);
                 return (defaultValue);
+            }
+            public IEnumerable<string> ReadList(string section, string name)
+            {
+                Debug.Assert(IsReadOnly);
+                if (_rootKey != null)
+                {
+                    var sectionKey = _rootKey.OpenSubKey(section, false);
+                    if (sectionKey != null)
+                    {
+                        var listKey = sectionKey.OpenSubKey(name, false);
+                        if (listKey != null)
+                        {
+                            int? count = (int?)listKey.GetValue("Count");
+                            if (count.HasValue)
+                            {
+                                for (int i = 0; i < count.Value; ++i)
+                                {
+                                    string item = (string)listKey.GetValue("Item" + i);
+                                    yield return item;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             public override void Dispose()
