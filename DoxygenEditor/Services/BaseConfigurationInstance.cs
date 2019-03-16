@@ -2,7 +2,7 @@
 
 namespace TSP.DoxygenEditor.Services
 {
-    abstract class BaseConfigurationInstance : IConfigurarionInstance
+    abstract class BaseConfigurationWriter : IConfigurarionWriter
     {
         public class WriteEntry
         {
@@ -25,16 +25,12 @@ namespace TSP.DoxygenEditor.Services
         protected bool IsReadOnly { get; }
         protected ConfigurationServiceConfig Config { get; }
 
-        public BaseConfigurationInstance(bool isReadOnly, ConfigurationServiceConfig config)
+        public BaseConfigurationWriter(bool isReadOnly, ConfigurationServiceConfig config)
         {
             IsReadOnly = isReadOnly;
             Config = config;
         }
 
-        public abstract object ReadRaw(string section, string name);
-        public abstract string ReadString(string section, string name);
-        public abstract int ReadInt(string section, string name, int defaultValue);
-        public abstract bool ReadBool(string section, string name, bool defaultValue);
         public abstract void Dispose();
 
         protected virtual void PublishWrites()

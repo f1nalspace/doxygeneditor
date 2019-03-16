@@ -268,7 +268,7 @@ namespace TSP.DoxygenEditor.Views
                 SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
             newTab.Tag = newState;
-            newTab.Controls.Add(newState.Container);
+            newTab.Controls.Add(newState.ContainerPanel);
             tcFiles.TabPages.Add(newTab);
             AddToSymbolTree(newState, newState.Name);
             return (newState);

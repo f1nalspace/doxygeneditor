@@ -25,8 +25,9 @@ namespace TSP.DoxygenEditor.Editor
 {
     class EditorState : IDisposable
     {
+        // @TODO(final): Lex & Parse should not require any editor controls -> Too many responsibilities here!
         private readonly IWin32Window _window;
-        private Panel _containerPanel;
+        public Panel ContainerPanel { get; private set; }
         private SearchReplaceControl _searchControl;
         private readonly Scintilla _editor;
         private int _maxLineNumberCharLength;
@@ -47,7 +48,6 @@ namespace TSP.DoxygenEditor.Editor
         public string Name { get; set; }
         public bool IsChanged { get; set; }
         public Encoding FileEncoding { get; set; }
-        public Panel Container { get { return _containerPanel; } }
         struct StyleNeededState
         {
             public int Has { get; set; }
@@ -85,13 +85,13 @@ namespace TSP.DoxygenEditor.Editor
             _editor = new Scintilla();
             SetupEditor(_editor);
 
-            _containerPanel = new Panel();
-            _containerPanel.Dock = DockStyle.Fill;
-            _containerPanel.Controls.Add(_editor);
+            ContainerPanel = new Panel();
+            ContainerPanel.Dock = DockStyle.Fill;
+            ContainerPanel.Controls.Add(_editor);
 
             _searchControl = new SearchReplaceControl();
             _searchControl.Dock = DockStyle.Top;
-            _containerPanel.Controls.Add(_searchControl);
+            ContainerPanel.Controls.Add(_searchControl);
 
             _searchControl.Search += (s, direction) =>
             {

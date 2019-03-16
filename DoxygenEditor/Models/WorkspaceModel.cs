@@ -25,7 +25,7 @@ namespace TSP.DoxygenEditor.Models
         {
             _recentFiles.Clear();
             _lastOpenedFiles.Clear();
-            using (var instance = service.Create(true, ProductConfig))
+            using (var instance = service.CreateReader(ProductConfig))
             {
                 int recentFileCount = instance.ReadInt("RecentFiles", "Count", 0);
                 for (int i = 0; i < recentFileCount; ++i)
@@ -47,7 +47,7 @@ namespace TSP.DoxygenEditor.Models
         }
         public void Save(IConfigurationService service)
         {
-            using (var instance = service.Create(false, ProductConfig))
+            using (var instance = service.CreateWriter(ProductConfig))
             {
                 instance.BeginPublish();
 

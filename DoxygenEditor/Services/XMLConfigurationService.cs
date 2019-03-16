@@ -12,7 +12,7 @@ namespace TSP.DoxygenEditor.Services
 {
     class XMLConfigurationService : IConfigurationService
     {
-        class XMLConfigurationInstance : BaseConfigurationInstance
+        class XMLConfigurationInstance : BaseConfigurationWriter, IConfigurarionReader
         {
             private readonly XmlDocument _doc;
             private XmlNode _rootNode;
@@ -139,7 +139,7 @@ namespace TSP.DoxygenEditor.Services
                 }
             }
 
-            public override object ReadRaw(string section, string name)
+            public object ReadRaw(string section, string name)
             {
                 Debug.Assert(IsReadOnly);
                 if (_rootNode != null)
@@ -150,7 +150,7 @@ namespace TSP.DoxygenEditor.Services
                 return (null);
             }
 
-            public override bool ReadBool(string section, string name, bool defaultValue)
+            public bool ReadBool(string section, string name, bool defaultValue)
             {
                 string rawValue = ReadRaw(section, name) as string;
                 if (rawValue != null)
@@ -162,7 +162,7 @@ namespace TSP.DoxygenEditor.Services
                 return (defaultValue);
             }
 
-            public override int ReadInt(string section, string name, int defaultValue)
+            public int ReadInt(string section, string name, int defaultValue)
             {
                 string rawValue = ReadRaw(section, name) as string;
                 if (rawValue != null)
@@ -174,7 +174,7 @@ namespace TSP.DoxygenEditor.Services
                 return (defaultValue);
             }
 
-            public override string ReadString(string section, string name)
+            public string ReadString(string section, string name)
             {
                 string rawValue = ReadRaw(section, name) as string;
                 return (rawValue);
@@ -186,9 +186,14 @@ namespace TSP.DoxygenEditor.Services
 
         }
 
-        public IConfigurarionInstance Create(bool readOnly, ConfigurationServiceConfig config)
+        public IConfigurarionReader CreateReader(ConfigurationServiceConfig config)
         {
-            IConfigurarionInstance result = new XMLConfigurationInstance(readOnly, config);
+            IConfigurarionReader result = new XMLConfigurationInstance(true, config);
+            return (result);
+        }
+        public IConfigurarionWriter CreateWriter(ConfigurationServiceConfig config)
+        {
+            IConfigurarionWriter result = new XMLConfigurationInstance(false, config);
             return (result);
         }
     }

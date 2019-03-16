@@ -15,20 +15,24 @@ namespace TSP.DoxygenEditor.Services
                 throw new Exception("Product name is required!");
         }
     }
-    public interface IConfigurarionInstance : IDisposable
+    public interface IConfigurarionReader : IDisposable
     {
-        void PushString(string section, string name, string value);
-        void PushInt(string section, string name, int value);
-        void PushBool(string section, string name, bool value);
         object ReadRaw(string section, string name);
         string ReadString(string section, string name);
         int ReadInt(string section, string name, int defaultValue);
         bool ReadBool(string section, string name, bool defaultValue);
+    }
+    public interface IConfigurarionWriter : IDisposable
+    {
+        void PushString(string section, string name, string value);
+        void PushInt(string section, string name, int value);
+        void PushBool(string section, string name, bool value);
         void BeginPublish();
         void EndPublish();
     }
     public interface IConfigurationService
     {
-        IConfigurarionInstance Create(bool readOnly, ConfigurationServiceConfig config);
+        IConfigurarionReader CreateReader(ConfigurationServiceConfig config);
+        IConfigurarionWriter CreateWriter(ConfigurationServiceConfig config);
     }
 }
