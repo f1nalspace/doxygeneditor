@@ -134,6 +134,12 @@
     <Compile Include="Views\AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Views\DirectoryInputForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\DirectoryInputForm.Designer.cs">
+      <DependentUpon>DirectoryInputForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Views\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -148,6 +154,12 @@
     <Compile Include="SymbolSearch\SymbolSearchForm.Designer.cs">
       <DependentUpon>SymbolSearchForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Views\WorkspaceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\WorkspaceForm.Designer.cs">
+      <DependentUpon>WorkspaceForm.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="ErrorDialog\ErrorDialogForm.resx">
       <DependentUpon>ErrorDialogForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -159,6 +171,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Views\AboutForm.resx">
       <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\DirectoryInputForm.resx">
+      <DependentUpon>DirectoryInputForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
@@ -175,6 +190,9 @@
     </Compile>
     <EmbeddedResource Include="SymbolSearch\SymbolSearchForm.resx">
       <DependentUpon>SymbolSearchForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\WorkspaceForm.resx">
+      <DependentUpon>WorkspaceForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

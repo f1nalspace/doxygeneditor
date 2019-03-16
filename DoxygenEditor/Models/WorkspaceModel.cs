@@ -16,16 +16,31 @@ namespace TSP.DoxygenEditor.Models
         public int LastOpenedFileCount => _lastOpenedFiles.Count;
 
         public bool IsWhitespaceVisible { get; set; }
-        public bool RestoreLastOpenedFiles { get; set; }
 
         private readonly List<string> _includeDirectories = new List<string>();
         public ICollection<string> IncludeDirectories => _includeDirectories;
+
+        public string IncludeFilter { get; set; }
+        private const string DefaultIncludeFilter = ".h .hpp";
 
         public string FilePath { get; set; }
 
         public WorkspaceModel(string filePath)
         {
             FilePath = filePath;
+            IncludeFilter = DefaultIncludeFilter;
+        }
+
+        public void Overwrite(WorkspaceModel other)
+        {
+            FilePath = other.FilePath;
+            IsWhitespaceVisible = other.IsWhitespaceVisible;
+            _recentFiles.Clear();
+            _recentFiles.AddRange(other.RecentFiles);
+            _lastOpenedFiles.Clear();
+            _lastOpenedFiles.AddRange(other.LastOpenedFiles);
+            _includeDirectories.Clear();
+            _includeDirectories.AddRange(other.IncludeDirectories);
         }
 
         public void Load(string filePath)
@@ -37,11 +52,14 @@ namespace TSP.DoxygenEditor.Models
             using (IConfigurarionReader instance = new XMLConfigurationStore("Workspace"))
             {
                 instance.Load(filePath);
+
                 IsWhitespaceVisible = instance.ReadBool("View", "IsWhitespaceVisible", false);
-                RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", false);
+
                 _recentFiles.AddRange(instance.ReadList("History", "RecentFiles"));
                 _lastOpenedFiles.AddRange(instance.ReadList("History", "LastOpenedFiles"));
+
                 _includeDirectories.AddRange(instance.ReadList("Sources", "IncludeDirectories"));
+                IncludeFilter = instance.ReadString("Sources", "IncludeFilter", DefaultIncludeFilter);
             }
         }
         public void Save()
@@ -50,10 +68,13 @@ namespace TSP.DoxygenEditor.Models
             using (IConfigurarionWriter instance = new XMLConfigurationStore("Workspace"))
             {
                 instance.WriteBool("View", "IsWhitespaceVisible", IsWhitespaceVisible);
-                instance.WriteBool("Startup", "RestoreLastOpenedFiles", RestoreLastOpenedFiles);
+
                 instance.WriteList("History", "RecentFiles", _recentFiles);
                 instance.WriteList("History", "LastOpenedFiles", _lastOpenedFiles);
+
                 instance.WriteList("Sources", "IncludeDirectories", _includeDirectories);
+                instance.WriteString("Sources", "IncludeFilter", IncludeFilter);
+
                 instance.Save(FilePath);
             }
         }

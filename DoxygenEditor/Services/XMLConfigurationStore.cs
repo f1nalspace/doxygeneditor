@@ -149,9 +149,11 @@ namespace TSP.DoxygenEditor.Services
             return (defaultValue);
         }
 
-        public string ReadString(string section, string name)
+        public string ReadString(string section, string name, string defaultValue)
         {
             string rawValue = ReadRaw(section, name) as string;
+            if (rawValue == null)
+                rawValue = defaultValue;
             return (rawValue);
         }
 

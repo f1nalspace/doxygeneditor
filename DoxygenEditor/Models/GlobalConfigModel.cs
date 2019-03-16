@@ -10,6 +10,7 @@ namespace TSP.DoxygenEditor.Models
         private readonly string _appName;
 
         public string WorkspacePath { get; set; }
+        public bool RestoreLastOpenedFiles { get; set; }
 
         public GlobalConfigModel(string companyName, string appName)
         {
@@ -22,6 +23,7 @@ namespace TSP.DoxygenEditor.Models
             using (IConfigurarionReader instance = new RegistryConfigurationStore(BaseName))
             {
                 instance.Load($"{_companyName}/{_appName}");
+                RestoreLastOpenedFiles = instance.ReadBool("Startup", "RestoreLastOpenedFiles", false);
                 WorkspacePath = instance.ReadString("Workspace", "DefaultPath");
             }
         }
@@ -30,6 +32,7 @@ namespace TSP.DoxygenEditor.Models
         {
             using (IConfigurarionWriter instance = new RegistryConfigurationStore(BaseName))
             {
+                instance.WriteBool("Startup", "RestoreLastOpenedFiles", RestoreLastOpenedFiles);
                 instance.WriteString("Workspace", "DefaultPath", WorkspacePath);
                 instance.Save($"{_companyName }/{_appName}");
             }

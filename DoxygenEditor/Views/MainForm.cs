@@ -488,7 +488,7 @@ namespace TSP.DoxygenEditor.Views
             }
             else
             {
-                if (_workspace.RestoreLastOpenedFiles && _workspace.LastOpenedFileCount > 0)
+                if (_globalConfig.RestoreLastOpenedFiles && _workspace.LastOpenedFileCount > 0)
                 {
                     foreach (var lastOpenedFilePath in _workspace.LastOpenedFiles)
                         OpenFileTab(lastOpenedFilePath);
@@ -1107,5 +1107,12 @@ namespace TSP.DoxygenEditor.Views
         }
         #endregion
 
+        private void miWorkspaceConfiguration_Click(object sender, EventArgs e)
+        {
+            WorkspaceForm dlg = new WorkspaceForm(_workspace);
+            DialogResult r = dlg.ShowDialog(this);
+            if (r == DialogResult.OK)
+                _workspace.Overwrite(dlg.Workspace);
+        }
     }
 }

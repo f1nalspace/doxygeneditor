@@ -66,6 +66,8 @@ namespace TSP.DoxygenEditor.Views
             this.miEditSelectAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miView = new System.Windows.Forms.ToolStripMenuItem();
             this.miViewShowWhitespaces = new System.Windows.Forms.ToolStripMenuItem();
+            this.miWorkspace = new System.Windows.Forms.ToolStripMenuItem();
+            this.miWorkspaceConfiguration = new System.Windows.Forms.ToolStripMenuItem();
             this.miHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.miHelpAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.tsMain = new System.Windows.Forms.ToolStrip();
@@ -115,8 +117,6 @@ namespace TSP.DoxygenEditor.Views
             this.miCurrentTabCloseAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miCurrentTabCloseAllButThis = new System.Windows.Forms.ToolStripMenuItem();
             this.dlgSaveFile = new System.Windows.Forms.SaveFileDialog();
-            this.miWorkspace = new System.Windows.Forms.ToolStripMenuItem();
-            this.miWorkspaceConfiguration = new System.Windows.Forms.ToolStripMenuItem();
             this.mainMenuStrip.SuspendLayout();
             this.tsMain.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -416,6 +416,21 @@ namespace TSP.DoxygenEditor.Views
             this.miViewShowWhitespaces.Text = "Show Whitespaces";
             this.miViewShowWhitespaces.Click += new System.EventHandler(this.MenuActionViewShowWhitespaces);
             // 
+            // miWorkspace
+            // 
+            this.miWorkspace.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miWorkspaceConfiguration});
+            this.miWorkspace.Name = "miWorkspace";
+            this.miWorkspace.Size = new System.Drawing.Size(77, 20);
+            this.miWorkspace.Text = "Workspace";
+            // 
+            // miWorkspaceConfiguration
+            // 
+            this.miWorkspaceConfiguration.Name = "miWorkspaceConfiguration";
+            this.miWorkspaceConfiguration.Size = new System.Drawing.Size(180, 22);
+            this.miWorkspaceConfiguration.Text = "Configuration...";
+            this.miWorkspaceConfiguration.Click += new System.EventHandler(this.miWorkspaceConfiguration_Click);
+            // 
             // miHelp
             // 
             this.miHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -550,7 +565,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.scMainAndLog.Dock = System.Windows.Forms.DockStyle.Fill;
             this.scMainAndLog.Location = new System.Drawing.Point(0, 55);
-            this.scMainAndLog.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.scMainAndLog.Margin = new System.Windows.Forms.Padding(2);
             this.scMainAndLog.Name = "scMainAndLog";
             this.scMainAndLog.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
@@ -570,7 +585,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.scTreeAndFiles.Dock = System.Windows.Forms.DockStyle.Fill;
             this.scTreeAndFiles.Location = new System.Drawing.Point(0, 0);
-            this.scTreeAndFiles.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.scTreeAndFiles.Margin = new System.Windows.Forms.Padding(2);
             this.scTreeAndFiles.Name = "scTreeAndFiles";
             // 
             // scTreeAndFiles.Panel1
@@ -591,7 +606,7 @@ namespace TSP.DoxygenEditor.Views
             this.tvTree.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tvTree.HideSelection = false;
             this.tvTree.Location = new System.Drawing.Point(0, 20);
-            this.tvTree.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tvTree.Margin = new System.Windows.Forms.Padding(2);
             this.tvTree.Name = "tvTree";
             this.tvTree.Size = new System.Drawing.Size(241, 221);
             this.tvTree.TabIndex = 1;
@@ -601,7 +616,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.panTreeTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.panTreeTop.Location = new System.Drawing.Point(0, 0);
-            this.panTreeTop.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panTreeTop.Margin = new System.Windows.Forms.Padding(2);
             this.panTreeTop.Name = "panTreeTop";
             this.panTreeTop.Size = new System.Drawing.Size(241, 20);
             this.panTreeTop.TabIndex = 2;
@@ -611,7 +626,7 @@ namespace TSP.DoxygenEditor.Views
             this.tcFiles.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tcFiles.HotTrack = true;
             this.tcFiles.Location = new System.Drawing.Point(0, 0);
-            this.tcFiles.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tcFiles.Margin = new System.Windows.Forms.Padding(2);
             this.tcFiles.Name = "tcFiles";
             this.tcFiles.SelectedIndex = 0;
             this.tcFiles.Size = new System.Drawing.Size(492, 241);
@@ -636,9 +651,9 @@ namespace TSP.DoxygenEditor.Views
             // tpDoxygenIssues
             // 
             this.tpDoxygenIssues.Location = new System.Drawing.Point(4, 22);
-            this.tpDoxygenIssues.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tpDoxygenIssues.Margin = new System.Windows.Forms.Padding(2);
             this.tpDoxygenIssues.Name = "tpDoxygenIssues";
-            this.tpDoxygenIssues.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tpDoxygenIssues.Padding = new System.Windows.Forms.Padding(2);
             this.tpDoxygenIssues.Size = new System.Drawing.Size(728, 103);
             this.tpDoxygenIssues.TabIndex = 2;
             this.tpDoxygenIssues.Text = "Doxygen Issues";
@@ -647,10 +662,10 @@ namespace TSP.DoxygenEditor.Views
             // tpCppIssues
             // 
             this.tpCppIssues.Location = new System.Drawing.Point(4, 22);
-            this.tpCppIssues.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tpCppIssues.Margin = new System.Windows.Forms.Padding(2);
             this.tpCppIssues.Name = "tpCppIssues";
-            this.tpCppIssues.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.tpCppIssues.Size = new System.Drawing.Size(728, 106);
+            this.tpCppIssues.Padding = new System.Windows.Forms.Padding(2);
+            this.tpCppIssues.Size = new System.Drawing.Size(728, 103);
             this.tpCppIssues.TabIndex = 0;
             this.tpCppIssues.Text = "C/C++ Issues";
             this.tpCppIssues.UseVisualStyleBackColor = true;
@@ -660,8 +675,8 @@ namespace TSP.DoxygenEditor.Views
             this.tpPerformance.Controls.Add(this.lvPerformance);
             this.tpPerformance.Location = new System.Drawing.Point(4, 22);
             this.tpPerformance.Name = "tpPerformance";
-            this.tpPerformance.Padding = new System.Windows.Forms.Padding(3, 3, 3, 3);
-            this.tpPerformance.Size = new System.Drawing.Size(728, 106);
+            this.tpPerformance.Padding = new System.Windows.Forms.Padding(3);
+            this.tpPerformance.Size = new System.Drawing.Size(728, 103);
             this.tpPerformance.TabIndex = 1;
             this.tpPerformance.Text = "Performance";
             this.tpPerformance.UseVisualStyleBackColor = true;
@@ -681,7 +696,7 @@ namespace TSP.DoxygenEditor.Views
             this.lvPerformance.Margin = new System.Windows.Forms.Padding(0);
             this.lvPerformance.MultiSelect = false;
             this.lvPerformance.Name = "lvPerformance";
-            this.lvPerformance.Size = new System.Drawing.Size(722, 100);
+            this.lvPerformance.Size = new System.Drawing.Size(722, 97);
             this.lvPerformance.TabIndex = 1;
             this.lvPerformance.UseCompatibleStateImageBehavior = false;
             this.lvPerformance.View = System.Windows.Forms.View.Details;
@@ -834,20 +849,6 @@ namespace TSP.DoxygenEditor.Views
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
             // 
-            // miWorkspace
-            // 
-            this.miWorkspace.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miWorkspaceConfiguration});
-            this.miWorkspace.Name = "miWorkspace";
-            this.miWorkspace.Size = new System.Drawing.Size(77, 20);
-            this.miWorkspace.Text = "Workspace";
-            // 
-            // miWorkspaceConfiguration
-            // 
-            this.miWorkspaceConfiguration.Name = "miWorkspaceConfiguration";
-            this.miWorkspaceConfiguration.Size = new System.Drawing.Size(180, 22);
-            this.miWorkspaceConfiguration.Text = "Configuration...";
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -859,7 +860,7 @@ namespace TSP.DoxygenEditor.Views
             this.Controls.Add(this.mainMenuStrip);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.mainMenuStrip;
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Doxygen Editor";

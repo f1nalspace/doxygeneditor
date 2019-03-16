@@ -110,9 +110,11 @@ namespace TSP.DoxygenEditor.Services
             return (null);
         }
 
-        public string ReadString(string section, string name)
+        public string ReadString(string section, string name, string defaultValue)
         {
             string result = (string)ReadRaw(section, name);
+            if (result == null)
+                result = defaultValue;
             return (result);
         }
         public int ReadInt(string section, string name, int defaultValue)
