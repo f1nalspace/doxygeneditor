@@ -25,6 +25,8 @@ using TSP.DoxygenEditor.Symbols;
 using System.Collections;
 using TSP.DoxygenEditor.FilterControls;
 using System.Threading;
+using TSP.DoxygenEditor.Multithreading;
+using System.ComponentModel;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -35,6 +37,8 @@ namespace TSP.DoxygenEditor.Views
         private readonly string _appName;
         private readonly string _dataPath;
         private readonly string _defaultWorkspaceFilePath;
+        private BackgroundWorker _sourceIncludeWorker = null;
+        private SourceIncludesLoader _sourceIncludesLoaders = null;
 
         class PerformanceListViewItemComparer : IComparer
         {
@@ -159,7 +163,7 @@ namespace TSP.DoxygenEditor.Views
 
         private void SetParseStatus(string status)
         {
-            tsParseStatusLabel.Text = status;
+            tsslblParseStatusLabel.Text = status;
         }
 
         private void ShowError(string caption, string shortText, string details)
@@ -470,12 +474,99 @@ namespace TSP.DoxygenEditor.Views
             IEnumerable<EditorState> changes = GetChangedEditorStates();
             if (changes.Count() > 0)
                 e.Cancel = !CloseTabs(changes);
+            if (!e.Cancel)
+            {
+                if (_sourceIncludesLoaders != null)
+                {
+                    if (!_sourceIncludesLoaders.IsStopped && !_sourceIncludesLoaders.IsComplete)
+                        _sourceIncludesLoaders.Stop();
+                    if (_sourceIncludeWorker != null && _sourceIncludeWorker.IsBusy)
+                        _sourceIncludeWorker.CancelAsync();
+                }
+                _workspace.Save();
+                _globalConfig.Save();
+            }
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            _workspace.Save();
-            _globalConfig.Save();
+            
+        }
+
+        private void SetIncludeParseState(string newText, int progress, int total)
+        {
+            if (this.Disposing || this.IsDisposed) return;
+
+            if (this.InvokeRequired)
+                Invoke(new Action(() => SetIncludeParseState(newText, progress, total)));
+            else
+            {
+                tspbIncludeStateProgress.Maximum = total;
+                tspbIncludeStateProgress.Minimum = 0;
+                tspbIncludeStateProgress.Value = progress;
+                tsslblIncludeParseState.Text = newText;
+            }
+        }
+
+        private void ReloadSourceIncludes()
+        {
+            SetIncludeParseState("Reload includes", 0, 0);
+            if (_sourceIncludeWorker != null && _sourceIncludeWorker.IsBusy)
+                _sourceIncludeWorker.CancelAsync();
+            _sourceIncludeWorker = new BackgroundWorker();
+            _sourceIncludeWorker.WorkerSupportsCancellation = true;
+            _sourceIncludeWorker.DoWork += (s, e) =>
+            {
+                List<string> result = new List<string>();
+                if (!string.IsNullOrWhiteSpace(_workspace.IncludeFilter))
+                {
+                    var splittedFilters = _workspace.IncludeFilter.Split(' ', ';', '|');
+                    HashSet<string> filtersSet = new HashSet<string>();
+                    foreach (var filter in splittedFilters)
+                        filtersSet.Add(filter.ToLower());
+                    foreach (var includePath in _workspace.IncludeDirectories)
+                    {
+                        if (string.IsNullOrWhiteSpace(includePath)) continue;
+                        DirectoryInfo includeDir = new DirectoryInfo(includePath);
+                        if (includeDir.Exists)
+                        {
+                            var files = includeDir.GetFiles();
+                            foreach (var file in files)
+                            {
+                                string name = file.Name;
+                                string ext = file.Extension.ToString();
+                                if (filtersSet.Contains(ext))
+                                    result.Add(file.FullName);
+                            }
+                        }
+                    }
+                }
+                e.Result = result;
+            };
+            _sourceIncludeWorker.RunWorkerCompleted += (s, e) =>
+            {
+                if (_sourceIncludesLoaders != null)
+                {
+                    if (!_sourceIncludesLoaders.IsStopped && !_sourceIncludesLoaders.IsComplete)
+                        _sourceIncludesLoaders.Stop();
+                }
+                List<string> files = (List<string>)e.Result;
+                SetIncludeParseState($"Load {files.Count} include files", 0, 0);
+                if (files.Count > 0)
+                {
+                    _sourceIncludesLoaders = new SourceIncludesLoader(files, 10);
+                    _sourceIncludesLoaders.ProgressChanged += (sender, progress, total) =>
+                    {
+                        SetIncludeParseState($"Loading {progress}/{total} include files", progress, total);
+                    };
+                    _sourceIncludesLoaders.IsCompleted += (sender, tables) =>
+                    {
+                        SetIncludeParseState(string.Empty, 0, 0);
+                    };
+                    _sourceIncludesLoaders.Start();
+                }
+            };
+            _sourceIncludeWorker.RunWorkerAsync();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -496,6 +587,8 @@ namespace TSP.DoxygenEditor.Views
             }
             if (tcFiles.TabPages.Count == 0)
                 MenuActionFileNew(this, new EventArgs());
+
+            //ReloadSourceIncludes();
         }
 
         #region Symbols

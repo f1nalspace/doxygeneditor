@@ -12,6 +12,7 @@
         ForwardEnum,
         EnumValue,
         Struct,
+        Class,
         ForwardStruct,
         Define,
     }

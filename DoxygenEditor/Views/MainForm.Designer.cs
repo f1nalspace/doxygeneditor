@@ -81,7 +81,7 @@ namespace TSP.DoxygenEditor.Views
             this.tbtnEditUndo = new System.Windows.Forms.ToolStripButton();
             this.tbtnEditRedo = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.tsParseStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.tsslblParseStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.scMainAndLog = new System.Windows.Forms.SplitContainer();
             this.scTreeAndFiles = new System.Windows.Forms.SplitContainer();
             this.tvTree = new System.Windows.Forms.TreeView();
@@ -117,6 +117,8 @@ namespace TSP.DoxygenEditor.Views
             this.miCurrentTabCloseAll = new System.Windows.Forms.ToolStripMenuItem();
             this.miCurrentTabCloseAllButThis = new System.Windows.Forms.ToolStripMenuItem();
             this.dlgSaveFile = new System.Windows.Forms.SaveFileDialog();
+            this.tsslblIncludeParseState = new System.Windows.Forms.ToolStripStatusLabel();
+            this.tspbIncludeStateProgress = new System.Windows.Forms.ToolStripProgressBar();
             this.mainMenuStrip.SuspendLayout();
             this.tsMain.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -427,7 +429,7 @@ namespace TSP.DoxygenEditor.Views
             // miWorkspaceConfiguration
             // 
             this.miWorkspaceConfiguration.Name = "miWorkspaceConfiguration";
-            this.miWorkspaceConfiguration.Size = new System.Drawing.Size(180, 22);
+            this.miWorkspaceConfiguration.Size = new System.Drawing.Size(157, 22);
             this.miWorkspaceConfiguration.Text = "Configuration...";
             this.miWorkspaceConfiguration.Click += new System.EventHandler(this.miWorkspaceConfiguration_Click);
             // 
@@ -548,7 +550,9 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.statusStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsParseStatusLabel});
+            this.tsslblParseStatusLabel,
+            this.tsslblIncludeParseState,
+            this.tspbIncludeStateProgress});
             this.statusStrip1.Location = new System.Drawing.Point(0, 427);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 9, 0);
@@ -556,10 +560,11 @@ namespace TSP.DoxygenEditor.Views
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
             // 
-            // tsParseStatusLabel
+            // tsslblParseStatusLabel
             // 
-            this.tsParseStatusLabel.Name = "tsParseStatusLabel";
-            this.tsParseStatusLabel.Size = new System.Drawing.Size(0, 17);
+            this.tsslblParseStatusLabel.Name = "tsslblParseStatusLabel";
+            this.tsslblParseStatusLabel.Size = new System.Drawing.Size(47, 17);
+            this.tsslblParseStatusLabel.Text = "[Status]";
             // 
             // scMainAndLog
             // 
@@ -849,6 +854,17 @@ namespace TSP.DoxygenEditor.Views
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
             // 
+            // tsslblIncludeParseState
+            // 
+            this.tsslblIncludeParseState.Name = "tsslblIncludeParseState";
+            this.tsslblIncludeParseState.Size = new System.Drawing.Size(80, 17);
+            this.tsslblIncludeParseState.Text = "[IncludeState]";
+            // 
+            // tspbIncludeStateProgress
+            // 
+            this.tspbIncludeStateProgress.Name = "tspbIncludeStateProgress";
+            this.tspbIncludeStateProgress.Size = new System.Drawing.Size(100, 16);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -971,8 +987,10 @@ namespace TSP.DoxygenEditor.Views
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripButton tbtnEditUndo;
         private System.Windows.Forms.ToolStripButton tbtnEditRedo;
-        private System.Windows.Forms.ToolStripStatusLabel tsParseStatusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel tsslblParseStatusLabel;
         private System.Windows.Forms.ToolStripMenuItem miWorkspace;
         private System.Windows.Forms.ToolStripMenuItem miWorkspaceConfiguration;
+        private System.Windows.Forms.ToolStripStatusLabel tsslblIncludeParseState;
+        private System.Windows.Forms.ToolStripProgressBar tspbIncludeStateProgress;
     }
 }

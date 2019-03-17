@@ -86,6 +86,7 @@
     <Compile Include="Lexers\BaseLexer.cs" />
     <Compile Include="Lexers\BaseToken.cs" />
     <Compile Include="Lexers\IBaseToken.cs" />
+    <Compile Include="Multithreading\SourceIncludesLoader.cs" />
     <Compile Include="Symbols\BaseSymbol.cs" />
     <Compile Include="Symbols\ReferenceSymbolKind.cs" />
     <Compile Include="Symbols\SourceSymbolKind.cs" />

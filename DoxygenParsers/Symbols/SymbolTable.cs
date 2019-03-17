@@ -5,10 +5,12 @@ namespace TSP.DoxygenEditor.Symbols
     public class SymbolTable
     {
         public object Id { get; set; }
+        public bool IsValid { get; set; }
 
         public SymbolTable(object id)
         {
             Id = id;
+            IsValid = false;
         }
 
         private readonly Dictionary<string, List<SourceSymbol>> _sources = new Dictionary<string, List<SourceSymbol>>();

@@ -282,6 +282,32 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             // @TODO(final): Parse struct members
         }
 
+        private void ParseClass(LinkedListStream<IBaseToken> stream)
+        {
+            CppToken classKeywordToken = stream.Peek<CppToken>();
+            Debug.Assert(classKeywordToken.Kind == CppTokenKind.ReservedKeyword && "class".Equals(classKeywordToken.Value));
+            stream.Next();
+            var identTokenResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
+            if (identTokenResult != null)
+            {
+                var identToken = identTokenResult.Token;
+                string classIdent = identToken.Value;
+                stream.Next();
+
+                CppEntityKind kind = CppEntityKind.Class;
+
+                CppEntity classEntity = new CppEntity(kind, identToken, classIdent)
+                {
+                    DocumentationNode = FindDocumentationNode(identTokenResult.Node, 1),
+                };
+                CppNode classNode = new CppNode(Top, classEntity);
+                Add(classNode);
+                SymbolTable.AddSource(new SourceSymbol(SourceSymbolKind.CppClass, classIdent, identToken.Range, classNode));
+
+                // @TODO(final): Parse class members
+            }
+        }
+
         private void ParseTypedef(LinkedListStream<IBaseToken> stream)
         {
             CppToken typedefToken = stream.Peek<CppToken>();
@@ -298,6 +324,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     case "union":
                     case "struct":
                         ParseStruct(stream);
+                        return;
+
+                    case "class":
+                        ParseClass(stream);
                         return;
 
                     case "enum":
@@ -418,8 +448,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
                 case "struct":
                 case "union":
-                case "class":
                     ParseStruct(stream);
+                    return (true);
+
+                case "class":
+                    ParseClass(stream);
                     return (true);
 
                 case "enum":

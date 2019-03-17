@@ -7,6 +7,7 @@
         DoxygenPage,
         CppType,
         CppStruct,
+        CppClass,
         CppFunctionDefinition,
         CppFunctionBody,
         CppEnum,
