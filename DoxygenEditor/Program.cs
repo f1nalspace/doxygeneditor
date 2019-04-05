@@ -15,7 +15,7 @@ Doxygen-Editor is released under the following license:
 
 MIT License
 
-Copyright (c) 2018-2019 Torsten Spaete
+Copyright (c) 2018 Torsten Spaete
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ SOFTWARE.
 	Version History
 -------------------------------------------------------------------------------
 
-    ## v0.8.2.0:
+    ## v0.9.0.0:
     - Proper #define argument parsing & highlighting
     - Lex multi & single line comments inside preprocessor
     - Internal refactoring for editor state
