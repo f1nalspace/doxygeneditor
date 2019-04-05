@@ -5,11 +5,7 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoxygenEditor", "DoxygenEditor\DoxygenEditor.csproj", "{70A53966-525E-4F6D-AA1C-229B428F2A98}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParserTest", "FastTokenizer\ParserTest.csproj", "{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoxygenParsers", "DoxygenParsers\DoxygenParsers.csproj", "{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CParserTest", "CParserTest\CParserTest.vcxproj", "{3A201660-2B12-45C4-A594-EA1C9077DDEC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "DoxygenEditorUnitTest\UnitTests.csproj", "{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}"
 EndProject
@@ -23,18 +19,10 @@ Global
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Debug|x64.Build.0 = Debug|x64
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Release|x64.ActiveCfg = Release|x64
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Release|x64.Build.0 = Release|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Debug|x64.ActiveCfg = Debug|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Debug|x64.Build.0 = Debug|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Release|x64.ActiveCfg = Release|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Release|x64.Build.0 = Release|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Debug|x64.ActiveCfg = Debug|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Debug|x64.Build.0 = Debug|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Release|x64.ActiveCfg = Release|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Release|x64.Build.0 = Release|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Debug|x64.ActiveCfg = Debug|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Debug|x64.Build.0 = Debug|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Release|x64.ActiveCfg = Release|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Release|x64.Build.0 = Release|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Debug|x64.ActiveCfg = Debug|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Debug|x64.Build.0 = Debug|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Release|x64.ActiveCfg = Release|x64
