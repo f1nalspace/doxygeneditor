@@ -6,6 +6,7 @@ namespace TSP.DoxygenEditor.Models
 {
     public class WorkspaceModel
     {
+        const string DefaultWorkspaceNamespace = "https://tspsoftware.net/doxygeneditor/workspace/";
         const int MaxRecentFileCount = 10;
 
         public readonly List<string> _recentFiles = new List<string>();
@@ -17,18 +18,11 @@ namespace TSP.DoxygenEditor.Models
 
         public bool IsWhitespaceVisible { get; set; }
 
-        private readonly List<string> _includeDirectories = new List<string>();
-        public ICollection<string> IncludeDirectories => _includeDirectories;
-
-        public string IncludeFilter { get; set; }
-        private const string DefaultIncludeFilter = ".h .hpp";
-
         public string FilePath { get; set; }
 
         public WorkspaceModel(string filePath)
         {
             FilePath = filePath;
-            IncludeFilter = DefaultIncludeFilter;
         }
 
         public void Overwrite(WorkspaceModel other)
@@ -39,41 +33,33 @@ namespace TSP.DoxygenEditor.Models
             _recentFiles.AddRange(other.RecentFiles);
             _lastOpenedFiles.Clear();
             _lastOpenedFiles.AddRange(other.LastOpenedFiles);
-            _includeDirectories.Clear();
-            _includeDirectories.AddRange(other.IncludeDirectories);
         }
 
-        public void Load(string filePath)
+        public bool Load(string filePath)
         {
             FilePath = filePath;
             _recentFiles.Clear();
             _lastOpenedFiles.Clear();
-            _includeDirectories.Clear();
-            using (IConfigurarionReader instance = new XMLConfigurationStore("Workspace"))
+            bool result = true;
+            using (IConfigurarionReader instance = new XMLConfigurationStore(DefaultWorkspaceNamespace, "Workspace"))
             {
-                instance.Load(filePath);
-
+                if (!instance.Load(filePath))
+                    result = false;
                 IsWhitespaceVisible = instance.ReadBool("View", "IsWhitespaceVisible", false);
-
                 _recentFiles.AddRange(instance.ReadList("History", "RecentFiles"));
                 _lastOpenedFiles.AddRange(instance.ReadList("History", "LastOpenedFiles"));
-
-                _includeDirectories.AddRange(instance.ReadList("Sources", "IncludeDirectories"));
-                IncludeFilter = instance.ReadString("Sources", "IncludeFilter", DefaultIncludeFilter);
             }
+            return (result);
         }
         public void Save()
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(FilePath));
-            using (IConfigurarionWriter instance = new XMLConfigurationStore("Workspace"))
+            using (IConfigurarionWriter instance = new XMLConfigurationStore(DefaultWorkspaceNamespace, "Workspace"))
             {
                 instance.WriteBool("View", "IsWhitespaceVisible", IsWhitespaceVisible);
 
                 instance.WriteList("History", "RecentFiles", _recentFiles);
                 instance.WriteList("History", "LastOpenedFiles", _lastOpenedFiles);
-
-                instance.WriteList("Sources", "IncludeDirectories", _includeDirectories);
-                instance.WriteString("Sources", "IncludeFilter", IncludeFilter);
 
                 instance.Save(FilePath);
             }

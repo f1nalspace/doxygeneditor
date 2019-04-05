@@ -16,6 +16,12 @@ namespace TSP.DoxygenEditor.Lexers
         public bool HasTokens => _tokens.Count > 0;
         public IEnumerable<TextError> LexErrors => _lexErrors;
 
+        public enum LexIntern
+        {
+            Normal,
+            Intern,
+        }
+
         public abstract class State
         {
             public abstract void StartLex(TextStream stream);
@@ -27,15 +33,21 @@ namespace TSP.DoxygenEditor.Lexers
             Buffer = new BasicTextStream(source, pos, length);
         }
 
-        protected void AddError(TextPosition pos, string message, string type, string symbol = null)
+        
+
+        protected void AddError(TextPosition pos, string message, string what, string symbol = null)
         {
             string category = GetType().Name;
-            _lexErrors.Add(new TextError(pos, category, message, type, symbol) { Tag = this });
+            _lexErrors.Add(new TextError(pos, category, message, what, symbol) { Tag = this });
         }
 
-        protected bool PushToken(T token)
+        protected bool PushToken(T token, LexIntern intern = LexIntern.Normal)
         {
-            token.Value = Buffer.GetSourceText(token.Index, token.Length);
+            string value = Buffer.GetSourceText(token.Index, token.Length);
+            if ((intern == LexIntern.Intern) && !string.IsNullOrWhiteSpace(value))
+                token.Value = string.Intern(value);
+            else
+                token.Value = value;
             var lastToken = _tokens.LastOrDefault();
             if (lastToken != null)
                 Debug.Assert(token.Index >= lastToken.End);

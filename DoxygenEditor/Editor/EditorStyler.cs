@@ -11,29 +11,36 @@ using TSP.DoxygenEditor.Lexers;
 
 namespace TSP.DoxygenEditor.Editor
 {
-    class EditorStyler
+    class EditorStyler : IStylerData, IVisualStyler
     {
         static int styleIndex = 1;
 
         static readonly int cppMultiLineCommentStyle = styleIndex++;
         static readonly int cppMultiLineCommentDocStyle = styleIndex++;
+        static readonly int cppMultiLineCommentDocTextStyle = styleIndex++;
         static readonly int cppSingleLineCommentStyle = styleIndex++;
         static readonly int cppSingleLineCommentDocStyle = styleIndex++;
+        static readonly int cppSingleLineCommentDocTextStyle = styleIndex++;
+
         static readonly int cppPreprocessorBasicStyle = styleIndex++;
         static readonly int cppPreprocessorKeywordStyle = styleIndex++;
         static readonly int cppPreprocessorDefineStyle = styleIndex++;
         static readonly int cppPreprocessorDefineArgumentStyle = styleIndex++;
         static readonly int cppPreprocessorIncludeStyle = styleIndex++;
+
         static readonly int cppReservedKeywordStyle = styleIndex++;
-        static readonly int cppTypeKeywordStyle = styleIndex++;
+        static readonly int cppGlobalTypeKeywordStyle = styleIndex++;
+        static readonly int cppUserTypeStyle = styleIndex++;
+        static readonly int cppFunctionStyle = styleIndex++;
+
         static readonly int cppStringStyle = styleIndex++;
         static readonly int cppNumberStyle = styleIndex++;
 
         static readonly Dictionary<CppTokenKind, int> cppTokenTypeToStyleDict = new Dictionary<CppTokenKind, int>() {
             { CppTokenKind.MultiLineComment, cppMultiLineCommentStyle },
-            //{ CppTokenKind.MultiLineCommentDoc, cppMultiLineCommentDocStyle },
+            { CppTokenKind.MultiLineCommentDoc, cppMultiLineCommentDocTextStyle },
             { CppTokenKind.SingleLineComment, cppSingleLineCommentStyle },
-            //{ CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocStyle },
+            { CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocTextStyle },
 
             { CppTokenKind.PreprocessorStart, cppPreprocessorBasicStyle },
             { CppTokenKind.PreprocessorOperator, cppPreprocessorBasicStyle },
@@ -44,7 +51,10 @@ namespace TSP.DoxygenEditor.Editor
             { CppTokenKind.PreprocessorInclude, cppPreprocessorIncludeStyle },
 
             { CppTokenKind.ReservedKeyword, cppReservedKeywordStyle },
-            { CppTokenKind.TypeKeyword, cppTypeKeywordStyle },
+            { CppTokenKind.GlobalTypeKeyword, cppGlobalTypeKeywordStyle },
+
+            { CppTokenKind.FunctionIdent, cppFunctionStyle },
+            { CppTokenKind.UserTypeIdent, cppUserTypeStyle },
 
             { CppTokenKind.StringLiteral, cppStringStyle },
             { CppTokenKind.CharLiteral, cppStringStyle },
@@ -77,6 +87,7 @@ namespace TSP.DoxygenEditor.Editor
             { DoxygenTokenKind.ArgumentFile, doxygenArgumentStyle },
             { DoxygenTokenKind.CommandStart, doxygenCommandStyle },
             { DoxygenTokenKind.CommandEnd, doxygenCommandStyle },
+            { DoxygenTokenKind.Code, Style.Default },
         };
 
         static int htmlTagCharsStyle = styleIndex++;
@@ -91,7 +102,15 @@ namespace TSP.DoxygenEditor.Editor
             { HtmlTokenKind.AttrValue, htmlAttrValueStyle },
         };
 
-        struct StyleEntry
+        private readonly static HashSet<int> allowedMatchStyles = new HashSet<int> {
+            cppPreprocessorDefineStyle,
+            cppUserTypeStyle,
+            cppFunctionStyle,
+            doxygenIdentStyle,
+            doxygenArgumentStyle,
+        };
+
+        public struct StyleEntry
         {
             public int Index { get; }
             public int Length { get; }
@@ -125,12 +144,19 @@ namespace TSP.DoxygenEditor.Editor
         }
 
         private readonly List<StyleEntry> _entries = new List<StyleEntry>();
+        public int Count => _entries.Count;
 
         public EditorStyler()
         {
         }
 
-        public void Refresh(IEnumerable<IBaseToken> tokens)
+        public StyleEntry FindStyleFromPosition(int position)
+        {
+            StyleEntry result = _entries.FirstOrDefault((e) => allowedMatchStyles.Contains(e.Style) && position >= e.Index && position <= e.End);
+            return (result);
+        }
+
+        public void RefreshData(IEnumerable<IBaseToken> tokens)
         {
             _entries.Clear();
             foreach (var token in tokens)
@@ -166,21 +192,38 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        public void InitStyles(Scintilla editor)
+        public void CreateStyles(Scintilla editor)
+        {
+            InitStyles(editor);
+            InitIndicators(editor);
+        }
+
+        private void InitIndicators(Scintilla editor)
+        {
+            editor.Indicators[0].Style = IndicatorStyle.Plain;
+        }
+
+        private void InitStyles(Scintilla editor)
         {
             editor.Styles[cppMultiLineCommentStyle].ForeColor = Color.Green;
             editor.Styles[cppMultiLineCommentDocStyle].ForeColor = Color.Purple;
+            editor.Styles[cppMultiLineCommentDocTextStyle].ForeColor = Color.Navy;
             editor.Styles[cppSingleLineCommentStyle].ForeColor = Color.Green;
             editor.Styles[cppSingleLineCommentDocStyle].ForeColor = Color.Purple;
+            editor.Styles[cppSingleLineCommentDocTextStyle].ForeColor = Color.Navy;
+
             editor.Styles[cppPreprocessorBasicStyle].ForeColor = Color.DarkSlateGray;
             editor.Styles[cppPreprocessorKeywordStyle].ForeColor = Color.DarkSlateGray;
-            editor.Styles[cppPreprocessorDefineStyle].ForeColor = Color.Purple;
+            editor.Styles[cppPreprocessorDefineStyle].ForeColor = Color.BlueViolet;
             editor.Styles[cppPreprocessorDefineArgumentStyle].ForeColor = Color.Magenta;
             editor.Styles[cppPreprocessorIncludeStyle].ForeColor = Color.Brown;
+
             editor.Styles[cppReservedKeywordStyle].ForeColor = Color.Blue;
-            editor.Styles[cppTypeKeywordStyle].ForeColor = Color.BlueViolet;
-            editor.Styles[cppStringStyle].ForeColor = Color.Green;
-            editor.Styles[cppNumberStyle].ForeColor = Color.Red;
+            editor.Styles[cppGlobalTypeKeywordStyle].ForeColor = Color.DarkBlue;
+            editor.Styles[cppUserTypeStyle].ForeColor = Color.MediumVioletRed;
+
+            editor.Styles[cppStringStyle].ForeColor = Color.OrangeRed;
+            editor.Styles[cppNumberStyle].ForeColor = Color.OrangeRed;
 
             editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
             editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
@@ -188,7 +231,7 @@ namespace TSP.DoxygenEditor.Editor
             editor.Styles[doxygenInvalidCommandStyle].Underline = true;
             editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
             editor.Styles[doxygenQuoteStringStyle].ForeColor = Color.Green;
-            editor.Styles[doxygenArgumentStyle].ForeColor = Color.Orange;
+            editor.Styles[doxygenArgumentStyle].ForeColor = Color.Red;
 
             editor.Styles[htmlTagCharsStyle].ForeColor = Color.DarkRed;
             editor.Styles[htmlTagNameStyle].ForeColor = Color.DarkRed;

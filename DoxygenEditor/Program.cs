@@ -15,7 +15,7 @@ Doxygen-Editor is released under the following license:
 
 MIT License
 
-Copyright (c) 2018 Torsten Spaete
+Copyright (c) 2018-2019 Torsten Spaete
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,10 @@ SOFTWARE.
     ## v0.8.2.0:
     - Proper #define argument parsing & highlighting
     - Lex multi & single line comments inside preprocessor
+    - Internal refactoring for editor state
+    - Highlight and jump to a symbol in the editor
+    - Support for symbol jumping between tabs
+    - Introduced workspaces in internal code
 
     ## v0.8.1.0:
     - Bugfixes
@@ -69,12 +73,12 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 
 Cpp:
-    - Function argument parsing (@param validation)
-    - Function return parsing (@return validation -> void or not void)
-    - C++ namespace symbol parsing
     - Types parsing (C99)
     - Types parsing (C++ templates)
+    - C++ namespace symbol parsing
     - Struct member parsing
+    - Function argument parsing (@param validation)
+    - Function return parsing (@return validation -> void or not void)
     - Highlighting of C++ symbols (Types, Functions)
 
 Doxygen:

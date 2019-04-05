@@ -27,15 +27,12 @@ namespace TSP.DoxygenEditor.Parsers
             }
         }
 
-        public object Tag { get; }
-
         protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
 
-        public BaseParser(object tag)
+        public BaseParser(ISymbolTableId id)
         {
-            Tag = tag;
             Root = new RootNode();
-            SymbolTable = new SymbolTable(tag);
+            SymbolTable = new SymbolTable(id);
         }
         protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {
@@ -122,7 +119,10 @@ namespace TSP.DoxygenEditor.Parsers
                     tokenStream.Next();
                 Debug.Assert(old != tokenStream.CurrentValue);
             }
+            Finished(tokens);
         }
+
+        public virtual void Finished(IEnumerable<IBaseToken> tokens) { }
 
         protected void Add(IBaseNode node)
         {

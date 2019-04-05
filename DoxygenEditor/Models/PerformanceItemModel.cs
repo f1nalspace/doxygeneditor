@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Collections;
+using TSP.DoxygenEditor.Editor;
 
 namespace TSP.DoxygenEditor.Models
 {
     public class PerformanceItemModel : IComparer
     {
-        public object Tag { get; }
+        public IEditorId Id { get; }
         public int SortIndex { get; }
         public string Input { get; }
         public string Output { get; }
         public string What { get; }
         public TimeSpan Duration { get; }
-        public PerformanceItemModel(object tag, int sortIndex, string input, string output, string what, TimeSpan duration)
+        public PerformanceItemModel(IEditorId id, int sortIndex, string input, string output, string what, TimeSpan duration)
         {
-            Tag = tag;
+            Id = id;
             SortIndex = sortIndex;
             Input = input;
             Output = output;

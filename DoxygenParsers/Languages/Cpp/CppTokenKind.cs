@@ -30,7 +30,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         IdentLiteral,
         ReservedKeyword,
-        TypeKeyword,
+        GlobalTypeKeyword,
+        FunctionIdent,
+        UserTypeIdent,
 
         StringLiteral,
         CharLiteral,

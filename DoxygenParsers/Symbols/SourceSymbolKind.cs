@@ -12,6 +12,6 @@
         CppFunctionBody,
         CppEnum,
         CppMember,
-        CppDefine,
+        CppMacro,
     }
 }

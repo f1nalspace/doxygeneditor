@@ -14,7 +14,7 @@ namespace TSP.DoxygenEditor.Services
             _baseName = baseName;
         }
 
-        public void Load(string filePath)
+        public bool Load(string filePath)
         {
             var softwareKey = Registry.CurrentUser.OpenSubKey("Software", false);
             string[] names = filePath.Split('/');
@@ -31,6 +31,7 @@ namespace TSP.DoxygenEditor.Services
                 _rootKey = newKey;
                 curKey = newKey;
             }
+            return (_rootKey != null);
         }
 
         public void Save(string filePath)

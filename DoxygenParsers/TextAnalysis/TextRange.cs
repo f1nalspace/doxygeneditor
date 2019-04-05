@@ -36,8 +36,13 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public override int GetHashCode()
         {
-            int result = Index.GetHashCode() ^ Length.GetHashCode();
-            return (result);
+            unchecked // Overflow is fine, just wrap
+            {
+                int result = 17;
+                result *= 23 + Index.GetHashCode();
+                result *= 23 + Length.GetHashCode();
+                return (result);
+            }
         }
 
         public override string ToString()

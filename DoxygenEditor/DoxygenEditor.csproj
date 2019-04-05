@@ -79,8 +79,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Editor\EditorState.cs" />
+    <Compile Include="Editor\EditorContext.cs" />
     <Compile Include="Editor\EditorStyler.cs" />
+    <Compile Include="Editor\IEditorId.cs" />
+    <Compile Include="Editor\IParseControl.cs" />
+    <Compile Include="Editor\IParseInfo.cs" />
+    <Compile Include="Editor\IVisualStyler.cs" />
+    <Compile Include="Editor\IStylerData.cs" />
+    <Compile Include="Editor\ParseContext.cs" />
     <Compile Include="ErrorDialog\ErrorDialogForm.cs">
       <SubType>Form</SubType>
     </Compile>

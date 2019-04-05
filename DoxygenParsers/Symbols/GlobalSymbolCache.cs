@@ -8,9 +8,9 @@ namespace TSP.DoxygenEditor.Symbols
 {
     public static class GlobalSymbolCache
     {
-        private readonly static ConcurrentDictionary<object, SymbolTable> _tableMap = new ConcurrentDictionary<object, SymbolTable>();
+        private readonly static ConcurrentDictionary<ISymbolTableId, SymbolTable> _tableMap = new ConcurrentDictionary<ISymbolTableId, SymbolTable>();
 
-        public static void Clear(object id)
+        public static void Clear(ISymbolTableId id)
         {
             if (id == null)
                 throw new ArgumentNullException("Id may not be null");
@@ -21,7 +21,19 @@ namespace TSP.DoxygenEditor.Symbols
             }
         }
 
-        public static void Remove(object id)
+        public static SymbolTable GetTable(ISymbolTableId id)
+        {
+            if (id == null)
+                throw new ArgumentNullException("Id may not be null");
+            if (_tableMap.ContainsKey(id))
+            {
+                var table = _tableMap[id];
+                return (table);
+            }
+            return (null);
+        }
+
+        public static void Remove(ISymbolTableId id)
         {
             if (id == null)
                 throw new ArgumentNullException("Id may not be null");
@@ -60,7 +72,35 @@ namespace TSP.DoxygenEditor.Symbols
             return (false);
         }
 
-        public static IEnumerable<SourceSymbol> GetSources(object id)
+        public static Tuple<SourceSymbol, ISymbolTableId> FindSource(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+                throw new ArgumentNullException("Symbol may not be null or empty");
+            foreach (var entryPair in _tableMap)
+            {
+                var id = entryPair.Key;
+                var table = entryPair.Value;
+                SourceSymbol result = table.GetSource(symbol);
+                if (result != null)
+                    return new Tuple<SourceSymbol, ISymbolTableId>(result, id);
+            }
+            return (null);
+        }
+
+        public static BaseSymbol FindSymbolFromRange(TextRange range)
+        {
+            foreach (var entryPair in _tableMap)
+            {
+                var id = entryPair.Key;
+                var table = entryPair.Value;
+                var result = table.FindSymbolFromRange(range);
+                if (result != null)
+                    return (result);
+            }
+            return (null);
+        }
+
+        public static IEnumerable<SourceSymbol> GetSources(ISymbolTableId id)
         {
             var table = _tableMap.ContainsKey(id) ? _tableMap[id] : null;
             if (table != null)
@@ -74,9 +114,9 @@ namespace TSP.DoxygenEditor.Symbols
             }
         }
 
-        public static IEnumerable<KeyValuePair<object, TextError>> Validate()
+        public static IEnumerable<KeyValuePair<ISymbolTableId, TextError>> Validate()
         {
-            List<KeyValuePair<object, TextError>> result = new List<KeyValuePair<object, TextError>>();
+            List<KeyValuePair<ISymbolTableId, TextError>> result = new List<KeyValuePair<ISymbolTableId, TextError>>();
             foreach (var tablePair in _tableMap)
             {
                 var id = tablePair.Key;
@@ -87,7 +127,7 @@ namespace TSP.DoxygenEditor.Symbols
                     foreach (var reference in names.Value)
                     {
                         if (!HasReference(name))
-                            result.Add(new KeyValuePair<object, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name) { Tag = reference }));
+                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name) { Tag = reference }));
                     }
                 }
             }

@@ -23,5 +23,6 @@
         TextStart,
         TextEnd,
         Text,
+        Code,
     }
 }

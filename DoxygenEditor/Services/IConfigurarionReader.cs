@@ -10,6 +10,6 @@ namespace TSP.DoxygenEditor.Services
         IEnumerable<string> ReadList(string section, string name);
         int ReadInt(string section, string name, int defaultValue);
         bool ReadBool(string section, string name, bool defaultValue);
-        void Load(string filePath);
+        bool Load(string filePath);
     }
 }

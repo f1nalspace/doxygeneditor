@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Languages.Utils;
@@ -22,7 +21,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
         public string Source { get; }
 
-        public DoxygenParser(object tag, string source) : base(tag)
+        public DoxygenParser(ISymbolTableId id, string source) : base(id)
         {
             Source = source;
         }
@@ -213,7 +212,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                         string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length);
                                         if (referenceTextStream.Peek() == '(')
                                         {
-                                            referenceTarget = ReferenceSymbolKind.CppFunction;
+                                            referenceTarget = ReferenceSymbolKind.CppFunctionCall;
                                             referenceTextStream.AdvanceColumn();
                                             while (!referenceTextStream.IsEOF)
                                             {
