@@ -923,7 +923,6 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                     Buffer.SkipSpacings(TextStream.SkipType.All);
                                     if (Buffer.Peek() == '(')
                                     {
-                                        bool isComplete = false;
                                         Buffer.AdvanceColumn();
                                         while (!Buffer.IsEOF)
                                         {
@@ -931,7 +930,6 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                             if (c == ')')
                                             {
                                                 Buffer.AdvanceColumn();
-                                                isComplete = true;
                                                 break;
                                             }
                                             else if (SyntaxUtils.IsLineBreak(c))
