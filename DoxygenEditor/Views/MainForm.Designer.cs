@@ -243,7 +243,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.miFileRefresh.Image = global::TSP.DoxygenEditor.Properties.Resources.Refresh_16x;
             this.miFileRefresh.Name = "miFileRefresh";
-            this.miFileRefresh.ShortcutKeys = System.Windows.Forms.Keys.F3;
+            this.miFileRefresh.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
             this.miFileRefresh.Size = new System.Drawing.Size(225, 26);
             this.miFileRefresh.Text = "Refresh";
             this.miFileRefresh.Click += new System.EventHandler(this.MenuActionFileRefresh);
@@ -449,7 +449,6 @@ namespace TSP.DoxygenEditor.Views
             this.miWorkspaceConfiguration.Name = "miWorkspaceConfiguration";
             this.miWorkspaceConfiguration.Size = new System.Drawing.Size(184, 26);
             this.miWorkspaceConfiguration.Text = "Configuration...";
-            this.miWorkspaceConfiguration.Visible = false;
             this.miWorkspaceConfiguration.Click += new System.EventHandler(this.miWorkspaceConfiguration_Click);
             // 
             // miHelp
@@ -686,7 +685,7 @@ namespace TSP.DoxygenEditor.Views
             this.tpCppIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tpCppIssues.Name = "tpCppIssues";
             this.tpCppIssues.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.tpCppIssues.Size = new System.Drawing.Size(973, 134);
+            this.tpCppIssues.Size = new System.Drawing.Size(973, 135);
             this.tpCppIssues.TabIndex = 0;
             this.tpCppIssues.Text = "C/C++ Issues";
             this.tpCppIssues.UseVisualStyleBackColor = true;
@@ -698,7 +697,7 @@ namespace TSP.DoxygenEditor.Views
             this.tpPerformance.Margin = new System.Windows.Forms.Padding(4);
             this.tpPerformance.Name = "tpPerformance";
             this.tpPerformance.Padding = new System.Windows.Forms.Padding(4);
-            this.tpPerformance.Size = new System.Drawing.Size(973, 134);
+            this.tpPerformance.Size = new System.Drawing.Size(973, 135);
             this.tpPerformance.TabIndex = 1;
             this.tpPerformance.Text = "Performance";
             this.tpPerformance.UseVisualStyleBackColor = true;
@@ -718,7 +717,7 @@ namespace TSP.DoxygenEditor.Views
             this.lvPerformance.Margin = new System.Windows.Forms.Padding(0);
             this.lvPerformance.MultiSelect = false;
             this.lvPerformance.Name = "lvPerformance";
-            this.lvPerformance.Size = new System.Drawing.Size(965, 126);
+            this.lvPerformance.Size = new System.Drawing.Size(965, 127);
             this.lvPerformance.TabIndex = 1;
             this.lvPerformance.UseCompatibleStateImageBehavior = false;
             this.lvPerformance.View = System.Windows.Forms.View.Details;

@@ -8,9 +8,9 @@
         CppType,
         CppStruct,
         CppClass,
+        CppEnum,
         CppFunctionDefinition,
         CppFunctionBody,
-        CppEnum,
         CppMember,
         CppMacro,
     }

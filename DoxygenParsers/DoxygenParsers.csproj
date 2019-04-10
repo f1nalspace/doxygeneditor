@@ -64,6 +64,7 @@
     <Compile Include="Languages\Cpp\CppEntityKind.cs" />
     <Compile Include="Languages\Cpp\CppLexer.cs" />
     <Compile Include="Languages\Cpp\CppNode.cs" />
+    <Compile Include="Languages\Cpp\CppSymbolResolver.cs" />
     <Compile Include="Languages\Cpp\CppSyntax.cs" />
     <Compile Include="Languages\Cpp\CppToken.cs" />
     <Compile Include="Languages\Cpp\CppTokenKind.cs" />
@@ -78,6 +79,7 @@
     <Compile Include="Languages\Doxygen\DoxygenTokenKind.cs" />
     <Compile Include="Languages\Doxygen\DoxygenTokenPool.cs" />
     <Compile Include="Languages\Doxygen\DoxygenParser.cs" />
+    <Compile Include="Languages\LanguageKind.cs" />
     <Compile Include="Languages\Utils\SyntaxUtils.cs" />
     <Compile Include="Languages\Html\HtmlLexer.cs" />
     <Compile Include="Languages\Html\HtmlToken.cs" />
@@ -87,6 +89,7 @@
     <Compile Include="Lexers\BaseToken.cs" />
     <Compile Include="Lexers\IBaseToken.cs" />
     <Compile Include="Includes\SourceIncludesLoader.cs" />
+    <Compile Include="Parsers\BaseSymbolResolver.cs" />
     <Compile Include="Symbols\BaseSymbol.cs" />
     <Compile Include="Symbols\ISymbolTableId.cs" />
     <Compile Include="Symbols\ReferenceSymbolKind.cs" />

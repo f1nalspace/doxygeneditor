@@ -87,17 +87,15 @@ namespace TSP.DoxygenEditor.Views
             _globalConfig = new GlobalConfigModel(companyName, appId);
             _globalConfig.Load();
 
-            _workspace = new WorkspaceModel(_globalConfig.WorkspacePath);
-            if (!string.IsNullOrWhiteSpace(_workspace.FilePath))
+            _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
+            if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath))
             {
-                if (!_workspace.Load(_globalConfig.WorkspacePath))
-                {
+                WorkspaceModel loadedWorkspace = WorkspaceModel.Load(_globalConfig.WorkspacePath);
+                if (loadedWorkspace == null)
                     ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!");
-                    _workspace.Overwrite(new WorkspaceModel(_defaultWorkspaceFilePath));
-                }
+                else
+                    _workspace.Assign(loadedWorkspace);
             }
-            else
-                _workspace.FilePath = _defaultWorkspaceFilePath;
             _globalConfig.WorkspacePath = _workspace.FilePath;
             UpdatedWorkspaceFile();
 
@@ -130,7 +128,7 @@ namespace TSP.DoxygenEditor.Views
             lvPerformance.ListViewItemSorter = new PerformanceListViewItemComparer();
 
             // Update UI from config settings
-            miViewShowWhitespaces.Checked = _workspace.IsWhitespaceVisible;
+            miViewShowWhitespaces.Checked = _workspace.View.IsWhitespaceVisible;
             RefreshRecentFiles();
 
             _searchControl = new SearchReplace.SearchReplaceControl();
@@ -269,7 +267,7 @@ namespace TSP.DoxygenEditor.Views
             {
                 string title = context.Name;
                 if (context.IsChanged) title += "*";
-                TabPage tab = (TabPage)context.Tag;
+                TabPage tab = (TabPage)context.Tab;
                 tab.Text = title;
             }
 
@@ -281,7 +279,7 @@ namespace TSP.DoxygenEditor.Views
         {
             int tabIndex = _newTabCounter++;
             TabPage newTab = new TabPage() { Text = name };
-            EditorContext newContext = new EditorContext(this, name, newTab, tabIndex);
+            EditorContext newContext = new EditorContext(this, _workspace, name, newTab, tabIndex);
             newContext.IsShowWhitespace = miViewShowWhitespaces.Checked;
             newContext.TabUpdating += (s, e) => UpdateContext((EditorContext)s);
             newContext.FocusChanged += (s, e) =>
@@ -316,7 +314,7 @@ namespace TSP.DoxygenEditor.Views
                 var foundContext = FindEditorContextById(id);
                 if (foundContext != null)
                 {
-                    TabPage tab = (TabPage)foundContext.Tag;
+                    TabPage tab = (TabPage)foundContext.Tab;
                     tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
                     foundContext.GoToPosition(pos);
                 }
@@ -335,7 +333,7 @@ namespace TSP.DoxygenEditor.Views
             ClearPerformanceItems(context);
             GlobalSymbolCache.Remove(context);
 
-            TabPage tab = (TabPage)context.Tag;
+            TabPage tab = (TabPage)context.Tab;
             tcFiles.TabPages.Remove(tab);
             context.Dispose();
 
@@ -362,13 +360,13 @@ namespace TSP.DoxygenEditor.Views
             if (alreadyOpenContext != null)
             {
                 // Focus existing tab
-                tcFiles.SelectedTab = (TabPage)alreadyOpenContext.Tag;
+                tcFiles.SelectedTab = (TabPage)alreadyOpenContext.Tab;
                 alreadyOpenContext.SetFocus();
             }
             else
             {
                 EditorContext newContext = AddFileTab(Path.GetFileName(filePath));
-                TabPage tab = (TabPage)newContext.Tag;
+                TabPage tab = (TabPage)newContext.Tab;
                 tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
                 Tuple<bool, Exception> openRes = IOOpenFile(newContext, filePath);
                 if (!openRes.Item1)
@@ -381,7 +379,7 @@ namespace TSP.DoxygenEditor.Views
                 }
                 else
                 {
-                    _workspace.PushRecentFiles(filePath);
+                    _workspace.History.PushRecentFiles(filePath);
                     RefreshRecentFiles();
 
                     // Remove first tab when it was a "New" and is still unchanged
@@ -491,7 +489,7 @@ namespace TSP.DoxygenEditor.Views
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             var allFilePaths = GetAllEditorContexts().Where(f => !string.IsNullOrWhiteSpace(f.FilePath)).Select(f => f.FilePath);
-            _workspace.UpdateLastOpenedFiles(allFilePaths);
+            _workspace.History.UpdateLastOpenedFiles(allFilePaths);
             IEnumerable<EditorContext> changes = GetChangedEditorContexts();
             if (changes.Count() > 0)
                 e.Cancel = !CloseTabs(changes);
@@ -517,9 +515,9 @@ namespace TSP.DoxygenEditor.Views
             }
             else
             {
-                if (_workspace.LastOpenedFileCount > 0)
+                if (_workspace.History.LastOpenedFileCount > 0)
                 {
-                    foreach (var lastOpenedFilePath in _workspace.LastOpenedFiles)
+                    foreach (var lastOpenedFilePath in _workspace.History.LastOpenedFiles)
                     {
                         if (!string.IsNullOrWhiteSpace(lastOpenedFilePath))
                             OpenFileTab(lastOpenedFilePath);
@@ -550,7 +548,7 @@ namespace TSP.DoxygenEditor.Views
                     if (parentNode != null)
                     {
                         EditorContext context = (EditorContext)parentNode.Tag;
-                        TabPage tab = (TabPage)context.Tag;
+                        TabPage tab = (TabPage)context.Tab;
                         tcFiles.SelectedTab = tab;
                         tcFiles.Focus();
                         DoxygenNode entityNode = (DoxygenNode)selectedNode.Tag;
@@ -744,7 +742,7 @@ namespace TSP.DoxygenEditor.Views
         {
             string name = GetNextTabName("File");
             EditorContext newContext = AddFileTab(name);
-            TabPage tab = (TabPage)newContext.Tag;
+            TabPage tab = (TabPage)newContext.Tab;
             tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
             newContext.SetFocus();
             UpdateContext(newContext);
@@ -764,7 +762,7 @@ namespace TSP.DoxygenEditor.Views
             Tuple<bool, Exception> r = SaveWithConfirmation(context, true);
             if (r.Item1)
             {
-                _workspace.PushRecentFiles(context.FilePath);
+                _workspace.History.PushRecentFiles(context.FilePath);
                 RefreshRecentFiles();
             }
         }
@@ -785,7 +783,7 @@ namespace TSP.DoxygenEditor.Views
                 }
                 else
                 {
-                    _workspace.PushRecentFiles(filePath);
+                    _workspace.History.PushRecentFiles(filePath);
                     RefreshRecentFiles();
                 }
 
@@ -929,7 +927,7 @@ namespace TSP.DoxygenEditor.Views
                 context.IsShowWhitespace = enabled;
             }
             item.Checked = enabled;
-            _workspace.IsWhitespaceVisible = enabled;
+            _workspace.View.IsWhitespaceVisible = enabled;
         }
 
         private void MenuActionHelpAbout(object sender, EventArgs e)
@@ -953,7 +951,7 @@ namespace TSP.DoxygenEditor.Views
         private void RefreshRecentFiles()
         {
             miFileRecentFiles.DropDownItems.Clear();
-            foreach (string recentFile in _workspace.RecentFiles)
+            foreach (string recentFile in _workspace.History.RecentFiles)
             {
                 ToolStripMenuItem newItem = new ToolStripMenuItem(recentFile);
                 newItem.Tag = recentFile;
@@ -999,7 +997,7 @@ namespace TSP.DoxygenEditor.Views
             {
                 CppNode cppNode = (CppNode)rootNode;
                 CppEntity cppEntity = cppNode.Entity;
-                if (cppEntity.DocumentationNode != null)
+                if (cppEntity.IsDefinition && cppEntity.DocumentationNode != null && _workspace.ValidationCpp.RequireDoxygenReference)
                 {
                     DoxygenNode doxyNode = (DoxygenNode)cppEntity.DocumentationNode;
                     if (doxyNode.Entity.Kind == DoxygenEntityKind.BlockMulti)
@@ -1044,7 +1042,12 @@ namespace TSP.DoxygenEditor.Views
             lvDoxygenIssues.ClearItems();
 
             // Validate symbols from cache
-            var symbolErrors = GlobalSymbolCache.Validate();
+            var validationConfig = new GlobalSymbolCache.ValidationConfigration()
+            {
+                ExcludeCppPreprocessorMatch = _workspace.ValidationCpp.ExcludePreprocessorMatch,
+                ExcludeCppPreprocessorUsage = _workspace.ValidationCpp.ExcludePreprocessorUsage,
+            };
+            var symbolErrors = GlobalSymbolCache.Validate(validationConfig);
             foreach (var errorPair in symbolErrors)
             {
                 var error = errorPair.Value;
@@ -1095,7 +1098,7 @@ namespace TSP.DoxygenEditor.Views
                 IssueTag tag = (IssueTag)item.Tag;
                 TextPosition pos = tag.Pos;
                 EditorContext context = tag.Context;
-                TabPage tab = (TabPage)context.Tag;
+                TabPage tab = (TabPage)context.Tab;
                 tcFiles.SelectedTab = tab;
                 context.GoToPosition(pos.Index);
             }
@@ -1150,7 +1153,13 @@ namespace TSP.DoxygenEditor.Views
             WorkspaceForm dlg = new WorkspaceForm(_workspace);
             DialogResult r = dlg.ShowDialog(this);
             if (r == DialogResult.OK)
-                _workspace.Overwrite(dlg.Workspace);
+            {
+                _workspace.Assign(dlg.Workspace);
+                IEnumerable<EditorContext> contexts = GetAllEditorContexts();
+                foreach (EditorContext context in contexts) {
+                    context.Reparse();
+                }
+            }
         }
 
         private void miWorkspaceNew_Click(object sender, EventArgs e)
@@ -1159,7 +1168,8 @@ namespace TSP.DoxygenEditor.Views
             if (dlgSaveWorkspace.ShowDialog() == DialogResult.OK)
             {
                 _globalConfig.WorkspacePath = dlgSaveWorkspace.FileName;
-                _workspace.Overwrite(new WorkspaceModel(_globalConfig.WorkspacePath));
+                var newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath);
+                _workspace.Assign(newWorkspace);
                 UpdatedWorkspaceFile();
             }
         }
@@ -1168,14 +1178,14 @@ namespace TSP.DoxygenEditor.Views
         {
             if (dlgOpenWorkspace.ShowDialog() == DialogResult.OK)
             {
-                WorkspaceModel newWorkspace = new WorkspaceModel(dlgOpenWorkspace.FileName);
-                if (newWorkspace.Load(dlgOpenWorkspace.FileName))
-                    _workspace.Overwrite(newWorkspace);
-                else
+                WorkspaceModel newWorkspace = WorkspaceModel.Load(dlgOpenWorkspace.FileName);
+                if (newWorkspace == null)
                 {
                     ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!");
-                    _workspace.Overwrite(new WorkspaceModel(_defaultWorkspaceFilePath));
+                    _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath));
                 }
+                else
+                    _workspace.Assign(newWorkspace);
                 _globalConfig.WorkspacePath = _workspace.FilePath;
                 UpdatedWorkspaceFile();
             }

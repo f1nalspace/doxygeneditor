@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq.Expressions;
 using System.Text;
 using System.Xml;
+using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Services
 {
@@ -10,14 +13,16 @@ namespace TSP.DoxygenEditor.Services
     {
         private readonly string _defaultNamespace;
         private readonly string _baseName;
+        private readonly IConfigurationConverter _converter;
         private XmlDocument _doc;
         private XmlNamespaceManager _nsMng;
         private XmlNode _rootNode;
 
-        public XMLConfigurationStore(string defaultNamespace, string baseName) : base()
+        public XMLConfigurationStore(string defaultNamespace, string baseName, IConfigurationConverter converter = null) : base()
         {
             _defaultNamespace = defaultNamespace;
             _baseName = baseName;
+            _converter = converter;
             _doc = null;
             _rootNode = null;
         }
@@ -112,6 +117,43 @@ namespace TSP.DoxygenEditor.Services
                                 }
                             }
                             break;
+                        case WriteKind.Dictionary:
+                            {
+                                var dict = (IDictionary<string, object>)value;
+                                nameNode.RemoveAll();
+                                foreach (var pair in dict)
+                                {
+                                    XmlNode itemNode = _doc.CreateElement(pair.Key, _defaultNamespace);
+                                    Type t = pair.Value.GetType();
+                                    if (t.IsValueType)
+                                    {
+                                        var properties = t.GetProperties();
+                                        foreach (var property in properties)
+                                        {
+                                            Type propType = property.DeclaringType;
+                                            string propName = property.Name;
+                                            object propValue = property.GetValue(pair.Value);
+                                            string convertedValue = null;
+                                            if (_converter != null)
+                                                convertedValue = _converter.ConvertToString(propValue);
+                                            else
+                                            {
+                                                if (typeof(string).Equals(propType))
+                                                    convertedValue = (string)propValue;
+                                            }
+                                            if (!string.IsNullOrEmpty(convertedValue))
+                                            {
+                                                XmlNode propNode = _doc.CreateElement(propName, _defaultNamespace);
+                                                propNode.InnerText = convertedValue;
+                                                itemNode.AppendChild(propNode);
+                                            }
+                                        }
+                                    }
+
+                                    nameNode.AppendChild(itemNode);
+                                }
+                            }
+                            break;
                         default:
                             nameNode.InnerText = value.ToString();
                             break;
@@ -139,6 +181,10 @@ namespace TSP.DoxygenEditor.Services
             }
             return (null);
         }
+        public object ReadRaw(string section, Expression<Func<object>> nameExpression)
+        {
+            return ReadRaw(section, ReflectionUtils.GetName(nameExpression));
+        }
 
         public bool ReadBool(string section, string name, bool defaultValue)
         {
@@ -151,7 +197,10 @@ namespace TSP.DoxygenEditor.Services
             }
             return (defaultValue);
         }
-
+        public bool ReadBool(string section, Expression<Func<object>> nameExpression, bool defaultValue)
+        {
+            return ReadBool(section, ReflectionUtils.GetName(nameExpression), defaultValue);
+        }
         public int ReadInt(string section, string name, int defaultValue)
         {
             string rawValue = ReadRaw(section, name) as string;
@@ -163,6 +212,10 @@ namespace TSP.DoxygenEditor.Services
             }
             return (defaultValue);
         }
+        public int ReadInt(string section, Expression<Func<object>> nameExpression, int defaultValue)
+        {
+            return ReadInt(section, ReflectionUtils.GetName(nameExpression), defaultValue);
+        }
 
         public string ReadString(string section, string name, string defaultValue)
         {
@@ -170,6 +223,10 @@ namespace TSP.DoxygenEditor.Services
             if (rawValue == null)
                 rawValue = defaultValue;
             return (rawValue);
+        }
+        public string ReadString(string section, Expression<Func<object>> nameExpression, string defaultValue)
+        {
+            return ReadString(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
 
         public IEnumerable<string> ReadList(string section, string name)
@@ -187,6 +244,60 @@ namespace TSP.DoxygenEditor.Services
                     }
                 }
             }
+        }
+        public IEnumerable<string> ReadList(string section, Expression<Func<object>> nameExpression)
+        {
+            return ReadList(section, ReflectionUtils.GetName(nameExpression));
+        }
+
+        public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, string name) where TValue : struct
+        {
+            if (_rootNode != null)
+            {
+                var nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
+                if (nameNode != null)
+                {
+                    XmlNodeList itemsNodeList = nameNode.SelectNodes("d:Item", _nsMng);
+                    foreach (XmlNode itemNode in itemsNodeList)
+                    {
+                        string key = itemNode.Attributes.GetNamedItem("d:Key")?.Value;
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            Type structType = typeof(TValue);
+                            TValue structValue = (TValue)Activator.CreateInstance(structType);
+                            var properties = structType.GetProperties(System.Reflection.BindingFlags.Public);
+                            foreach (var property in properties)
+                            {
+                                Type propType = property.DeclaringType;
+                                string propName = property.Name;
+                                XmlNode propNode = itemNode.SelectSingleNode($"d:{propName}", _nsMng);
+                                if (propNode != null)
+                                {
+                                    string stringValue = propNode.InnerText;
+                                    object convertedValue = null;
+                                    if (_converter != null)
+                                        convertedValue = _converter.ConvertFromString(stringValue, propType);
+                                    else
+                                    {
+                                        if (typeof(string).Equals(propType))
+                                            convertedValue = stringValue;
+                                        else if (typeof(int).Equals(propType))
+                                            convertedValue = int.Parse(stringValue);
+                                        else if (typeof(bool).Equals(propType))
+                                            convertedValue = "true".Equals(stringValue, StringComparison.InvariantCultureIgnoreCase);
+                                    }
+                                    property.SetValue(structValue, convertedValue);
+                                }
+                            }
+                            yield return new KeyValuePair<string, TValue>(key, structValue);
+                        }
+                    }
+                }
+            }
+        }
+        public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, Expression<Func<object>> nameExpression) where TValue : struct
+        {
+            return ReadDictionary<TValue>(section, ReflectionUtils.GetName(nameExpression));
         }
 
         public override void Dispose()

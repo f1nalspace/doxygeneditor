@@ -23,7 +23,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         PreprocessorOperator,
         PreprocessorKeyword,
         PreprocessorDefineSource,
-        PreprocessorDefineTarget,
+        PreprocessorDefineUsage,
+        PreprocessorDefineMatch,
         PreprocessorDefineArgument,
         PreprocessorInclude,
         PreprocessorEnd,
@@ -33,6 +34,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         GlobalTypeKeyword,
         FunctionIdent,
         UserTypeIdent,
+        MemberIdent,
 
         StringLiteral,
         CharLiteral,

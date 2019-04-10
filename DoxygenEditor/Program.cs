@@ -42,10 +42,10 @@ SOFTWARE.
     ## v0.9.0.0:
     - Proper #define argument parsing & highlighting
     - Lex multi & single line comments inside preprocessor
-    - Internal refactoring for editor state
+    - Internal refactoring for editor state vs parse state (Context)
     - Highlight and jump to a symbol in the editor
     - Support for symbol jumping between tabs
-    - Introduced workspaces in internal code
+    - Introduced workspaces
 
     ## v0.8.1.0:
     - Bugfixes

@@ -14,6 +14,21 @@ namespace TSP.DoxygenEditor.Symbols
             Id = id;
             IsValid = false;
         }
+        public SymbolTable(SymbolTable other)
+        {
+            Id = other.Id;
+            IsValid = other.IsValid;
+            foreach (var sourcePair in other.SourceMap)
+            {
+                foreach (SourceSymbol symbol in sourcePair.Value)
+                    AddSource(symbol);
+            }
+            foreach (var refPair in other.ReferenceMap)
+            {
+                foreach (ReferenceSymbol symbol in refPair.Value)
+                    AddReference(symbol);
+            }
+        }
 
         private readonly Dictionary<string, List<SourceSymbol>> _sources = new Dictionary<string, List<SourceSymbol>>();
         public IEnumerable<KeyValuePair<string, List<SourceSymbol>>> SourceMap => _sources;
@@ -33,16 +48,20 @@ namespace TSP.DoxygenEditor.Symbols
 
         public SourceSymbol GetSource(string name)
         {
+            SourceSymbol result = null;
             if (_sources.ContainsKey(name))
             {
                 List<SourceSymbol> list = _sources[name];
                 if (list.Count > 0)
                 {
-                    SourceSymbol result = list[0];
-                    return (result);
+                    foreach (var item in list)
+                    {
+                        if (result == null || item.Lang < result.Lang)
+                            result = list[0];
+                    }
                 }
             }
-            return (null);
+            return (result);
         }
 
         public IEnumerable<SourceSymbol> GetSources(string name)

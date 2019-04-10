@@ -1,6 +1,9 @@
 ﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq.Expressions;
+using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Services
 {
@@ -8,10 +11,12 @@ namespace TSP.DoxygenEditor.Services
     {
         private RegistryKey _rootKey;
         private readonly string _baseName;
+        private readonly IConfigurationConverter _converter;
 
-        public RegistryConfigurationStore(string baseName) : base()
+        public RegistryConfigurationStore(string baseName, IConfigurationConverter converter = null) : base()
         {
             _baseName = baseName;
+            _converter = converter;
         }
 
         public bool Load(string filePath)
@@ -89,6 +94,39 @@ namespace TSP.DoxygenEditor.Services
                                     listKey.SetValue("Item", list[i]);
                             }
                             break;
+                        case WriteKind.Dictionary:
+                            {
+                                var dict = (IDictionary<string, object>)value;
+                                var listKey = sectionKey.OpenSubKey(name, true);
+                                sectionKey.DeleteSubKeyTree(name);
+                                listKey = sectionKey.CreateSubKey(name);
+
+                                foreach (var pair in dict)
+                                {
+                                    Type valueType = pair.Value.GetType();
+                                    if (valueType.IsValueType)
+                                    {
+                                        var properties = valueType.GetProperties(System.Reflection.BindingFlags.Public);
+                                        foreach (var property in properties)
+                                        {
+                                            Type propType = property.DeclaringType;
+                                            string propName = property.Name;
+                                            object propValue = property.GetValue(pair.Value);
+                                            string convertedValue = null;
+                                            if (_converter != null)
+                                                convertedValue = _converter.ConvertToString(propValue);
+                                            else
+                                            {
+                                                if (typeof(string).Equals(propType))
+                                                    convertedValue = (string)propValue;
+                                            }
+                                            if (!string.IsNullOrEmpty(convertedValue))
+                                                listKey.SetValue(propName, convertedValue);
+                                        }
+                                    }
+                                }
+                            }
+                            break;
                         default:
                             sectionKey.SetValue(name, value.ToString());
                             break;
@@ -110,6 +148,10 @@ namespace TSP.DoxygenEditor.Services
             }
             return (null);
         }
+        public object ReadRaw(string section, Expression<Func<object>> nameExpression)
+        {
+            return ReadRaw(section, ReflectionUtils.GetName(nameExpression));
+        }
 
         public string ReadString(string section, string name, string defaultValue)
         {
@@ -118,6 +160,10 @@ namespace TSP.DoxygenEditor.Services
                 result = defaultValue;
             return (result);
         }
+        public string ReadString(string section, Expression<Func<object>> nameExpression, string defaultValue)
+        {
+            return ReadString(section, ReflectionUtils.GetName(nameExpression), defaultValue);
+        }
         public int ReadInt(string section, string name, int defaultValue)
         {
             int? value = (int?)ReadRaw(section, name);
@@ -125,12 +171,20 @@ namespace TSP.DoxygenEditor.Services
                 return (value.Value);
             return (defaultValue);
         }
+        public int ReadInt(string section, Expression<Func<object>> nameExpression, int defaultValue)
+        {
+            return ReadInt(section, ReflectionUtils.GetName(nameExpression), defaultValue);
+        }
         public bool ReadBool(string section, string name, bool defaultValue)
         {
             int? value = (int?)ReadRaw(section, name);
             if (value.HasValue)
                 return (value.Value == 1);
             return (defaultValue);
+        }
+        public bool ReadBool(string section, Expression<Func<object>> nameExpression, bool defaultValue)
+        {
+            return ReadBool(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
         public IEnumerable<string> ReadList(string section, string name)
         {
@@ -154,6 +208,63 @@ namespace TSP.DoxygenEditor.Services
                     }
                 }
             }
+        }
+        public IEnumerable<string> ReadList(string section, Expression<Func<object>> nameExpression)
+        {
+            return ReadList(section, ReflectionUtils.GetName(nameExpression));
+        }
+
+        public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, string name) where TValue : struct
+        {
+            if (_rootKey != null)
+            {
+                var sectionKey = _rootKey.OpenSubKey(section, false);
+                if (sectionKey != null)
+                {
+                    var listKey = sectionKey.OpenSubKey(name, false);
+                    if (listKey != null)
+                    {
+                        int? count = (int?)listKey.GetValue("Count");
+                        if (count.HasValue)
+                        {
+                            for (int i = 0; i < count.Value; ++i)
+                            {
+                                string key = (string)listKey.GetValue("Key" + i);
+                                if (!string.IsNullOrWhiteSpace(key))
+                                {
+                                    Type structType = typeof(TValue);
+                                    TValue structValue = (TValue)Activator.CreateInstance(structType);
+                                    var properties = structType.GetProperties(System.Reflection.BindingFlags.Public);
+                                    foreach (var property in properties)
+                                    {
+                                        Type propType = property.DeclaringType;
+                                        string propName = property.Name;
+                                        string stringValue = (string)listKey.GetValue("V" + propName + i);
+                                        object convertedValue = null;
+                                        if (_converter != null)
+                                            convertedValue = _converter.ConvertFromString(stringValue, propType);
+                                        else
+                                        {
+                                            if (typeof(string).Equals(propType))
+                                                convertedValue = stringValue;
+                                            else if (typeof(int).Equals(propType))
+                                                convertedValue = int.Parse(stringValue);
+                                            else if (typeof(bool).Equals(propType))
+                                                convertedValue = "true".Equals(stringValue, StringComparison.InvariantCultureIgnoreCase);
+                                        }
+                                        property.SetValue(structValue, convertedValue);
+                                    }
+                                    yield return new KeyValuePair<string, TValue>(key, structValue);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, Expression<Func<object>> nameExpression) where TValue : struct
+        {
+            return ReadDictionary<TValue>(section, ReflectionUtils.GetName(nameExpression));
         }
 
         public override void Dispose()

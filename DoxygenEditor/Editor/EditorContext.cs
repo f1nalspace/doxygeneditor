@@ -9,13 +9,18 @@ using System.Windows.Forms;
 using TSP.DoxygenEditor.TextAnalysis;
 using TSP.DoxygenEditor.Symbols;
 using System.Threading;
+using TSP.DoxygenEditor.Models;
+using TSP.DoxygenEditor.Styles;
+using TSP.DoxygenEditor.Languages;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace TSP.DoxygenEditor.Editor
 {
     class EditorContext : IEditorId, IDisposable
     {
         #region Id
-        public object Tag { get; }
+        public TabPage Tab { get; }
         public int TabIndex { get; }
         public string FilePath { get; set; }
         public string Name { get; set; }
@@ -51,6 +56,9 @@ namespace TSP.DoxygenEditor.Editor
         #region Editor
         private readonly IWin32Window _window;
         public Panel ContainerPanel { get; private set; }
+
+        internal IVisualStyler VisualStyler => _visualStyler;
+
         private SearchReplaceControl _searchControl;
         private readonly Scintilla _editor;
         private int _maxLineNumberCharLength;
@@ -77,21 +85,21 @@ namespace TSP.DoxygenEditor.Editor
         private readonly IVisualStyler _visualStyler;
         #endregion
 
-        public EditorContext(IWin32Window window, string name, object tag, int tabIndex)
+        public EditorContext(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
         {
             // Mainform
             FilePath = null;
             Name = name;
-            Tag = tag;
+            Tab = tab;
             IsChanged = false;
             FileEncoding = Encoding.UTF8;
             _window = window;
 
             // Editor and Parsing
-            editorStyler = new EditorStyler();
+            editorStyler = new EditorStyler(workspace);
 
             // Parsing
-            _parseState = new ParseContext(this, editorStyler);
+            _parseState = new ParseContext(this, editorStyler, workspace);
             _parseState.ParseCompleted += (s) =>
             {
                 ParseCompleted?.Invoke(ParseInfo);
@@ -152,7 +160,12 @@ namespace TSP.DoxygenEditor.Editor
                     _editor.Colorize(start, end);
                 }
             };
+        }
 
+        public void Reparse()
+        {
+            ParseControl.StopParsing();
+            ParseControl.StartParsing(GetText());
         }
 
         #region Editor implementation
@@ -370,38 +383,48 @@ namespace TSP.DoxygenEditor.Editor
                 ParseControl.StopParsing();
         }
 
-        private BaseSymbol FindSymbolFromPosition(int position)
+
+
+        private Tuple<string, EditorStyler.StyleEntry> FindTextStyleFromPosition(int position)
         {
-            var style = _visualStyler.FindStyleFromPosition(position);
+            var style = VisualStyler.FindStyleFromPosition(position);
             if (style.Style != 0)
             {
                 string text = _editor.GetTextRange(style.Index, style.Length);
-                SymbolTable table = GlobalSymbolCache.GetTable(this);
-                if (table != null)
-                {
-                    TextRange range = new TextRange(new TextPosition(style.Index), style.Length);
-                    BaseSymbol symbol = table.FindSymbolFromRange(range);
-                    if (symbol != null)
-                        return (symbol);
-                }
+                if (text.Contains("(") && text.Contains(")"))
+                    text = text.Substring(0, text.IndexOf("("));
+                return new Tuple<string, EditorStyler.StyleEntry>(text, style);
             }
             return (null);
         }
 
         private bool isShownIndicators = false;
-        private void ShowIndicators()
+        private void ShowIndicators(Point mouse)
         {
             if (!isShownIndicators)
                 isShownIndicators = true;
             _editor.IndicatorClearRange(0, _editor.TextLength);
-            Point mouse = Cursor.Position;
             var p = _editor.PointToClient(mouse);
             int c = _editor.CharPositionFromPoint(p.X, p.Y);
-            var symbol = FindSymbolFromPosition(c);
-            if (symbol != null)
+            var textStyle = FindTextStyleFromPosition(c);
+            if (textStyle != null)
             {
-                _editor.IndicatorCurrent = 0;
-                _editor.IndicatorFillRange(symbol.Range.Index, symbol.Range.Length);
+                string symbolName = textStyle.Item1;
+                EditorStyler.StyleEntry style = textStyle.Item2;
+                SymbolTable table = GlobalSymbolCache.GetTable(this);
+                SourceSymbol source = table?.GetSource(symbolName);
+                if (source == null)
+                {
+                    var sourceTuple = GlobalSymbolCache.FindSource(symbolName);
+                    if (sourceTuple != null)
+                        source = sourceTuple.Item1;
+                }
+                if (source != null)
+                {
+                    TextRange symbolRange = new TextRange(new TextPosition(style.Index), style.Length);
+                    _editor.IndicatorCurrent = 0;
+                    _editor.IndicatorFillRange(symbolRange.Index, symbolRange.Length);
+                }
             }
         }
 
@@ -416,20 +439,56 @@ namespace TSP.DoxygenEditor.Editor
 
         private void JumpToIndicator(int position)
         {
-            var style = _visualStyler.FindStyleFromPosition(position);
-            if (style.Style != 0)
+            // Find text & style
+            var textStyle = FindTextStyleFromPosition(position);
+            if (textStyle == null) return;
+
+            string symbolName = textStyle.Item1;
+
+            // Search for inner source symbol (Self)
+            SymbolTable innerTable = GlobalSymbolCache.GetTable(this);
+            SourceSymbol bestInnerSource = innerTable?.GetSource(symbolName);
+            ISymbolTableId bestInnerSourceId = this;
+
+            // Search for extern source symbol
+            SourceSymbol bestExternSource = null;
+            ISymbolTableId bestExternSourceId = null;
+            var externSourceTuple = GlobalSymbolCache.FindSource(symbolName, (t) => t != bestInnerSourceId);
+            if (externSourceTuple != null)
             {
-                string text = _editor.GetTextRange(style.Index, style.Length);
-                var sourceTuple = GlobalSymbolCache.FindSource(text);
-                if (sourceTuple != null)
+                bestExternSource = externSourceTuple.Item1;
+                bestExternSourceId = externSourceTuple.Item2;
+            }
+
+            // Determine highest source symbol based on language weights (Cpp < DoxygenCode < Doxygen < Html)
+            SourceSymbol source = null;
+            ISymbolTableId sourceId = null;
+            if (bestInnerSource != null)
+            {
+                source = bestInnerSource;
+                sourceId = this;
+                if (bestExternSource != null)
                 {
-                    var id = sourceTuple.Item2;
-                    var source = sourceTuple.Item1;
-                    if (id == this)
-                        GoToPosition(source.Range.Index);
-                    else
-                        JumpToEditor?.Invoke(id, source.Range.Index);
+                    if (bestExternSource.Lang < bestInnerSource.Lang)
+                    {
+                        source = bestExternSource;
+                        sourceId = bestExternSourceId;
+                    }
                 }
+            }
+            else if (bestExternSource != null)
+            {
+                source = bestExternSource;
+                sourceId = bestExternSourceId;
+            }
+
+            // Jump to inner or outer source
+            if (source != null)
+            {
+                if (sourceId == this)
+                    GoToPosition(source.Range.Index);
+                else
+                    JumpToEditor?.Invoke(sourceId, source.Range.Index);
             }
         }
 
@@ -468,7 +527,7 @@ namespace TSP.DoxygenEditor.Editor
             editor.StyleClearAll();
             editor.Lexer = Lexer.Container;
 
-            _visualStyler.CreateStyles(editor);
+            VisualStyler.ApplyStyles(editor);
 
             editor.TextChanged += (s, e) =>
             {
@@ -501,7 +560,7 @@ namespace TSP.DoxygenEditor.Editor
                 endPos = thisEditor.Lines[endLine].Position;
                 if (!ParseControl.IsParsing)
                 {
-                    _visualStyler.Highlight(thisEditor, startPos, endPos);
+                    VisualStyler.Highlight(thisEditor, startPos, endPos);
                     _styleNeededState.Reset();
                 }
                 else
@@ -518,7 +577,10 @@ namespace TSP.DoxygenEditor.Editor
                     else if (e.KeyCode == Keys.End || e.KeyCode == Keys.Down)
                         GoToPosition(_editor.TextLength);
                     else if (e.KeyCode == Keys.ControlKey)
-                        ShowIndicators();
+                    {
+                        Point mouse = Cursor.Position;
+                        ShowIndicators(mouse);
+                    }
                 }
                 else if (!e.Alt && !e.Shift)
                 {

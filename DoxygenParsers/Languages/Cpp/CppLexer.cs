@@ -198,8 +198,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return new CppLexerState();
         }
 
-        public CppLexer(string source, TextPosition pos, int length) : base(source, pos, length)
+        private readonly LanguageKind _lang;
+
+        public CppLexer(string source, TextPosition pos, int length, LanguageKind lang) : base(source, pos, length)
         {
+            _lang = lang;
         }
         public enum LexCompletion
         {
@@ -656,7 +659,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             // Preprocessor start
             Buffer.StartLexeme();
             Buffer.AdvanceColumn();
-            PushToken(CppTokenPool.Make(CppTokenKind.PreprocessorStart, Buffer.LexemeRange, true));
+            PushToken(CppTokenPool.Make(_lang, CppTokenKind.PreprocessorStart, Buffer.LexemeRange, true));
 
             bool firstIdent = true;
 
@@ -685,18 +688,18 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else if (first == '#')
                 {
                     Buffer.AdvanceColumn();
-                    PushToken(CppTokenPool.Make(CppTokenKind.PreprocessorOperator, Buffer.LexemeRange, true));
+                    PushToken(CppTokenPool.Make(_lang, CppTokenKind.PreprocessorOperator, Buffer.LexemeRange, true));
                 }
                 else if (first == '/' && second == '*')
                 {
                     LexResult commentResult = LexMultiLineComment(Buffer, true);
-                    CppToken commentToken = CppTokenPool.Make(commentResult.Kind, Buffer.LexemeRange, commentResult.IsComplete);
+                    CppToken commentToken = CppTokenPool.Make(_lang, commentResult.Kind, Buffer.LexemeRange, commentResult.IsComplete);
                     PushToken(commentToken);
                 }
                 else if (first == '/' && second == '/')
                 {
                     LexResult commentResult = LexSingleLineComment(Buffer, true);
-                    CppToken commentToken = CppTokenPool.Make(commentResult.Kind, Buffer.LexemeRange, commentResult.IsComplete);
+                    CppToken commentToken = CppTokenPool.Make(_lang, commentResult.Kind, Buffer.LexemeRange, commentResult.IsComplete);
                     PushToken(commentToken);
                     // @NOTE(final): Single line comments, will always stop the preprocessor line
                     break;
@@ -705,7 +708,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 {
                     int lb = SyntaxUtils.GetLineBreakChars(first, second);
                     Buffer.AdvanceLine(lb);
-                    PushToken(CppTokenPool.Make(CppTokenKind.EndOfLine, Buffer.LexemeRange, true));
+                    PushToken(CppTokenPool.Make(_lang, CppTokenKind.EndOfLine, Buffer.LexemeRange, true));
                     break;
                 }
                 else if (SyntaxUtils.IsIdentStart(first))
@@ -723,7 +726,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             identResult.Kind = CppTokenKind.PreprocessorDefineArgument;
                     }
 
-                    CppToken identToken = CppTokenPool.Make(identResult.Kind, Buffer.LexemeRange, identResult.IsComplete);
+                    CppToken identToken = CppTokenPool.Make(_lang, identResult.Kind, Buffer.LexemeRange, identResult.IsComplete);
                     PushToken(identToken);
 
                     Buffer.SkipSpacings(TextStream.SkipType.All);
@@ -744,7 +747,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                             goto preprocessorDone;
                                         }
                                         LexResult defineValueResult = LexIdent(false);
-                                        CppToken defineValueToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineSource, Buffer.LexemeRange, defineValueResult.IsComplete);
+                                        CppToken defineValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineSource, Buffer.LexemeRange, defineValueResult.IsComplete);
                                         PushToken(defineValueToken);
 
                                         // Multi define styles:
@@ -791,7 +794,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                                         if (SyntaxUtils.IsIdentStart(c0))
                                                         {
                                                             LexResult defineArgumentResult = LexIdent(false);
-                                                            CppToken defineArgumentToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, defineArgumentResult.IsComplete);
+                                                            CppToken defineArgumentToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, defineArgumentResult.IsComplete);
                                                             PushToken(defineArgumentToken);
                                                             state.Preprocessor.AddDefineArgument(defineArgumentToken);
                                                         }
@@ -800,7 +803,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                                             if (c1 == '.' && c2 == '.')
                                                             {
                                                                 Buffer.AdvanceColumns(3);
-                                                                CppToken defineArgumentToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, true);
+                                                                CppToken defineArgumentToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, true);
                                                                 PushToken(defineArgumentToken);
                                                                 state.Preprocessor.AddDefineArgument(defineArgumentToken);
                                                             }
@@ -873,7 +876,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                             goto preprocessorDone;
                                         }
                                         LexResult definedValueResult = LexIdent(false);
-                                        CppToken definedValueToken = CppTokenPool.Make(CppTokenKind.PreprocessorDefineTarget, Buffer.LexemeRange, definedValueResult.IsComplete);
+                                        CppToken definedValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineMatch, Buffer.LexemeRange, definedValueResult.IsComplete);
                                         PushToken(definedValueToken);
                                         Buffer.SkipSpacings(TextStream.SkipType.All);
                                         if (Buffer.Peek() != ')')
@@ -905,7 +908,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                                 }
                                                 Buffer.AdvanceColumn();
                                             }
-                                            CppToken includeToken = CppTokenPool.Make(CppTokenKind.PreprocessorInclude, Buffer.LexemeRange, isComplete);
+                                            CppToken includeToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorInclude, Buffer.LexemeRange, isComplete);
                                             PushToken(includeToken);
                                         }
                                         else
@@ -955,7 +958,7 @@ preprocessorDone:
 
             state.Preprocessor.End();
 
-            PushToken(CppTokenPool.Make(CppTokenKind.PreprocessorEnd, new TextRange(Buffer.TextPosition, 0), true));
+            PushToken(CppTokenPool.Make(_lang, CppTokenKind.PreprocessorEnd, new TextRange(Buffer.TextPosition, 0), true));
 
             return (true);
         }
@@ -1335,7 +1338,7 @@ preprocessorDone:
                     }
                     break;
             }
-            return PushToken(CppTokenPool.Make(lexRes.Kind, Buffer.LexemeRange, lexRes.IsComplete), lexRes.Intern);
+            return PushToken(CppTokenPool.Make(_lang, lexRes.Kind, Buffer.LexemeRange, lexRes.IsComplete), lexRes.Intern);
         }
     }
 }

@@ -12,6 +12,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         public IBaseNode DocumentationNode { get; set; }
 
+        public bool IsDefinition => (Kind != CppEntityKind.MacroMatch && Kind != CppEntityKind.MacroUsage);
+
         public CppEntity(CppEntityKind kind, IBaseToken token, string ident) : base(token.Range)
         {
             Kind = kind;

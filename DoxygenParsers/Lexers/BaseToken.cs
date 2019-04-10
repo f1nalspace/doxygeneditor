@@ -1,9 +1,11 @@
-﻿using TSP.DoxygenEditor.TextAnalysis;
+﻿using TSP.DoxygenEditor.Languages;
+using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Lexers
 {
     public abstract class BaseToken : IBaseToken
     {
+        public LanguageKind Lang { get; set; }
         public TextRange Range { get; set; }
         public string Value { get; set; }
         public bool IsComplete { get; set; }
@@ -23,6 +25,7 @@ namespace TSP.DoxygenEditor.Lexers
 
         public BaseToken(TextRange range, bool isComplete)
         {
+            Lang = LanguageKind.None;
             Range = Range;
             IsComplete = isComplete;
             Value = null;
@@ -31,8 +34,9 @@ namespace TSP.DoxygenEditor.Lexers
         {
         }
 
-        protected void Set(TextRange range, bool isComplete)
+        protected void Set(LanguageKind lang, TextRange range, bool isComplete)
         {
+            Lang = lang;
             Range = range;
             IsComplete = isComplete;
         }

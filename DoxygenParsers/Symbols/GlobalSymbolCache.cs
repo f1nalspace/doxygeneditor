@@ -40,8 +40,8 @@ namespace TSP.DoxygenEditor.Symbols
             if (_tableMap.ContainsKey(id))
             {
                 var table = _tableMap[id];
-                ((IDictionary)_tableMap).Remove(id);
                 table.Clear();
+                ((IDictionary)_tableMap).Remove(id);
             }
         }
 
@@ -50,10 +50,11 @@ namespace TSP.DoxygenEditor.Symbols
             if (table == null)
                 throw new ArgumentNullException("Table may not be null");
             Remove(table.Id);
-            _tableMap.AddOrUpdate(table.Id, table, (key, existingValue) =>
+            SymbolTable copy = new SymbolTable(table);
+            _tableMap.AddOrUpdate(copy.Id, copy, (key, existingValue) =>
             {
-                if (table != existingValue)
-                    throw new ArgumentException($"Duplicate table id '{table.Id}' are not allowed");
+                if (copy != existingValue)
+                    throw new ArgumentException($"Duplicate table id '{copy.Id}' are not allowed");
                 return (existingValue);
             });
         }
@@ -72,7 +73,27 @@ namespace TSP.DoxygenEditor.Symbols
             return (false);
         }
 
-        public static Tuple<SourceSymbol, ISymbolTableId> FindSource(string symbol)
+        public static Tuple<SourceSymbol, ISymbolTableId> FindSource(string symbol, Func<ISymbolTableId, bool> tableFilter = null)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+                throw new ArgumentNullException("Symbol may not be null or empty");
+            Tuple<SourceSymbol, ISymbolTableId> bestSource = null;
+            foreach (var entryPair in _tableMap)
+            {
+                var id = entryPair.Key;
+                var table = entryPair.Value;
+                if (tableFilter != null && !tableFilter(id))
+                    continue;
+                SourceSymbol source = table.GetSource(symbol);
+                if (source != null)
+                {
+                    if (bestSource == null || source.Lang < bestSource.Item1.Lang)
+                        bestSource = new Tuple<SourceSymbol, ISymbolTableId>(source, id);
+                }
+            }
+            return bestSource;
+        }
+        public static IEnumerable<Tuple<SourceSymbol, ISymbolTableId>> FindSources(string symbol, Func<ISymbolTableId, bool> tableFilter = null)
         {
             if (string.IsNullOrWhiteSpace(symbol))
                 throw new ArgumentNullException("Symbol may not be null or empty");
@@ -80,11 +101,12 @@ namespace TSP.DoxygenEditor.Symbols
             {
                 var id = entryPair.Key;
                 var table = entryPair.Value;
+                if (tableFilter != null && !tableFilter(id))
+                    continue;
                 SourceSymbol result = table.GetSource(symbol);
                 if (result != null)
-                    return new Tuple<SourceSymbol, ISymbolTableId>(result, id);
+                    yield return new Tuple<SourceSymbol, ISymbolTableId>(result, id);
             }
-            return (null);
         }
 
         public static BaseSymbol FindSymbolFromRange(TextRange range)
@@ -114,7 +136,13 @@ namespace TSP.DoxygenEditor.Symbols
             }
         }
 
-        public static IEnumerable<KeyValuePair<ISymbolTableId, TextError>> Validate()
+        public class ValidationConfigration
+        {
+            public bool ExcludeCppPreprocessorMatch { get; set; }
+            public bool ExcludeCppPreprocessorUsage { get; set; }
+        }
+
+        public static IEnumerable<KeyValuePair<ISymbolTableId, TextError>> Validate(ValidationConfigration config)
         {
             List<KeyValuePair<ISymbolTableId, TextError>> result = new List<KeyValuePair<ISymbolTableId, TextError>>();
             foreach (var tablePair in _tableMap)
@@ -126,6 +154,16 @@ namespace TSP.DoxygenEditor.Symbols
                     string name = names.Key;
                     foreach (var reference in names.Value)
                     {
+                        if (config.ExcludeCppPreprocessorMatch)
+                        {
+                            if (reference.Kind == ReferenceSymbolKind.CppMacroMatch)
+                                continue;
+                        }
+                        if (config.ExcludeCppPreprocessorUsage)
+                        {
+                            if (reference.Kind == ReferenceSymbolKind.CppMacroUsage)
+                                continue;
+                        }
                         if (!HasReference(name))
                             result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name) { Tag = reference }));
                     }

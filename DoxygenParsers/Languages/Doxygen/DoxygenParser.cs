@@ -185,7 +185,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             SourceSymbolKind kind = SourceSymbolKind.DoxygenSection;
                             if ("page".Equals(commandName) || "mainpage".Equals(commandName))
                                 kind = SourceSymbolKind.DoxygenPage;
-                            SymbolTable.AddSource(new SourceSymbol(kind, symbolName, nameParam.Token.Range, commandNode));
+                            SymbolTable.AddSource(new SourceSymbol(nameParam.Token.Lang, kind, symbolName, nameParam.Token.Range, commandNode));
                         }
                         else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
                         {
@@ -212,7 +212,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                         string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length);
                                         if (referenceTextStream.Peek() == '(')
                                         {
-                                            referenceTarget = ReferenceSymbolKind.CppFunctionCall;
+                                            referenceTarget = ReferenceSymbolKind.CppFunction;
                                             referenceTextStream.AdvanceColumn();
                                             while (!referenceTextStream.IsEOF)
                                             {
@@ -222,7 +222,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             }
                                         }
                                         var symbolRange = new TextRange(new TextPosition(nameParam.Token.Position.Index + refRange.Position.Index, refRange.Position.Line, refRange.Position.Column), refRange.Length);
-                                        SymbolTable.AddReference(new ReferenceSymbol(referenceTarget, singleRereference, symbolRange, commandNode));
+                                        SymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, referenceTarget, singleRereference, symbolRange, commandNode));
                                     }
                                     else if (first == '#' || first == '.')
                                     {
@@ -239,7 +239,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             }
                         }
                         else if ("subpage".Equals(commandName))
-                            SymbolTable.AddReference(new ReferenceSymbol(ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
+                            SymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
                     }
                 }
                 ParseBlockContent(stream, commandNode);
@@ -251,7 +251,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return (true);
         }
 
-        private bool ParseSingleBlock(LinkedListStream<IBaseToken> stream)
+        private ParseTokenResult ParseSingleBlock(LinkedListStream<IBaseToken> stream)
         {
             // @NOTE(final) Single block = auto-brief
 
@@ -288,7 +288,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             if (endToken != null)
                 blockEntity.EndRange = endToken.Range;
 
-            return (true);
+            return (ParseTokenResult.AlreadyAdvanced);
         }
 
         private void CloseParagraphOrSection(IBaseNode contentRoot)
@@ -344,7 +344,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 return (false);
         }
 
-        public override bool ParseToken(LinkedListStream<IBaseToken> stream)
+        public override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
         {
             IBaseToken token = stream.Peek();
             if (typeof(DoxygenToken).Equals(token.GetType()))
@@ -360,7 +360,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             DoxygenEntity blockEntity = new DoxygenEntity(DoxygenEntityKind.BlockMulti, doxyToken);
                             PushEntity(blockEntity);
                             stream.Next();
-                            return (true);
+                            return (ParseTokenResult.AlreadyAdvanced);
                         }
 
                     case DoxygenTokenKind.DoxyBlockEnd:
@@ -372,18 +372,42 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             Pop();
                             rootEntity.EndRange = doxyToken.Range;
                             stream.Next();
-                            return (true);
+                            return (ParseTokenResult.AlreadyAdvanced);
                         }
 
                     default:
                         {
                             ParseBlockContent(stream, Top);
-                            return (true);
+                            return (ParseTokenResult.AlreadyAdvanced);
                         }
                 }
             }
             else
-                return (false);
+                return (ParseTokenResult.ReadNext);
+        }
+
+        public override void Finished(IEnumerable<IBaseToken> tokens)
+        {
+            // Properly change "Any" kinds for each reference symbol
+            foreach (var refPair in SymbolTable.ReferenceMap)
+            {
+                string name = refPair.Key;
+                List<ReferenceSymbol> referenceSymbols = refPair.Value;
+                foreach (var referenceSymbol in referenceSymbols)
+                {
+                    if (referenceSymbol.Kind == ReferenceSymbolKind.Any)
+                    {
+                        SourceSymbol sourceSymbol = SymbolTable.GetSource(name);
+                        if (sourceSymbol != null)
+                        {
+                            if (sourceSymbol.Kind == SourceSymbolKind.DoxygenSection)
+                                referenceSymbol.Kind = ReferenceSymbolKind.DoxygenSection;
+                            else if (sourceSymbol.Kind == SourceSymbolKind.CppMacro)
+                                referenceSymbol.Kind = ReferenceSymbolKind.CppMacroUsage;
+                        }
+                    }
+                }
+            }
         }
 
         public override void Dispose()

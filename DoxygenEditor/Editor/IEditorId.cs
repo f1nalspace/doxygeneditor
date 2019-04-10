@@ -1,10 +1,11 @@
-﻿using TSP.DoxygenEditor.Symbols;
+﻿using System.Windows.Forms;
+using TSP.DoxygenEditor.Symbols;
 
 namespace TSP.DoxygenEditor.Editor
 {
     public interface IEditorId : ISymbolTableId
     {
-        object Tag { get; }
+        TabPage Tab { get; }
         string Name { get; }
         string FilePath { get; }
         int TabIndex { get; }

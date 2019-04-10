@@ -4,12 +4,14 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Extensions;
+using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.Languages.Cpp;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Languages.Html;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Models;
 using TSP.DoxygenEditor.Parsers;
+using TSP.DoxygenEditor.Styles;
 using TSP.DoxygenEditor.Symbols;
 using TSP.DoxygenEditor.TextAnalysis;
 
@@ -32,11 +34,13 @@ namespace TSP.DoxygenEditor.Editor
         private readonly IEditorId _id;
         private readonly IStylerData _stylerRefresh;
         public bool IsParsing => _parseWorker.IsBusy;
+        private readonly WorkspaceModel _workspace;
 
-        public ParseContext(IEditorId id, IStylerData dataStyler)
+        public ParseContext(IEditorId id, IStylerData dataStyler, WorkspaceModel workspace)
         {
             _id = id;
             _stylerRefresh = dataStyler;
+            _workspace = workspace;
 
             SymbolTable = new SymbolTable(id);
             _parseWorker = new BackgroundWorker();
@@ -125,13 +129,13 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private TokenizeResult TokenizeCpp(string text, TextPosition pos, int length, bool allowDoxy)
+        private TokenizeResult TokenizeCpp(string text, TextPosition pos, int length, LanguageKind lang)
         {
             TokenizeResult result = new TokenizeResult();
             Stopwatch timer = new Stopwatch();
             timer.Restart();
             List<CppToken> cppTokens = new List<CppToken>();
-            using (CppLexer cppLexer = new CppLexer(text, pos, length))
+            using (CppLexer cppLexer = new CppLexer(text, pos, length, lang))
             {
                 cppTokens.AddRange(cppLexer.Tokenize());
                 result.AddErrors(cppLexer.LexErrors);
@@ -140,7 +144,7 @@ namespace TSP.DoxygenEditor.Editor
             result.Stats.CppDuration += timer.Elapsed;
             foreach (CppToken token in cppTokens)
             {
-                if (allowDoxy && (token.Kind == CppTokenKind.MultiLineCommentDoc || token.Kind == CppTokenKind.SingleLineCommentDoc))
+                if ((lang == LanguageKind.Cpp) && (token.Kind == CppTokenKind.MultiLineCommentDoc || token.Kind == CppTokenKind.SingleLineCommentDoc))
                 {
                     result.AddToken(token);
                     using (TokenizeResult doxyRes = TokenizeDoxy(text, token.Position, token.Length))
@@ -278,7 +282,7 @@ namespace TSP.DoxygenEditor.Editor
                                 {
                                     DoxygenToken codeRangedToken = DoxygenTokenPool.Make(DoxygenTokenKind.Code, new TextRange(commandContentStart, commandContentLength), true);
                                     result.AddToken(codeRangedToken);
-                                    using (TokenizeResult cppRes = TokenizeCpp(text, commandContentStart, commandContentLength, false))
+                                    using (TokenizeResult cppRes = TokenizeCpp(text, commandContentStart, commandContentLength, LanguageKind.DoxygenCode))
                                     {
                                         result.AddTokens(cppRes.Tokens);
                                         result.AddErrors(cppRes.Errors);
@@ -346,7 +350,7 @@ namespace TSP.DoxygenEditor.Editor
 
             // C++ lexing -> Doxygen (Code -> Cpp) -> (Text -> Html)
             TokenizerTimingStats totalStats = new TokenizerTimingStats();
-            using (TokenizeResult cppRes = TokenizeCpp(text, new TextPosition(0), text.Length, true))
+            using (TokenizeResult cppRes = TokenizeCpp(text, new TextPosition(0), text.Length, LanguageKind.Cpp))
             {
                 totalStats += cppRes.Stats;
                 _tokens.AddRange(cppRes.Tokens);
@@ -404,13 +408,18 @@ namespace TSP.DoxygenEditor.Editor
                 SymbolTable.AddTable(doxyParser.SymbolTable);
             }
             timer.Stop();
-            Debug.WriteLine($"Doxygen parse done, took {timer.Elapsed.ToMilliseconds()} ms");
             _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen parser", timer.Elapsed));
 
             // C++ parsing
             timer.Restart();
             int cppNodeCount = 0;
-            using (CppParser cppParser = new CppParser(_id))
+            CppParser.CppConfiguration cppParserConfiguration = new CppParser.CppConfiguration()
+            {
+                ExcludeFunctionBodies = _workspace.ParserCpp.ExcludeFunctionBodies,
+                ExcludeFunctionBodySymbols = _workspace.ParserCpp.ExcludeFunctionBodySymbols,
+                ExcludeFunctionCallSymbols = _workspace.ParserCpp.ExcludeFunctionCallSymbols,
+            };
+            using (CppParser cppParser = new CppParser(_id, cppParserConfiguration))
             {
                 cppParser.GetDocumentationNode += (token) =>
                 {
@@ -426,6 +435,7 @@ namespace TSP.DoxygenEditor.Editor
             timer.Stop();
             _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
 
+            // Refresh data for styler
             timer.Restart();
             stylerData.RefreshData(_tokens);
             timer.Stop();

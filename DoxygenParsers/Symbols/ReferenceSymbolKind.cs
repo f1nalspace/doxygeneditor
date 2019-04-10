@@ -4,9 +4,12 @@
     {
         Unknown = 0,
         Any,
-        CppFunctionCall,
+        CppType,
+        CppFunction,
         CppMember,
-        CppMacro,
+        CppMacroUsage,
+        CppMacroMatch,
         DoxygenPage,
+        DoxygenSection,
     }
 }

@@ -102,7 +102,13 @@ namespace TSP.DoxygenEditor.Parsers
             return (null);
         }
 
-        public abstract bool ParseToken(LinkedListStream<IBaseToken> stream);
+        public enum ParseTokenResult
+        {
+            ReadNext,
+            AlreadyAdvanced,
+        }
+
+        public abstract ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream);
 
         public void ParseTokens(IEnumerable<IBaseToken> tokens)
         {
@@ -115,9 +121,11 @@ namespace TSP.DoxygenEditor.Parsers
                     tokenStream.Next();
                     continue;
                 }
-                if (!ParseToken(tokenStream))
+                ParseTokenResult tokResult = ParseToken(tokenStream);
+                if (tokResult == ParseTokenResult.ReadNext)
                     tokenStream.Next();
-                Debug.Assert(old != tokenStream.CurrentValue);
+                else
+                    Debug.Assert(old != tokenStream.CurrentValue);
             }
             Finished(tokens);
         }

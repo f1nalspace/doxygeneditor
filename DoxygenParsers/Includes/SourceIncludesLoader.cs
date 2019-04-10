@@ -89,13 +89,13 @@ namespace TSP.DoxygenEditor.Includes
                             {
                                 string source = File.ReadAllText(filePath);
                                 List<CppToken> _tokens = new List<CppToken>();
-                                using (CppLexer lexer = new CppLexer(source, new TextPosition(), source.Length))
+                                using (CppLexer lexer = new CppLexer(source, new TextPosition(), source.Length, Languages.LanguageKind.Cpp))
                                 {
                                     foreach (var err in lexer.LexErrors)
                                         Debug.WriteLine($"Lex error[{filePath}]: {err.Message}");
                                     _tokens.AddRange(lexer.Tokenize());
                                 }
-                                using (CppParser parser = new CppParser(table.Id))
+                                using (CppParser parser = new CppParser(table.Id, new CppParser.CppConfiguration()))
                                 {
                                     parser.ParseTokens(_tokens);
                                     foreach (var err in parser.ParseErrors)
