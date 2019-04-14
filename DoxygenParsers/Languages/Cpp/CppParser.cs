@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Lexers;
@@ -354,7 +355,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 stream.Next();
 
                 SearchResult<CppToken> identResult = null;
+
                 // @TODO(final): Support for array typedef, such as: typedef int myArray[16 + 3];
+
                 var prevResult = Search(semicolonResult, SearchMode.Prev, CppTokenKind.RightParen, CppTokenKind.IdentLiteral);
                 if (prevResult != null)
                 {
@@ -376,10 +379,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             }
                             else
                             {
-                                // Typedef on define
+                                // @TODO(final): Support for special typedef based on macros - or expand macros entirely
+                                //
+                                // Examples:
                                 // #define MY_TYPEDEF(name)
                                 // typedef MY_TYPEDEF(my_typedef);
-                                //Debug.WriteLine("Right paren not found!");
                             }
                         }
                     }
@@ -440,37 +444,24 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppToken token = stream.Peek<CppToken>();
             Debug.Assert(token.Kind == CppTokenKind.PreprocessorStart);
             stream.Next();
-            var keywordResult = Search(stream, SearchMode.Current, CppTokenKind.PreprocessorKeyword);
-            if (keywordResult != null)
+
+            while (!stream.IsEOF)
             {
-                var keywordToken = keywordResult.Token;
+                token = stream.Peek<CppToken>();
+                if (token == null) return (ParseTokenResult.AlreadyAdvanced);
+                if (token.Kind == CppTokenKind.PreprocessorDefineMatch)
+                    AddPreprocessorDefine(token, stream.CurrentNode, CppEntityKind.MacroMatch, PreprocessorMacroKind.MacroMatch);
+                else if (token.Kind == CppTokenKind.PreprocessorDefineSource || token.Kind == CppTokenKind.PreprocessorFunctionSource)
+                    AddPreprocessorDefine(token, stream.CurrentNode, CppEntityKind.MacroDefinition, PreprocessorMacroKind.Source);
+                else if (token.Kind == CppTokenKind.PreprocessorEnd)
+                    break;
                 stream.Next();
-                if ("define".Equals(keywordResult.Token.Value))
-                {
-                    var defineResult = Search(stream, SearchMode.Current, CppTokenKind.PreprocessorDefineSource);
-                    if (defineResult != null)
-                    {
-                        var defineNameToken = defineResult.Token;
-                        string defineName = string.Intern(defineNameToken.Value);
-                        stream.Next();
-
-                        var defineValueResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
-                        if (defineValueResult != null)
-                            stream.Next();
-
-                        CppEntity defineKeyEntity = new CppEntity(CppEntityKind.MacroDefinition, defineNameToken, defineName)
-                        {
-                            DocumentationNode = FindDocumentationNode(defineResult.Node, 1),
-                            Value = defineValueResult?.Token.Value
-                        };
-                        CppNode defineNode = new CppNode(Top, defineKeyEntity);
-                        Add(defineNode);
-                        SymbolTable.AddSource(new SourceSymbol(defineNameToken.Lang, SourceSymbolKind.CppMacro, defineName, defineNameToken.Range, defineNode));
-                    }
-                    else
-                        AddError(keywordToken.Position, $"Processor define has no identifier!", "Define");
-                }
             }
+
+            var endToken = stream.Peek<CppToken>();
+            Debug.Assert(endToken.Kind == CppTokenKind.PreprocessorEnd);
+            stream.Next();
+
             return (ParseTokenResult.AlreadyAdvanced);
         }
 
@@ -503,88 +494,200 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        private List<CppToken> ParseType(LinkedListStream<IBaseToken> stream)
+        private IEnumerable<CppToken> ParseType(LinkedListStream<IBaseToken> stream)
         {
             List<CppToken> result = new List<CppToken>();
+            bool allowStars = false;
+            while (!stream.IsEOF)
+            {
+                CppToken token = stream.Peek<CppToken>();
+                if (token == null) break;
+
+                if (allowStars)
+                {
+                    if (token.Kind == CppTokenKind.MulOp || token.Kind == CppTokenKind.AndOp)
+                    {
+                        result.Add(token);
+                        stream.Next();
+                        continue;
+                    }
+                    else allowStars = false;
+                }
+
+                if (token.Kind == CppTokenKind.ReservedKeyword)
+                {
+                    if ("const".Equals(token.Value) || "volatile".Equals(token.Value) || "void".Equals(token.Value))
+                    {
+                        result.Add(token);
+                        if ("void".Equals(token.Value))
+                        {
+                            stream.Next();
+                            allowStars = true;
+                            continue;
+                        }
+                    }
+                    else break;
+                }
+                else if (token.Kind == CppTokenKind.Ellipsis)
+                    result.Add(token);
+                else if (token.Kind == CppTokenKind.UserTypeIdent || token.Kind == CppTokenKind.GlobalTypeKeyword || token.Kind == CppTokenKind.PreprocessorDefineUsage)
+                {
+                    result.Add(token);
+                    stream.Next();
+                    allowStars = true;
+                    continue;
+                }
+                else
+                    break;
+                stream.Next();
+            }
             return (result);
         }
 
-        private bool ParseFunction(LinkedListStream<IBaseToken> stream)
+        private ParseTokenResult ParseFunction(LinkedListStream<IBaseToken> stream)
         {
             var functionIdentNode = stream.CurrentNode;
             CppToken functionIdentToken = functionIdentNode.Value as CppToken;
             Debug.Assert(functionIdentToken.Kind == CppTokenKind.IdentLiteral);
             var functionName = functionIdentToken.Value;
-
-            HashSet<CppTokenKind> funcBeforeKinds = new HashSet<CppTokenKind>()
-            {
-                CppTokenKind.IdentLiteral,
-                CppTokenKind.ReservedKeyword,
-                CppTokenKind.GlobalTypeKeyword,
-                CppTokenKind.UserTypeIdent,
-                CppTokenKind.PreprocessorDefineUsage, // This wont happen?
-            };
-
-#if false
-            CppTokenKind[] funcCallKinds =
-            {
-                CppTokenKind.EqOp,
-                CppTokenKind.Comma,
-                CppTokenKind.LeftParen,
-                CppTokenKind.LeftBrace,
-                CppTokenKind.LeftBracket,
-                CppTokenKind.AddOp,
-                CppTokenKind.AddAssign,
-                CppTokenKind.SubOp,
-                CppTokenKind.SubAssign,
-                CppTokenKind.DivOp,
-                CppTokenKind.DivAssign,
-                CppTokenKind.MulAssign,
-                CppTokenKind.XorOp,
-                CppTokenKind.XorAssign,
-                CppTokenKind.LeftShiftOp,
-                CppTokenKind.LeftShiftAssign,
-                CppTokenKind.RightShiftOp,
-                CppTokenKind.RightShiftAssign,
-            };
-
-            var funcCallResult = Search(stream, SearchMode.Prev, funcCallKinds);
-#endif
-
-            List<CppToken> prevTokens = new List<CppToken>();
-            var prevNode = stream.CurrentNode.Previous;
-            while (prevNode != null)
-            {
-                if (!(prevNode.Value is CppToken))
-                    break;
-                CppToken cppToken = (CppToken)prevNode.Value;
-                if (!funcBeforeKinds.Contains(cppToken.Kind))
-                    break;
-                prevTokens.Add(cppToken);
-                prevNode = prevNode.Previous;
-            }
-
-            // Skip ident
             stream.Next();
 
-            // Skip parameters
             CppToken openParenToken = stream.Peek<CppToken>();
             Debug.Assert(openParenToken.Kind == CppTokenKind.LeftParen);
             stream.Next();
 
-            // @TODO(final): These wont work, when arguments are filled in from another function calls!
-            var closeParenResult = Search(stream, SearchMode.Forward, CppTokenKind.RightParen);
-            if (closeParenResult == null)
+            // Function definitions
+            // ----------------------------------------------------------------------------------------
+            // void foo();
+            // void _foo();
+            // void* foo();
+            // void *foo();
+            // void * foo();
+            // int foo();
+            // const int foo();
+            // static void foo();
+            // static inline void foo();
+            // static inline size_t foo();
+            // static inline size_t bar(int a, char c, void *ptr);
+            // static inline size_t bar(short *arr[] myArray, size_t count);
+            // void variadic(int a, int b, ...);
+            // my_custom_inline bar(int a, int b, ...);
+
+            // Function calls
+            // ----------------------------------------------------------------------------------------
+            // foo()
+            // _foo();
+            // void *f = _foo();
+            // int f = foo(4);
+            // const int f = foo(4);
+            // size_t f = bar(4, 'A', nullptr);
+            // size_t f = bar((short **)myArray, 10);
+            // float x += computeSomething(2, 4.0f);
+            // float x += computeSomething(2, 4.0f) + otherComputation(42.3, 2.0);
+            //
+            // Function calls inside function arguments
+            // ----------------------------------------------------------------------------------------
+            // otherFunc(_foo());
+            // moreFuncs(42, otherFunc(32, foo()), 'B')
+
+            HashSet<CppTokenKind> allowedBefore = new HashSet<CppTokenKind>()
             {
-                AddError(openParenToken.Position, $"Unterminated function '{functionName}'", "Function", functionName);
-                return (true);
+                // C pointer operator
+                CppTokenKind.MulOp,
+
+                // C++ reference operator
+                CppTokenKind.AndOp,
+
+                // Template shit
+                CppTokenKind.LessThanOp,
+                CppTokenKind.GreaterThanOp,
+            };
+
+            HashSet<CppTokenKind> notAllowedBefore = new HashSet<CppTokenKind>()
+            {
+                CppTokenKind.SingleLineComment,
+                CppTokenKind.SingleLineCommentDoc,
+                CppTokenKind.PreprocessorEnd,
+                CppTokenKind.EqOp,
+                CppTokenKind.OrOp,
+                CppTokenKind.XorOp,
+                CppTokenKind.AddOp,
+                CppTokenKind.SubOp,
+                CppTokenKind.DivOp,
+                CppTokenKind.ModOp,
+                CppTokenKind.LeftParen,
+                CppTokenKind.RightParen,
+                CppTokenKind.LeftBrace,
+                CppTokenKind.RightBrace,
+                CppTokenKind.Ellipsis,
+                CppTokenKind.ExclationMark,
+                CppTokenKind.QuestionMark,
+                CppTokenKind.Dot,
+                CppTokenKind.Backslash,
+                CppTokenKind.Tilde,
+                CppTokenKind.Semicolon,
+                CppTokenKind.Comma,
+                CppTokenKind.Colon,
+            };
+
+            List<CppToken> beforeTokens = new List<CppToken>();
+            LinkedListNode<IBaseToken> beforeNode = functionIdentNode.Previous;
+            while (beforeNode != null)
+            {
+                CppToken tok = beforeNode.Value as CppToken;
+                if (tok == null) break;
+                if (!allowedBefore.Contains(tok.Kind))
+                {
+                    if (tok.Kind >= CppTokenKind.RightShiftAssign && tok.Kind <= CppTokenKind.LogicalNotEqualsOp)
+                        break;
+                    if (notAllowedBefore.Contains(tok.Kind))
+                        break;
+                }
+                beforeTokens.Add(tok);
+                beforeNode = beforeNode.Previous;
             }
-            stream.Seek(closeParenResult.Node);
-            stream.Next();
+
+            //
+            // Skip any parameters
+            //
+            Stack<CppToken> parenStack = new Stack<CppToken>();
+            parenStack.Push(openParenToken);
+            while (!stream.IsEOF && parenStack.Count > 0)
+            {
+                CppToken argToken = stream.Peek<CppToken>();
+                if (argToken == null)
+                    break;
+                if (argToken.Kind == CppTokenKind.LeftParen)
+                {
+                    parenStack.Push(argToken);
+                    stream.Next();
+                    continue;
+                }
+                else if (argToken.Kind == CppTokenKind.RightParen)
+                {
+                    parenStack.Pop();
+                    stream.Next();
+                    continue;
+                }
+                else if (argToken.Kind == CppTokenKind.LeftBrace || argToken.Kind == CppTokenKind.RightBrace)
+                {
+                    AddError(argToken.Position, $"Braces inside function arguments are not supported yet!", "Function", functionName);
+                    return (ParseTokenResult.AlreadyAdvanced);
+                }
+                Debug.Assert(parenStack.Count > 0);
+                stream.Next();
+            }
+            if (parenStack.Count > 0)
+            {
+                CppToken t = parenStack.Peek();
+                AddError(t.Position, $"Unterminated function parenthesis for token '{t}'!", "Function", functionName);
+                return (ParseTokenResult.AlreadyAdvanced);
+            }
+
+            functionIdentToken.Kind = CppTokenKind.FunctionIdent;
 
             CppEntityKind kind = CppEntityKind.FunctionCall;
-
-            var endingTokenResult = Search(stream, SearchMode.Current, CppTokenKind.Semicolon, CppTokenKind.LeftBrace);
+            var endingTokenResult = Search(stream, SearchMode.Current, CppTokenKind.LeftBrace, CppTokenKind.Semicolon);
             if (endingTokenResult != null)
             {
                 stream.Next();
@@ -592,11 +695,13 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 {
                     kind = CppEntityKind.FunctionBody;
                     if (Configuration.ExcludeFunctionBodies)
-                        return (true);
+                        return (ParseTokenResult.AlreadyAdvanced);
                 }
                 else
                 {
-                    kind = CppEntityKind.FunctionDefinition;
+                    Debug.Assert(endingTokenResult.Token.Kind == CppTokenKind.Semicolon);
+                    if (beforeTokens.Count > 0)
+                        kind = CppEntityKind.FunctionDefinition;
                 }
             }
 
@@ -607,19 +712,33 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppNode functionNode = new CppNode(Top, functionEntity);
             Add(functionNode);
 
-            if (kind == CppEntityKind.FunctionDefinition)
-                SymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
+            if (kind == CppEntityKind.FunctionCall && !Configuration.ExcludeFunctionCallSymbols)
+                SymbolTable.AddReference(new ReferenceSymbol(functionIdentToken.Lang, ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionBody && !Configuration.ExcludeFunctionBodySymbols)
                 SymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionBody, functionName, functionIdentToken.Range, functionNode));
-            else if (kind == CppEntityKind.FunctionCall && !Configuration.ExcludeFunctionCallSymbols)
-                SymbolTable.AddReference(new ReferenceSymbol(functionIdentToken.Lang, ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
+            else if (kind == CppEntityKind.FunctionDefinition)
+                SymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
 
-            return (true);
+            return (ParseTokenResult.AlreadyAdvanced);
+        }
+
+        private static readonly HashSet<CppTokenKind> _filteredTokenKinds = new HashSet<CppTokenKind>()
+        {
+            CppTokenKind.MultiLineComment,
+            CppTokenKind.MultiLineCommentDoc,
+            CppTokenKind.SingleLineComment,
+            CppTokenKind.SingleLineCommentDoc,
+        };
+        public override IEnumerable<IBaseToken> FilterTokens(IEnumerable<IBaseToken> tokens)
+        {
+            List<IBaseToken> result = new List<IBaseToken>();
+            result.AddRange(tokens.Where(t => !(t is CppToken && _filteredTokenKinds.Contains(((CppToken)t).Kind))));
+            return (result);
         }
 
         public override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
         {
-            var token = stream.Peek<CppToken>();
+            CppToken token = stream.Peek<CppToken>();
             if (token == null) return (ParseTokenResult.ReadNext);
             var node = stream.CurrentNode;
             switch (token.Kind)
@@ -629,34 +748,39 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         return ParsePreprocessor(stream);
                     }
 
-                case CppTokenKind.PreprocessorDefineSource:
-                    {
-                        AddPreprocessorDefine(token, node, CppEntityKind.MacroDefinition, PreprocessorMacroKind.Source);
-                        stream.Next();
-                        return (ParseTokenResult.AlreadyAdvanced);
-                    }
-
-                case CppTokenKind.PreprocessorDefineMatch:
-                    {
-                        AddPreprocessorDefine(token, node, CppEntityKind.MacroMatch, PreprocessorMacroKind.MacroMatch);
-                        stream.Next();
-                        return (ParseTokenResult.AlreadyAdvanced);
-                    }
-
                 case CppTokenKind.ReservedKeyword:
                     return ParseReservedKeyword(stream);
+
+                case CppTokenKind.IdentLiteral:
+                    {
+                        if (IsToken(stream, SearchMode.Next, CppTokenKind.LeftParen))
+                            return ParseFunction(stream);
+                    }
+                    break;
             }
             return (ParseTokenResult.ReadNext);
         }
 
-        public override void Finished(IEnumerable<IBaseToken> tokens)
+        private void SkipUntil(LinkedListStream<IBaseToken> tokenStream, params CppTokenKind[] kinds)
         {
-            LinkedListStream<IBaseToken> tokenStream;
-
-            tokenStream = new LinkedListStream<IBaseToken>(tokens);
             while (!tokenStream.IsEOF)
             {
                 CppToken token = tokenStream.Peek<CppToken>();
+                if (token == null)
+                    break;
+                if (kinds.Contains(token.Kind))
+                    break;
+                tokenStream.Next();
+            }
+        }
+
+        public override void Finished(IEnumerable<IBaseToken> tokens)
+        {
+            // Resolve references
+            LinkedListStream<IBaseToken> stream = new LinkedListStream<IBaseToken>(tokens);
+            while (!stream.IsEOF)
+            {
+                CppToken token = stream.Peek<CppToken>();
                 if (token != null)
                 {
                     if (token.Kind == CppTokenKind.IdentLiteral)
@@ -695,31 +819,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         }
                     }
                 }
-                tokenStream.Next();
-            }
-
-            //
-            // Parse functions
-            //
-            tokenStream = new LinkedListStream<IBaseToken>(tokens);
-            while (!tokenStream.IsEOF)
-            {
-                CppToken token = tokenStream.Peek<CppToken>();
-                bool skipNext = false;
-                if (token != null)
-                {
-                    switch (token.Kind)
-                    {
-                        case CppTokenKind.IdentLiteral:
-                            {
-                                if (IsToken(tokenStream, SearchMode.Next, CppTokenKind.LeftParen))
-                                    skipNext = ParseFunction(tokenStream);
-                            }
-                            break;
-                    }
-                }
-                if (!skipNext)
-                    tokenStream.Next();
+                stream.Next();
             }
         }
     }

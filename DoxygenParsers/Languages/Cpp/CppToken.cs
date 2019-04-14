@@ -9,7 +9,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         public override bool IsEOF => Kind == CppTokenKind.Eof;
         public override bool IsValid => Kind != CppTokenKind.Unknown;
         public override bool IsEndOfLine => false;
-        public override bool IsMarker => false;
+        public override bool IsMarker =>
+            (Kind == CppTokenKind.PreprocessorStart) ||
+            (Kind == CppTokenKind.PreprocessorEnd);
 
         private CppToken(CppTokenKind kind, TextRange range, bool isComplete) : base(range, isComplete)
         {

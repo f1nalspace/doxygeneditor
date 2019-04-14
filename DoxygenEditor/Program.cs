@@ -44,7 +44,9 @@ SOFTWARE.
     - Lex multi & single line comments inside preprocessor
     - Internal refactoring for editor state vs parse state (Context)
     - Highlight and jump to a symbol in the editor
+    - Improved function detections
     - Support for symbol jumping between tabs
+    - Fixed missing highlighting for visible lines
     - Introduced workspaces
 
     ## v0.8.1.0:
@@ -79,15 +81,14 @@ Cpp:
     - Struct member parsing
     - Function argument parsing (@param validation)
     - Function return parsing (@return validation -> void or not void)
-    - Highlighting of C++ symbols (Types, Functions)
+    - Code completion
 
 Doxygen:
     - Group parsing
-    - Better command arguments validation (Invalid character inside a identifier)
     - Code completion
 
 Lexers:
-    - Incremental lexing for very fast syntax highlighting (Remove position from token)
+    - Incremental lexing for very fast syntax highlighting
 
 Editor:
     - Spellchecking (I am still looking for a existing library for that)
@@ -96,8 +97,7 @@ UI:
     - Button for generating & viewing doxygen documentation
 
 Workspace:
-    - Support for multi workspaces (Switching projects)
-    - Custom symbol tables (Auto parsed header files or manually created)
+    - Custom symbol tables
 
 ***/
 

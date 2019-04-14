@@ -51,6 +51,7 @@ namespace TSP.DoxygenEditor.Styles
             { CppTokenKind.PreprocessorOperator, cppPreprocessorBasicStyle },
             { CppTokenKind.PreprocessorKeyword, cppPreprocessorKeywordStyle },
             { CppTokenKind.PreprocessorDefineSource, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorFunctionSource, cppPreprocessorDefineStyle },
             { CppTokenKind.PreprocessorDefineUsage, cppPreprocessorDefineStyle },
             { CppTokenKind.PreprocessorDefineMatch, cppPreprocessorDefineStyle },
             { CppTokenKind.PreprocessorDefineArgument, cppPreprocessorDefineArgumentStyle },
@@ -254,6 +255,8 @@ namespace TSP.DoxygenEditor.Styles
 
         public void Highlight(Scintilla editor, int startPos, int endPos)
         {
+            Debug.Assert(startPos < endPos);
+
             int length = (endPos - startPos) + 1;
 
             editor.StartStyling(startPos);

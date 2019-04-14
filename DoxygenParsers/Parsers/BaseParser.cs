@@ -112,7 +112,8 @@ namespace TSP.DoxygenEditor.Parsers
 
         public void ParseTokens(IEnumerable<IBaseToken> tokens)
         {
-            LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(tokens);
+            IEnumerable<IBaseToken> filteredTokens = FilterTokens(tokens);
+            LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(filteredTokens);
             while (!tokenStream.IsEOF)
             {
                 IBaseToken old = tokenStream.CurrentValue;
@@ -127,9 +128,10 @@ namespace TSP.DoxygenEditor.Parsers
                 else
                     Debug.Assert(old != tokenStream.CurrentValue);
             }
-            Finished(tokens);
+            Finished(filteredTokens);
         }
 
+        public virtual IEnumerable<IBaseToken> FilterTokens(IEnumerable<IBaseToken> tokens) { return tokens; }
         public virtual void Finished(IEnumerable<IBaseToken> tokens) { }
 
         protected void Add(IBaseNode node)

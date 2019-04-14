@@ -22,6 +22,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         PreprocessorStart,
         PreprocessorOperator,
         PreprocessorKeyword,
+        PreprocessorFunctionSource,
         PreprocessorDefineSource,
         PreprocessorDefineUsage,
         PreprocessorDefineMatch,

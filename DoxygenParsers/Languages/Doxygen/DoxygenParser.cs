@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Languages.Utils;
 using TSP.DoxygenEditor.Lexers;
@@ -342,7 +343,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
             else
                 return (false);
-        }
+        }       
 
         public override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
         {

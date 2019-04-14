@@ -104,7 +104,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             "imaginary",
         };
 
-        // @TODO(final): Global configurable symbol table
+        // @TODO(final): Make global class keywords configurable
         public static readonly HashSet<string> GlobalClassKeywords = new HashSet<string>
         {
             "NULL",
@@ -776,6 +776,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                             if (!hadSpaces && Buffer.Peek() == '(')
                                             {
                                                 // Define with arguments
+                                                defineValueToken.Kind = CppTokenKind.PreprocessorFunctionSource;
                                                 Buffer.AdvanceColumn();
                                                 Buffer.StartLexeme();
                                                 bool isComplete = false;

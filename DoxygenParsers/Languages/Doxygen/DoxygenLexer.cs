@@ -239,7 +239,6 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         case DoxygenSyntax.ArgumentKind.MultipleObjectReference:
                         case DoxygenSyntax.ArgumentKind.SingleObjectReference:
                             {
-                                // @TODO(final): ReferencedObject is not always a identifier
                                 // Here are some examples of valid referenced objects:
                                 // simple_identifier
                                 // a_function()
