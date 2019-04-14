@@ -141,7 +141,7 @@ namespace TSP.DoxygenEditor.Editor
             _textChangedTimer = new System.Windows.Forms.Timer() { Enabled = false, Interval = 250 };
             _textChangedTimer.Tick += (s, e) =>
             {
-                if (!ParseControl.IsParsing)
+                if (!ParseControl.IsParsing())
                 {
                     ParseControl.StartParsing(_editor.Text);
                     _textChangedTimer.Enabled = false;
@@ -154,9 +154,9 @@ namespace TSP.DoxygenEditor.Editor
                 else
                 {
                     int firstLine = _editor.FirstVisibleLine;
-                    int lastLine = firstLine + Math.Max(_editor.LinesOnScreen - 1, 0);
+                    int lastLine = firstLine + Math.Max(Math.Min(_editor.LinesOnScreen, _editor.Lines.Count) - 1, 0);
                     int start = _editor.Lines[firstLine].Position;
-                    int end = _editor.Lines[lastLine].Position;
+                    int end = _editor.Lines[lastLine].Position + Math.Max(_editor.Lines[lastLine].Length - 1, 0);
                     _editor.Colorize(start, end);
                 }
             };
@@ -379,7 +379,7 @@ namespace TSP.DoxygenEditor.Editor
         {
             // Stop timer and parsing if needed
             _textChangedTimer.Enabled = false;
-            if (ParseControl.IsParsing)
+            if (ParseControl.IsParsing())
                 ParseControl.StopParsing();
         }
 
@@ -557,10 +557,11 @@ namespace TSP.DoxygenEditor.Editor
                 int startLine = thisEditor.LineFromPosition(startPos);
                 int endLine = thisEditor.LineFromPosition(endPos);
                 startPos = thisEditor.Lines[startLine].Position;
-                endPos = thisEditor.Lines[endLine].Position;
-                if (!ParseControl.IsParsing)
+                endPos = thisEditor.Lines[endLine].Position + Math.Max(thisEditor.Lines[endLine].Length - 1, 0);
+                if (!ParseControl.IsParsing())
                 {
-                    VisualStyler.Highlight(thisEditor, startPos, endPos);
+                    if (startPos < endPos)
+                        VisualStyler.Highlight(thisEditor, startPos, endPos);
                     _styleNeededState.Reset();
                 }
                 else

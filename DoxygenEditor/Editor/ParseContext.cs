@@ -33,7 +33,12 @@ namespace TSP.DoxygenEditor.Editor
         public event ParseEventHandler ParseStarting;
         private readonly IEditorId _id;
         private readonly IStylerData _stylerRefresh;
-        public bool IsParsing => _parseWorker.IsBusy;
+
+        public bool IsParsing()
+        {
+            return _parseWorker.IsBusy;
+        }
+
         private readonly WorkspaceModel _workspace;
 
         public ParseContext(IEditorId id, IStylerData dataStyler, WorkspaceModel workspace)

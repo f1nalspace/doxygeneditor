@@ -2,7 +2,7 @@
 {
     interface IParseControl
     {
-        bool IsParsing { get; }
+        bool IsParsing();
         void StartParsing(string text);
         void StopParsing();
     }
