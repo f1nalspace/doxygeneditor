@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using TSP.DoxygenEditor.TextAnalysis;
 
@@ -17,6 +18,14 @@ namespace TSP.DoxygenEditor.Parsers
         public string Id => Entity.Id;
         public string Value => Entity.Value;
         public virtual bool ShowChildren => false;
+
+        public IEnumerable<TChild> GetChildrenAs<TChild>() where TChild : IBaseNode
+        {
+            Type t = typeof(TChild);
+            IEnumerable<TChild> result = _children.Where(c => t.Equals(c.GetType())).Select(c => (TChild)c);
+            return (result);
+        }
+
         public string FullId
         {
             get
@@ -70,7 +79,7 @@ namespace TSP.DoxygenEditor.Parsers
         {
             if (obj == null)
                 return (-1);
-            var t = obj.GetType();
+            System.Type t = obj.GetType();
             if (!typeof(IEntityBaseNode<TEntity>).IsAssignableFrom(t))
                 return (-1);
             IEntityBaseNode<TEntity> a = (IEntityBaseNode<TEntity>)obj;

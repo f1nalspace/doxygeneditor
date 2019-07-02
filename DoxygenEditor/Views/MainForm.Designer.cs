@@ -70,6 +70,8 @@ namespace TSP.DoxygenEditor.Views
             this.miWorkspaceNew = new System.Windows.Forms.ToolStripMenuItem();
             this.mitWorkspaceLoad = new System.Windows.Forms.ToolStripMenuItem();
             this.miWorkspaceConfiguration = new System.Windows.Forms.ToolStripMenuItem();
+            this.miBuild = new System.Windows.Forms.ToolStripMenuItem();
+            this.miBuildDocumentation = new System.Windows.Forms.ToolStripMenuItem();
             this.miHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.miHelpAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.tsMain = new System.Windows.Forms.ToolStrip();
@@ -82,6 +84,8 @@ namespace TSP.DoxygenEditor.Views
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.tbtnEditUndo = new System.Windows.Forms.ToolStripButton();
             this.tbtnEditRedo = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.tbtnBuildDocumentation = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tsslblParseStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.scMainAndLog = new System.Windows.Forms.SplitContainer();
@@ -145,6 +149,7 @@ namespace TSP.DoxygenEditor.Views
             this.miEdit,
             this.miView,
             this.miWorkspace,
+            this.miBuild,
             this.miHelp});
             this.mainMenuStrip.Location = new System.Drawing.Point(0, 0);
             this.mainMenuStrip.Name = "mainMenuStrip";
@@ -451,6 +456,22 @@ namespace TSP.DoxygenEditor.Views
             this.miWorkspaceConfiguration.Text = "Configuration...";
             this.miWorkspaceConfiguration.Click += new System.EventHandler(this.miWorkspaceConfiguration_Click);
             // 
+            // miBuild
+            // 
+            this.miBuild.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miBuildDocumentation});
+            this.miBuild.Name = "miBuild";
+            this.miBuild.Size = new System.Drawing.Size(55, 24);
+            this.miBuild.Text = "Build";
+            // 
+            // miBuildDocumentation
+            // 
+            this.miBuildDocumentation.Image = global::TSP.DoxygenEditor.Properties.Resources.BuildDefinition_16x;
+            this.miBuildDocumentation.Name = "miBuildDocumentation";
+            this.miBuildDocumentation.Size = new System.Drawing.Size(238, 30);
+            this.miBuildDocumentation.Text = "Build Documentation...";
+            this.miBuildDocumentation.Click += new System.EventHandler(this.BuildDocumentationClick);
+            // 
             // miHelp
             // 
             this.miHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -479,7 +500,9 @@ namespace TSP.DoxygenEditor.Views
             this.tbtnFileRefresh,
             this.toolStripSeparator2,
             this.tbtnEditUndo,
-            this.tbtnEditRedo});
+            this.tbtnEditRedo,
+            this.toolStripSeparator3,
+            this.tbtnBuildDocumentation});
             this.tsMain.Location = new System.Drawing.Point(0, 28);
             this.tsMain.Name = "tsMain";
             this.tsMain.Size = new System.Drawing.Size(981, 31);
@@ -563,6 +586,21 @@ namespace TSP.DoxygenEditor.Views
             this.tbtnEditRedo.Name = "tbtnEditRedo";
             this.tbtnEditRedo.Size = new System.Drawing.Size(28, 28);
             this.tbtnEditRedo.Text = "Redo";
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 31);
+            // 
+            // tbtnBuildDocumentation
+            // 
+            this.tbtnBuildDocumentation.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tbtnBuildDocumentation.Image = global::TSP.DoxygenEditor.Properties.Resources.BuildDefinition_16x;
+            this.tbtnBuildDocumentation.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbtnBuildDocumentation.Name = "tbtnBuildDocumentation";
+            this.tbtnBuildDocumentation.Size = new System.Drawing.Size(28, 28);
+            this.tbtnBuildDocumentation.Text = "Build Documentation...";
+            this.tbtnBuildDocumentation.Click += new System.EventHandler(this.BuildDocumentationClick);
             // 
             // statusStrip1
             // 
@@ -818,8 +856,6 @@ namespace TSP.DoxygenEditor.Views
             // dlgOpenFile
             // 
             this.dlgOpenFile.AddExtension = false;
-            this.dlgOpenFile.Filter = "All supported files (*.h;*.docs)|*.h;*.docs|Doxygen files (*.docs)|*.docs|C Heade" +
-    "r files (*.h)|*.h|All files (*.*)|*.*";
             this.dlgOpenFile.FilterIndex = 0;
             this.dlgOpenFile.Multiselect = true;
             this.dlgOpenFile.Title = "Open file";
@@ -866,7 +902,6 @@ namespace TSP.DoxygenEditor.Views
             // dlgSaveFile
             // 
             this.dlgSaveFile.DefaultExt = "docs";
-            this.dlgSaveFile.Filter = "Doxygen files (*.docs)|*.docs|C Header file (*.h)|*.h";
             this.dlgSaveFile.FilterIndex = 0;
             this.dlgSaveFile.Title = "Save file";
             // 
@@ -1009,5 +1044,9 @@ namespace TSP.DoxygenEditor.Views
         private System.Windows.Forms.ToolStripMenuItem mitWorkspaceLoad;
         private System.Windows.Forms.OpenFileDialog dlgOpenWorkspace;
         private System.Windows.Forms.SaveFileDialog dlgSaveWorkspace;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripMenuItem miBuild;
+        private System.Windows.Forms.ToolStripMenuItem miBuildDocumentation;
+        private System.Windows.Forms.ToolStripButton tbtnBuildDocumentation;
     }
 }

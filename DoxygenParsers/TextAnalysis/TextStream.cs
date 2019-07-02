@@ -48,7 +48,6 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public abstract char Peek(int delta);
         public abstract int CompareText(int delta, string match, bool ignoreCase = false);
         public abstract bool MatchCharacters(int index, int length, Func<char, bool> predicate);
-        public abstract void Dispose();
 
         public void AdvanceColumns(int numChars)
         {
@@ -56,7 +55,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             for (int i = 0; i < numChars; ++i)
             {
                 char c = Peek(i);
-                Debug.Assert(c != '\t' && c != '\n' && c != '\r');
+                Debug.Assert(c != '\t' && !SyntaxUtils.IsLineBreak(c));
             }
             p.Column += numChars;
             p.Index += numChars;
@@ -97,15 +96,20 @@ namespace TSP.DoxygenEditor.TextAnalysis
             TextPosition = p;
         }
 
+        public void AdvanceLineAuto()
+        {
+            char c0 = Peek();
+            char c1 = Peek(1);
+            int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
+            AdvanceLine(lb);
+        }
+
         public void AdvanceManual(char first, char second)
         {
             if (first == '\t')
                 AdvanceTab();
             else if (SyntaxUtils.IsLineBreak(first))
-            {
-                int nb = SyntaxUtils.GetLineBreakChars(first, second);
-                AdvanceLine(nb);
-            }
+                AdvanceLineAuto();
             else
                 AdvanceColumn();
         }
@@ -155,18 +159,14 @@ namespace TSP.DoxygenEditor.TextAnalysis
         {
             do
             {
-                char c0 = Peek();
-                char c1 = Peek(1);
-                if (c0 == InvalidCharacter)
+                char c = Peek();
+                if (c == InvalidCharacter)
                     break;
-                else if (c0 == '\t')
+                else if (c == '\t')
                     AdvanceTab();
-                else if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    int nb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                    AdvanceLine(nb);
-                }
-                else if (char.IsWhiteSpace(c0))
+                else if (SyntaxUtils.IsLineBreak(c))
+                    AdvanceLineAuto();
+                else if (char.IsWhiteSpace(c))
                     AdvanceColumn();
                 else
                     break;
@@ -226,5 +226,28 @@ namespace TSP.DoxygenEditor.TextAnalysis
             _lexemeStart = TextPosition;
         }
 
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
+        {
+        }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~TextStream()
+        {
+            Dispose(false);
+        }
+        #endregion
     }
 }

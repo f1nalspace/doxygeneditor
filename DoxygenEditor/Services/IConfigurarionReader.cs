@@ -12,6 +12,8 @@ namespace TSP.DoxygenEditor.Services
         string ReadString(string section, Expression<Func<object>> nameExpression, string defaultValue = null);
         int ReadInt(string section, string name, int defaultValue);
         int ReadInt(string section, Expression<Func<object>> nameExpression, int defaultValue);
+        double ReadDouble(string section, string name, double defaultValue);
+        double ReadDouble(string section, Expression<Func<object>> nameExpression, double defaultValue);
         bool ReadBool(string section, string name, bool defaultValue);
         bool ReadBool(string section, Expression<Func<object>> nameExpression, bool defaultValue);
         IEnumerable<string> ReadList(string section, string name);

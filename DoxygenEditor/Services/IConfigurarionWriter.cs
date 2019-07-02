@@ -10,6 +10,8 @@ namespace TSP.DoxygenEditor.Services
         void WriteString(string section, Expression<Func<object>> nameExpression, string value);
         void WriteInt(string section, string name, int value);
         void WriteInt(string section, Expression<Func<object>> nameExpression, int value);
+        void WriteDouble(string section, string name, double value);
+        void WriteDouble(string section, Expression<Func<object>> nameExpression, double value);
         void WriteBool(string section, string name, bool value);
         void WriteBool(string section, Expression<Func<object>> nameExpression, bool value);
         void WriteList(string section, string name, IEnumerable<string> list);

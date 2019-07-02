@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Editor\EditorContext.cs" />
+    <Compile Include="Editor\EditorFileType.cs" />
     <Compile Include="Styles\ColorTheme.cs" />
     <Compile Include="Styles\EditorStyler.cs" />
     <Compile Include="Editor\IEditorId.cs" />
@@ -146,6 +147,12 @@
     <Compile Include="Views\AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Views\BuildDocumentationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\BuildDocumentationForm.Designer.cs">
+      <DependentUpon>BuildDocumentationForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Views\DirectoryInputForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -183,6 +190,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Views\AboutForm.resx">
       <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\BuildDocumentationForm.resx">
+      <DependentUpon>BuildDocumentationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\DirectoryInputForm.resx">
       <DependentUpon>DirectoryInputForm.cs</DependentUpon>
@@ -224,6 +234,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
+    <None Include="Resources\BuildDefinition_16x.png" />
     <None Include="Resources\StatusCriticalError_32x.png" />
     <None Include="Resources\Refresh_16x.png" />
     <None Include="Resources\CollapseArrow_16x.png" />

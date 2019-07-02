@@ -11,14 +11,16 @@ namespace TSP.DoxygenEditor.Styles
 
     public abstract class ColorThemeStyles<TKey>
     {
-        private readonly Dictionary<TKey, ColorThemeStyle> _styles = new Dictionary<TKey, ColorThemeStyle>();
-        public IEnumerable<TKey> Keys => _styles.Keys;
+        public IEnumerable<TKey> Keys => Styles.Keys;
+
+        public Dictionary<TKey, ColorThemeStyle> Styles { get; } = new Dictionary<TKey, ColorThemeStyle>();
+
         public ColorThemeStyle this[TKey key]
         {
             get
             {
-                if (_styles.ContainsKey(key))
-                    return _styles[key];
+                if (Styles.ContainsKey(key))
+                    return Styles[key];
                 else
                     return new ColorThemeStyle();
             }
@@ -29,13 +31,13 @@ namespace TSP.DoxygenEditor.Styles
         }
         public void Set(TKey key, ColorThemeStyle style)
         {
-            _styles[key] = style;
+            Styles[key] = style;
         }
         public void Assign(ColorThemeStyles<TKey> other)
         {
             ResetToDefault();
-            foreach (var keyPair in other._styles)
-                _styles[keyPair.Key] = keyPair.Value;
+            foreach (KeyValuePair<TKey, ColorThemeStyle> keyPair in other.Styles)
+                Styles[keyPair.Key] = keyPair.Value;
         }
 
         public abstract void ResetToDefault();

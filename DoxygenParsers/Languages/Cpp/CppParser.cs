@@ -14,7 +14,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
     public class CppParser : BaseParser<CppEntity, CppToken>
     {
         public delegate IBaseNode GetDocumentationNodeEventHandler(IBaseToken token);
-        public event GetDocumentationNodeEventHandler GetDocumentationNode;
+        public GetDocumentationNodeEventHandler GetDocumentationNode;
 
         public class CppConfiguration
         {
@@ -47,7 +47,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     {
                         if (doxyToken.Kind == DoxygenTokenKind.DoxyBlockStartSingle || doxyToken.Kind == DoxygenTokenKind.DoxyBlockEnd)
                         {
-                            var foundNode = GetDocumentationNode?.Invoke(baseToke);
+                            IBaseNode foundNode = GetDocumentationNode?.Invoke(baseToke);
                             return (foundNode);
                         }
                     }
@@ -61,7 +61,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         private SearchResult<CppToken> Search(LinkedListStream<IBaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
         {
-            var searchFunc = new Func<CppToken, bool>((token) =>
+            Func<CppToken, bool> searchFunc = new Func<CppToken, bool>((token) =>
             {
                 foreach (CppTokenKind kind in kinds)
                 {
@@ -75,7 +75,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         }
         private SearchResult<CppToken> Search(SearchResult<CppToken> inResult, SearchMode mode, params CppTokenKind[] kinds)
         {
-            var searchFunc = new Func<CppToken, bool>((token) =>
+            Func<CppToken, bool> searchFunc = new Func<CppToken, bool>((token) =>
             {
                 foreach (CppTokenKind kind in kinds)
                 {
@@ -89,7 +89,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         }
         private bool IsToken(LinkedListStream<IBaseToken> stream, SearchMode mode, params CppTokenKind[] kinds)
         {
-            var searchFunc = new Func<CppToken, bool>((token) =>
+            Func<CppToken, bool> searchFunc = new Func<CppToken, bool>((token) =>
             {
                 foreach (CppTokenKind kind in kinds)
                 {
@@ -110,20 +110,20 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             stream.Next();
             while (!stream.IsEOF)
             {
-                var rightBraceResult = Search(stream, SearchMode.Current, CppTokenKind.RightBrace);
+                SearchResult<CppToken> rightBraceResult = Search(stream, SearchMode.Current, CppTokenKind.RightBrace);
                 if (rightBraceResult != null)
                 {
                     // Enum complete
                     stream.Next();
                     break;
                 }
-                var identResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
+                SearchResult<CppToken> identResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
                 if (identResult != null)
                 {
                     stream.Seek(identResult.Node);
 
                     // Enum value
-                    var enumValueToken = identResult.Token;
+                    CppToken enumValueToken = identResult.Token;
                     enumValueToken.Kind = CppTokenKind.MemberIdent;
                     string enumValueName = enumValueToken.Value;
                     stream.Next();
@@ -134,15 +134,15 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     CppNode enumValueNode = new CppNode(rootNode, enumValueEntity);
                     rootNode.AddChild(enumValueNode);
-                    SymbolTable.AddSource(new SourceSymbol(enumValueToken.Lang, SourceSymbolKind.CppMember, enumValueName, enumValueToken.Range, enumValueNode));
+                    LocalSymbolTable.AddSource(new SourceSymbol(enumValueToken.Lang, SourceSymbolKind.CppMember, enumValueName, enumValueToken.Range, enumValueNode));
 
-                    var equalsResult = Search(stream, SearchMode.Current, CppTokenKind.EqOp);
+                    SearchResult<CppToken> equalsResult = Search(stream, SearchMode.Current, CppTokenKind.EqOp);
                     if (equalsResult != null)
                     {
                         stream.Next();
 
                         // Skip until comma or right brace
-                        var tmpResult = Search(stream, SearchMode.Forward, CppTokenKind.Comma, CppTokenKind.RightBrace);
+                        SearchResult<CppToken> tmpResult = Search(stream, SearchMode.Forward, CppTokenKind.Comma, CppTokenKind.RightBrace);
                         if (tmpResult != null)
                             stream.Seek(tmpResult.Node);
                         else
@@ -152,7 +152,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         }
                     }
 
-                    var commaOrRightBraceResult = Search(stream, SearchMode.Current, CppTokenKind.Comma, CppTokenKind.RightBrace);
+                    SearchResult<CppToken> commaOrRightBraceResult = Search(stream, SearchMode.Current, CppTokenKind.Comma, CppTokenKind.RightBrace);
                     if (commaOrRightBraceResult != null)
                     {
                         stream.Seek(commaOrRightBraceResult.Node);
@@ -162,7 +162,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     }
                     else
                     {
-                        var tok = stream.Peek<CppToken>();
+                        CppToken tok = stream.Peek<CppToken>();
                         if (tok != null)
                             AddError(tok.Position, $"Unexpected token '{tok.Kind}'", "EnumValue");
                         break;
@@ -180,7 +180,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
             SearchResult<CppToken> enumIdentResult = null;
 
-            var classKeywordResult = Search(stream, SearchMode.Current, CppTokenKind.ReservedKeyword);
+            SearchResult<CppToken> classKeywordResult = Search(stream, SearchMode.Current, CppTokenKind.ReservedKeyword);
             if (classKeywordResult != null)
             {
                 string keyword = classKeywordResult.Token.Value;
@@ -191,7 +191,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     enumIdentResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
                     if (enumIdentResult == null)
                     {
-                        var token = stream.Peek<CppToken>();
+                        CppToken token = stream.Peek<CppToken>();
                         AddError(pos, $"Expect identifier token, but got token kind {token?.Kind} for enum", "enum");
                         return;
                     }
@@ -201,7 +201,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             if (enumIdentResult == null)
             {
                 // Ident after enum
-                var identAfterEnumResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
+                SearchResult<CppToken> identAfterEnumResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
                 if (identAfterEnumResult != null)
                 {
                     stream.Next();
@@ -209,7 +209,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 }
             }
 
-            var braceOrSemiResult = Search(stream, SearchMode.Current, CppTokenKind.LeftBrace, CppTokenKind.Semicolon);
+            SearchResult<CppToken> braceOrSemiResult = Search(stream, SearchMode.Current, CppTokenKind.LeftBrace, CppTokenKind.Semicolon);
             if (braceOrSemiResult == null)
                 return;
 
@@ -241,7 +241,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 enumRootNode.Entity = enumRootEntity;
                 Add(enumRootNode);
-                SymbolTable.AddSource(new SourceSymbol(enumIdentToken.Lang, SourceSymbolKind.CppEnum, enumIdent, enumIdentToken.Range, enumRootNode));
+                LocalSymbolTable.AddSource(new SourceSymbol(enumIdentToken.Lang, SourceSymbolKind.CppEnum, enumIdent, enumIdentToken.Range, enumRootNode));
             }
         }
 
@@ -250,7 +250,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppToken structKeywordToken = stream.Peek<CppToken>();
             Debug.Assert(structKeywordToken.Kind == CppTokenKind.ReservedKeyword && ("struct".Equals(structKeywordToken.Value) || "union".Equals(structKeywordToken.Value)));
 
-            var typedefResult = Search(stream.CurrentNode, SearchMode.Prev, (t) => t.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(t.Value));
+            SearchResult<CppToken> typedefResult = Search(stream.CurrentNode, SearchMode.Prev, (t) => t.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(t.Value));
             bool isTypedef = typedefResult != null;
 
             stream.Next();
@@ -263,19 +263,19 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             // E = struct foo { int a; }; (C++ style)
 
             // B/E
-            var identTokenResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
+            SearchResult<CppToken> identTokenResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
             if (identTokenResult != null)
             {
-                var identToken = identTokenResult.Token;
+                CppToken identToken = identTokenResult.Token;
                 string structIdent = identToken.Value;
                 stream.Next();
 
                 CppEntityKind kind = CppEntityKind.Struct;
 
-                var terminatorTokenResult = Search(stream, SearchMode.Current, CppTokenKind.Semicolon, CppTokenKind.LeftBrace);
+                SearchResult<CppToken> terminatorTokenResult = Search(stream, SearchMode.Current, CppTokenKind.Semicolon, CppTokenKind.LeftBrace);
                 if (terminatorTokenResult != null)
                 {
-                    var terminatorToken = terminatorTokenResult.Token;
+                    CppToken terminatorToken = terminatorTokenResult.Token;
                     if (terminatorToken.Kind == CppTokenKind.Semicolon)
                         kind = CppEntityKind.ForwardStruct;
                     stream.Next();
@@ -286,7 +286,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode structNode = new CppNode(Top, structEntity);
                 Add(structNode);
-                SymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppStruct, structIdent, identToken.Range, structNode));
+                LocalSymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppStruct, structIdent, identToken.Range, structNode));
             }
 
             // @TODO(final): Parse struct members
@@ -297,10 +297,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppToken classKeywordToken = stream.Peek<CppToken>();
             Debug.Assert(classKeywordToken.Kind == CppTokenKind.ReservedKeyword && "class".Equals(classKeywordToken.Value));
             stream.Next();
-            var identTokenResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
+            SearchResult<CppToken> identTokenResult = Search(stream, SearchMode.Current, CppTokenKind.IdentLiteral);
             if (identTokenResult != null)
             {
-                var identToken = identTokenResult.Token;
+                CppToken identToken = identTokenResult.Token;
                 string classIdent = identToken.Value;
                 stream.Next();
 
@@ -312,7 +312,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode classNode = new CppNode(Top, classEntity);
                 Add(classNode);
-                SymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppClass, classIdent, identToken.Range, classNode));
+                LocalSymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppClass, classIdent, identToken.Range, classNode));
 
                 // @TODO(final): Parse class members
             }
@@ -324,10 +324,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Debug.Assert(typedefToken.Kind == CppTokenKind.ReservedKeyword && "typedef".Equals(typedefToken.Value));
             stream.Next();
 
-            var reservedKeywordResult = Search(stream, SearchMode.Current, CppTokenKind.ReservedKeyword);
+            SearchResult<CppToken> reservedKeywordResult = Search(stream, SearchMode.Current, CppTokenKind.ReservedKeyword);
             if (reservedKeywordResult != null)
             {
-                var reservedKeywordToken = reservedKeywordResult.Token;
+                CppToken reservedKeywordToken = reservedKeywordResult.Token;
                 string keyword = reservedKeywordToken.Value;
                 switch (keyword)
                 {
@@ -348,7 +348,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
             // Normal typedef
             CppEntityKind kind = CppEntityKind.Typedef;
-            var semicolonResult = Search(stream, SearchMode.Forward, CppTokenKind.Semicolon);
+            SearchResult<CppToken> semicolonResult = Search(stream, SearchMode.Forward, CppTokenKind.Semicolon);
             if (semicolonResult != null)
             {
                 stream.Seek(semicolonResult.Node);
@@ -358,16 +358,16 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
                 // @TODO(final): Support for array typedef, such as: typedef int myArray[16 + 3];
 
-                var prevResult = Search(semicolonResult, SearchMode.Prev, CppTokenKind.RightParen, CppTokenKind.IdentLiteral);
+                SearchResult<CppToken> prevResult = Search(semicolonResult, SearchMode.Prev, CppTokenKind.RightParen, CppTokenKind.IdentLiteral);
                 if (prevResult != null)
                 {
                     if (prevResult.Token.Kind == CppTokenKind.RightParen)
                     {
                         // Function typedef
-                        var leftParenResult = Search(prevResult, SearchMode.Backward, CppTokenKind.LeftParen);
+                        SearchResult<CppToken> leftParenResult = Search(prevResult, SearchMode.Backward, CppTokenKind.LeftParen);
                         if (leftParenResult != null)
                         {
-                            var rightParentResult = Search(leftParenResult, SearchMode.Prev, CppTokenKind.RightParen);
+                            SearchResult<CppToken> rightParentResult = Search(leftParenResult, SearchMode.Prev, CppTokenKind.RightParen);
                             if (rightParentResult != null)
                             {
                                 leftParenResult = Search(rightParentResult, SearchMode.Backward, CppTokenKind.LeftParen);
@@ -397,15 +397,15 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
                 if (identResult != null)
                 {
-                    var identToken = identResult.Token;
+                    CppToken identToken = identResult.Token;
                     string typedefIdent = identToken.Value;
                     CppEntity typedefEntity = new CppEntity(kind, identToken, typedefIdent)
                     {
                         DocumentationNode = FindDocumentationNode(identResult.Node, 1),
                     };
-                    var typedefNode = new CppNode(Top, typedefEntity);
+                    CppNode typedefNode = new CppNode(Top, typedefEntity);
                     Add(typedefNode);
-                    SymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppType, typedefIdent, identToken.Range));
+                    LocalSymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppType, typedefIdent, identToken.Range));
                 }
             }
         }
@@ -427,7 +427,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppNode defineNode = new CppNode(Top, defineKeyEntity);
             Add(defineNode);
             if (macroKind == PreprocessorMacroKind.Source)
-                SymbolTable.AddSource(new SourceSymbol(token.Lang, SourceSymbolKind.CppMacro, token.Value, token.Range, defineNode));
+                LocalSymbolTable.AddSource(new SourceSymbol(token.Lang, SourceSymbolKind.CppMacro, token.Value, token.Range, defineNode));
             else
             {
                 ReferenceSymbolKind referenceKind;
@@ -435,7 +435,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     referenceKind = ReferenceSymbolKind.CppMacroMatch;
                 else
                     referenceKind = ReferenceSymbolKind.CppMacroUsage;
-                SymbolTable.AddReference(new ReferenceSymbol(token.Lang, referenceKind, token.Value, token.Range, defineNode));
+                LocalSymbolTable.AddReference(new ReferenceSymbol(token.Lang, referenceKind, token.Value, token.Range, defineNode));
             }
         }
 
@@ -458,7 +458,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 stream.Next();
             }
 
-            var endToken = stream.Peek<CppToken>();
+            CppToken endToken = stream.Peek<CppToken>();
             Debug.Assert(endToken.Kind == CppTokenKind.PreprocessorEnd);
             stream.Next();
 
@@ -546,10 +546,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         private ParseTokenResult ParseFunction(LinkedListStream<IBaseToken> stream)
         {
-            var functionIdentNode = stream.CurrentNode;
+            LinkedListNode<IBaseToken> functionIdentNode = stream.CurrentNode;
             CppToken functionIdentToken = functionIdentNode.Value as CppToken;
             Debug.Assert(functionIdentToken.Kind == CppTokenKind.IdentLiteral);
-            var functionName = functionIdentToken.Value;
+            string functionName = functionIdentToken.Value;
             stream.Next();
 
             CppToken openParenToken = stream.Peek<CppToken>();
@@ -687,7 +687,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             functionIdentToken.Kind = CppTokenKind.FunctionIdent;
 
             CppEntityKind kind = CppEntityKind.FunctionCall;
-            var endingTokenResult = Search(stream, SearchMode.Current, CppTokenKind.LeftBrace, CppTokenKind.Semicolon);
+            SearchResult<CppToken> endingTokenResult = Search(stream, SearchMode.Current, CppTokenKind.LeftBrace, CppTokenKind.Semicolon);
             if (endingTokenResult != null)
             {
                 stream.Next();
@@ -713,11 +713,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Add(functionNode);
 
             if (kind == CppEntityKind.FunctionCall && !Configuration.ExcludeFunctionCallSymbols)
-                SymbolTable.AddReference(new ReferenceSymbol(functionIdentToken.Lang, ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
+                LocalSymbolTable.AddReference(new ReferenceSymbol(functionIdentToken.Lang, ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionBody && !Configuration.ExcludeFunctionBodySymbols)
-                SymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionBody, functionName, functionIdentToken.Range, functionNode));
+                LocalSymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionBody, functionName, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionDefinition)
-                SymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
+                LocalSymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
 
             return (ParseTokenResult.AlreadyAdvanced);
         }
@@ -736,11 +736,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (result);
         }
 
-        public override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
+        protected override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
         {
             CppToken token = stream.Peek<CppToken>();
             if (token == null) return (ParseTokenResult.ReadNext);
-            var node = stream.CurrentNode;
+            LinkedListNode<IBaseToken> node = stream.CurrentNode;
             switch (token.Kind)
             {
                 case CppTokenKind.PreprocessorStart:
@@ -776,51 +776,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         public override void Finished(IEnumerable<IBaseToken> tokens)
         {
-            // Resolve references
-            LinkedListStream<IBaseToken> stream = new LinkedListStream<IBaseToken>(tokens);
-            while (!stream.IsEOF)
-            {
-                CppToken token = stream.Peek<CppToken>();
-                if (token != null)
-                {
-                    if (token.Kind == CppTokenKind.IdentLiteral)
-                    {
-                        string intern = string.IsInterned(token.Value);
-                        string value = intern ?? token.Value;
-                        SourceSymbol sourceSymbol = SymbolTable.GetSource(value);
-                        if (sourceSymbol != null)
-                        {
-                            ReferenceSymbolKind refKind = ReferenceSymbolKind.Any;
-                            if (sourceSymbol.Kind == SourceSymbolKind.CppMacro)
-                            {
-                                token.Kind = CppTokenKind.PreprocessorDefineUsage;
-                                refKind = ReferenceSymbolKind.CppMacroUsage;
-                            }
-                            else if (sourceSymbol.Kind == SourceSymbolKind.CppFunctionDefinition || sourceSymbol.Kind == SourceSymbolKind.CppFunctionBody)
-                            {
-                                token.Kind = CppTokenKind.FunctionIdent;
-                                refKind = ReferenceSymbolKind.CppFunction;
-                            }
-                            else if (
-                                sourceSymbol.Kind == SourceSymbolKind.CppType ||
-                                sourceSymbol.Kind == SourceSymbolKind.CppStruct ||
-                                sourceSymbol.Kind == SourceSymbolKind.CppClass ||
-                                sourceSymbol.Kind == SourceSymbolKind.CppEnum)
-                            {
-                                token.Kind = CppTokenKind.UserTypeIdent;
-                                refKind = ReferenceSymbolKind.CppType;
-                            }
-                            else if (sourceSymbol.Kind == SourceSymbolKind.CppMember)
-                            {
-                                token.Kind = CppTokenKind.MemberIdent;
-                                refKind = ReferenceSymbolKind.CppMember;
-                            }
-                            SymbolTable.AddReference(new ReferenceSymbol(token.Lang, refKind, token.Value, token.Range, null));
-                        }
-                    }
-                }
-                stream.Next();
-            }
+            CppSymbolResolver resolver = new CppSymbolResolver(LocalSymbolTable);
+            resolver.ResolveTokens(tokens.Where(t => typeof(CppToken).Equals(t.GetType())).Select(t => t as CppToken));
         }
     }
 }

@@ -33,8 +33,6 @@ namespace TSP.DoxygenEditor.Lexers
             Buffer = new BasicTextStream(source, pos, length);
         }
 
-        
-
         protected void AddError(TextPosition pos, string message, string what, string symbol = null)
         {
             string category = GetType().Name;
@@ -48,7 +46,7 @@ namespace TSP.DoxygenEditor.Lexers
                 token.Value = string.Intern(value);
             else
                 token.Value = value;
-            var lastToken = _tokens.LastOrDefault();
+            T lastToken = _tokens.LastOrDefault();
             if (lastToken != null)
                 Debug.Assert(token.Index >= lastToken.End);
             _tokens.Add(token);
@@ -76,12 +74,32 @@ namespace TSP.DoxygenEditor.Lexers
                     Debug.Assert(Buffer.StreamPosition > p);
             } while (!Buffer.IsEOF);
             return (_tokens);
-        }      
+        }
 
-        public void Dispose()
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
         {
             Buffer.Dispose();
             _tokens.Clear();
         }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~BaseLexer()
+        {
+            Dispose(false);
+        }
+        #endregion
     }
 }

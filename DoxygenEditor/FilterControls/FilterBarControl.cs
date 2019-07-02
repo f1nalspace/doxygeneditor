@@ -43,7 +43,7 @@ namespace TSP.DoxygenEditor.FilterControls
             InitializeComponent();
 
             Parent = viewControl.Parent;
-            var prevIndex = Parent.Controls.IndexOf(viewControl);
+            int prevIndex = Parent.Controls.IndexOf(viewControl);
             Parent.Controls.Add(this);
             Parent.Controls.SetChildIndex(this, prevIndex);
             viewControl.SizeChanged += (s, e) =>

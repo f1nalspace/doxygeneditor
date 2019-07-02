@@ -39,6 +39,22 @@ SOFTWARE.
 	Version History
 -------------------------------------------------------------------------------
 
+    ## v0.9.1.0:
+    - New: Grouping for issues and performance listview
+    - New: Build dialog filter from the global configuration
+    - New: Introduced editor file type to only parse/highlight supported files
+    - New: Introduced cpp/doxygen symbol resolver
+    - New: Caption for source symbol
+    - New: Doxygen config lexing and parsing
+    - New: Compile & open documentation dialog
+    - New: Auto sort and column size for issues and performance listview
+    - Change: Jump to documentation start instead of the entity start for issues
+    - Change: Replaced all "var" with proper type in sources
+    - Change: New version history style
+    - Bugfix: Fixed several minor/major issues
+    - Bugfix: Fixed captions in symbol search was not shown
+    - Bugfix: Fixed wrong auto indent after linebreak hopefully
+
     ## v0.9.0.0:
     - Proper #define argument parsing & highlighting
     - Lex multi & single line comments inside preprocessor

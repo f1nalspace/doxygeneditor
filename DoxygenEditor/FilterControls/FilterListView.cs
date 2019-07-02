@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using TSP.DoxygenEditor.Extensions;
 using System;
+using System.Collections;
 
 namespace TSP.DoxygenEditor.FilterControls
 {
@@ -11,46 +12,16 @@ namespace TSP.DoxygenEditor.FilterControls
         private readonly ListView _listView;
 
         public int ItemCount => _listView.Items.Count;
-        public int SelectedIndex => (_listView.VirtualListSize > 0 && _listView.SelectedIndices.Count > 0) ? _listView.SelectedIndices[0] : -1;
-        public ListViewItem SelectedItem => (_listView.VirtualListSize > 0 && _listView.SelectedIndices.Count > 0) ? _filteredItems[_listView.SelectedIndices[0]] : null;
+
+        public int SelectedIndex => (_listView.Items.Count > 0 && _listView.SelectedIndices.Count > 0) ? _listView.SelectedIndices[0] : -1;
+        public ListViewItem SelectedItem => (_listView.Items.Count > 0 && _listView.SelectedIndices.Count > 0) ? _listView.Items[_listView.SelectedIndices[0]] : null;
+
         public delegate void ItemDoubleClickEventHandler(object sender, ListViewItem item);
         public event ItemDoubleClickEventHandler ItemDoubleClick;
+
         public ImageList ImageList
         {
-            get { return _listView.SmallImageList; }
             set { _listView.SmallImageList = value; }
-        }
-
-        private readonly List<ListViewItem> _items = new List<ListViewItem>();
-        private string _filterText = null;
-
-        private readonly List<ListViewItem> _filteredItems = new List<ListViewItem>();
-
-        private void RebuildFilteredItems()
-        {
-            _filteredItems.Clear();
-            string filterText = _filterText;
-            int filterCol = _filterColumn;
-            foreach (var item in _items)
-            {
-                bool canAdd = false;
-                if (string.IsNullOrWhiteSpace(filterText))
-                    canAdd = true;
-                else
-                {
-                    for (int colIndex = 0; colIndex < _listView.Columns.Count; ++colIndex)
-                    {
-                        if (filterCol > -1 && filterCol != colIndex)
-                            continue;
-                        bool matches = MatchWildcard(item.SubItems[colIndex].Text, filterText);
-                        canAdd |= matches;
-                        if (canAdd)
-                            break;
-                    }
-                }
-                if (canAdd)
-                    _filteredItems.Add(item);
-            }
         }
 
         public string FilterText
@@ -64,11 +35,12 @@ namespace TSP.DoxygenEditor.FilterControls
                 EndUpdate();
             }
         }
+
         private int _filterColumn = -1;
         public int FilterColumn
         {
             get { return _filterColumn; }
-            set
+            private set
             {
                 _filterColumn = value;
                 BeginUpdate();
@@ -76,6 +48,65 @@ namespace TSP.DoxygenEditor.FilterControls
                 EndUpdate();
             }
         }
+        public void SetFilterColumn(string columnName)
+        {
+            FilterColumn = GetColumnIndexByName(columnName);
+        }
+
+        private int GetColumnIndexByName(string name)
+        {
+            int idx = 0;
+            foreach (ColumnHeader header in _listView.Columns)
+            {
+                if (string.Equals(header.Text, name))
+                    return (idx);
+                ++idx;
+            }
+            return (-1);
+        }
+
+        private int _groupColumn = -1;
+        public int GroupColumn
+        {
+            get { return _groupColumn; }
+            private set
+            {
+                _groupColumn = value;
+                BeginUpdate();
+                RefreshItems();
+                EndUpdate();
+            }
+        }
+
+        public void SetGroupColumn(string columnName)
+        {
+            GroupColumn = GetColumnIndexByName(columnName);
+        }
+
+        class ListviewItemSorter : IComparer
+        {
+            private readonly Comparison<ListViewItem> _comparer;
+
+            public ListviewItemSorter(Comparison<ListViewItem> comparer)
+            {
+                _comparer = comparer;
+            }
+            public int Compare(object x, object y)
+            {
+                ListViewItem a = x as ListViewItem;
+                ListViewItem b = y as ListViewItem;
+                int result = _comparer(a, b);
+                return (result);
+            }
+        }
+
+        public Comparison<ListViewItem> Comparer
+        {
+            set { _listView.ListViewItemSorter = new ListviewItemSorter(value); }
+        }
+
+        private readonly List<ListViewItem> _items = new List<ListViewItem>();
+        private string _filterText = null;
 
         public FilterListView() : base()
         {
@@ -86,15 +117,12 @@ namespace TSP.DoxygenEditor.FilterControls
             _listView.HideSelection = false;
             _listView.MultiSelect = false;
             _listView.FullRowSelect = true;
-            _listView.VirtualMode = true;
+            _listView.VirtualMode = false;
+            _listView.ShowGroups = true;
             _listView.DoubleClick += (s, e) =>
             {
-                if (_listView.VirtualListSize > 0 && _listView.SelectedIndices.Count > 0)
-                    ItemDoubleClick?.Invoke(this, _filteredItems[_listView.SelectedIndices[0]]);
-            };
-            _listView.RetrieveVirtualItem += (s, e) =>
-            {
-                e.Item = _filteredItems[e.ItemIndex];
+                if (_listView.Items.Count > 0 && _listView.SelectedIndices.Count > 0)
+                    ItemDoubleClick?.Invoke(this, _listView.Items[_listView.SelectedIndices[0]]);
             };
             Controls.Add(_listView);
         }
@@ -102,8 +130,8 @@ namespace TSP.DoxygenEditor.FilterControls
         public void ClearItems()
         {
             _items.Clear();
-            _filteredItems.Clear();
-            _listView.VirtualListSize = 0;
+            _listView.Items.Clear();
+            _listView.Groups.Clear();
         }
 
         public void AddItem(ListViewItem item)
@@ -111,17 +139,62 @@ namespace TSP.DoxygenEditor.FilterControls
             _items.Add(item);
         }
 
-        private bool MatchWildcard(string text, string filter)
+        private bool MatchWildcard(string text, string filter, bool ignoreCase)
         {
             string regex = "^" + Regex.Escape(filter).Replace("\\?", ".").Replace("\\*", ".*") + "$";
-            bool result = Regex.IsMatch(text, regex);
+            bool result = Regex.IsMatch(text, regex, ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None);
             return (result);
         }
 
         public void RefreshItems()
         {
-            RebuildFilteredItems();
-            _listView.VirtualListSize = _filteredItems.Count;
+            string filterText = _filterText;
+            int filterCol = _filterColumn;
+            int groupCol = _groupColumn;
+            int colCount = _listView.Columns.Count;
+            Dictionary<string, ListViewGroup> groupsMap = new Dictionary<string, ListViewGroup>();
+            _listView.Items.Clear();
+            _listView.Groups.Clear();
+            foreach (ListViewItem item in _items)
+            {
+                bool canAdd = false;
+                item.Group = null;
+                if (string.IsNullOrWhiteSpace(filterText))
+                    canAdd = true;
+                else
+                {
+                    for (int colIndex = 0; colIndex < colCount; ++colIndex)
+                    {
+                        if (filterCol > -1 && filterCol != colIndex)
+                            continue;
+                        bool matches = MatchWildcard(item.SubItems[colIndex].Text, filterText, true);
+                        canAdd |= matches;
+                        if (canAdd)
+                            break;
+                    }
+                }
+                if (canAdd)
+                {
+                    if (groupCol > -1 && groupCol < colCount)
+                    {
+                        string groupValue = item.SubItems[groupCol].Text;
+                        if (!string.IsNullOrWhiteSpace(groupValue))
+                        {
+                            if (!groupsMap.ContainsKey(groupValue))
+                            {
+                                ListViewGroup group = new ListViewGroup(groupValue);
+                                groupsMap.Add(groupValue, group);
+                                _listView.Groups.Add(group);
+                            }
+                            item.Group = groupsMap[groupValue];
+                        }
+                    }
+                    _listView.Items.Add(item);
+                }
+            }
+            if (_listView.ListViewItemSorter != null)
+                _listView.Sort();
+            _listView.AutoSizeColumnList();
         }
 
         public void BeginUpdate()
@@ -138,7 +211,7 @@ namespace TSP.DoxygenEditor.FilterControls
             ListViewItem foundItem = null;
             if (tag != null)
             {
-                foreach (ListViewItem item in _filteredItems)
+                foreach (ListViewItem item in _listView.Items)
                 {
                     if (item.Tag == tag)
                     {
@@ -149,8 +222,8 @@ namespace TSP.DoxygenEditor.FilterControls
             }
             if (foundItem == null && index > -1)
             {
-                if (_filteredItems.Count > 0)
-                    foundItem = _filteredItems[Math.Min(index, _filteredItems.Count - 1)];
+                if (_listView.Items.Count > 0)
+                    foundItem = _listView.Items[Math.Min(index, _listView.Items.Count - 1)];
             }
             if (foundItem != null)
                 foundItem.Selected = true;

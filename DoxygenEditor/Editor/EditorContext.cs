@@ -1,5 +1,4 @@
 ﻿using TSP.DoxygenEditor.SearchReplace;
-using ScintillaNET;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -11,9 +10,8 @@ using TSP.DoxygenEditor.Symbols;
 using System.Threading;
 using TSP.DoxygenEditor.Models;
 using TSP.DoxygenEditor.Styles;
-using TSP.DoxygenEditor.Languages;
 using System.Linq;
-using System.Collections.Generic;
+using ScintillaNET;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -25,6 +23,7 @@ namespace TSP.DoxygenEditor.Editor
         public string FilePath { get; set; }
         public string Name { get; set; }
         public object SymbolTableId => FilePath;
+        public EditorFileType FileType { get; set; }
         #endregion
 
         #region For mainform only
@@ -63,6 +62,7 @@ namespace TSP.DoxygenEditor.Editor
         private readonly Scintilla _editor;
         private int _maxLineNumberCharLength;
         private System.Windows.Forms.Timer _textChangedTimer;
+
         class StyleNeededState
         {
             private volatile int _value;
@@ -81,7 +81,7 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
         private StyleNeededState _styleNeededState;
-        private readonly EditorStyler editorStyler;
+        private readonly EditorStyler _editorStyler;
         private readonly IVisualStyler _visualStyler;
         #endregion
 
@@ -96,10 +96,10 @@ namespace TSP.DoxygenEditor.Editor
             _window = window;
 
             // Editor and Parsing
-            editorStyler = new EditorStyler(workspace);
+            _editorStyler = new EditorStyler(workspace);
 
             // Parsing
-            _parseState = new ParseContext(this, editorStyler, workspace);
+            _parseState = new ParseContext(this, _editorStyler, workspace);
             _parseState.ParseCompleted += (s) =>
             {
                 ParseCompleted?.Invoke(ParseInfo);
@@ -110,7 +110,7 @@ namespace TSP.DoxygenEditor.Editor
             };
 
             // Editor
-            _visualStyler = editorStyler;
+            _visualStyler = _editorStyler;
             _styleNeededState = new StyleNeededState();
             _editor = new Scintilla();
             SetupEditor(_editor);
@@ -270,7 +270,7 @@ namespace TSP.DoxygenEditor.Editor
 
         public void GoToLine(int lineIndex)
         {
-            var line = _editor.Lines[lineIndex];
+            Line line = _editor.Lines[lineIndex];
             GoToPosition(line.Position);
         }
 
@@ -387,7 +387,7 @@ namespace TSP.DoxygenEditor.Editor
 
         private Tuple<string, EditorStyler.StyleEntry> FindTextStyleFromPosition(int position)
         {
-            var style = VisualStyler.FindStyleFromPosition(position);
+            EditorStyler.StyleEntry style = VisualStyler.FindStyleFromPosition(position);
             if (style.Style != 0)
             {
                 string text = _editor.GetTextRange(style.Index, style.Length);
@@ -404,18 +404,18 @@ namespace TSP.DoxygenEditor.Editor
             if (!isShownIndicators)
                 isShownIndicators = true;
             _editor.IndicatorClearRange(0, _editor.TextLength);
-            var p = _editor.PointToClient(mouse);
+            Point p = _editor.PointToClient(mouse);
             int c = _editor.CharPositionFromPoint(p.X, p.Y);
-            var textStyle = FindTextStyleFromPosition(c);
+            Tuple<string, EditorStyler.StyleEntry> textStyle = FindTextStyleFromPosition(c);
             if (textStyle != null)
             {
                 string symbolName = textStyle.Item1;
                 EditorStyler.StyleEntry style = textStyle.Item2;
-                SymbolTable table = GlobalSymbolCache.GetTable(this);
-                SourceSymbol source = table?.GetSource(symbolName);
+                SymbolTable innerTable = GlobalSymbolCache.GetTable(this);
+                SourceSymbol source = innerTable?.GetSource(symbolName);
                 if (source == null)
                 {
-                    var sourceTuple = GlobalSymbolCache.FindSource(symbolName);
+                    Tuple<SourceSymbol, ISymbolTableId> sourceTuple = GlobalSymbolCache.FindSource(symbolName);
                     if (sourceTuple != null)
                         source = sourceTuple.Item1;
                 }
@@ -440,7 +440,7 @@ namespace TSP.DoxygenEditor.Editor
         private void JumpToIndicator(int position)
         {
             // Find text & style
-            var textStyle = FindTextStyleFromPosition(position);
+            Tuple<string, EditorStyler.StyleEntry> textStyle = FindTextStyleFromPosition(position);
             if (textStyle == null) return;
 
             string symbolName = textStyle.Item1;
@@ -453,7 +453,7 @@ namespace TSP.DoxygenEditor.Editor
             // Search for extern source symbol
             SourceSymbol bestExternSource = null;
             ISymbolTableId bestExternSourceId = null;
-            var externSourceTuple = GlobalSymbolCache.FindSource(symbolName, (t) => t != bestInnerSourceId);
+            Tuple<SourceSymbol, ISymbolTableId> externSourceTuple = GlobalSymbolCache.FindSource(symbolName, (t) => t != bestInnerSourceId);
             if (externSourceTuple != null)
             {
                 bestExternSource = externSourceTuple.Item1;
@@ -602,15 +602,15 @@ namespace TSP.DoxygenEditor.Editor
 
             editor.InsertCheck += (s, e) =>
             {
-                if ((e.Text.EndsWith("\n")))
+                if ((e.Text == "\n") || (e.Text == "\r") || (e.Text == "\r\n"))
                 {
-                    var curLine = _editor.LineFromPosition(e.Position);
-                    var curLineText = _editor.Lines[curLine].Text;
+                    int curLine = _editor.LineFromPosition(e.Position);
+                    string curLineText = _editor.Lines[curLine].Text;
                     StringBuilder addon = new StringBuilder();
                     for (int i = 0; i < curLineText.Length; ++i)
                     {
                         char c = curLineText[i];
-                        if ((c != '\n') && char.IsWhiteSpace(c))
+                        if (c == '\t' || c == ' ')
                             addon.Append(c);
                         else
                             break;
@@ -622,9 +622,29 @@ namespace TSP.DoxygenEditor.Editor
         #endregion
 
         #region IDisposable Support
-        public void Dispose()
+        protected virtual void DisposeManaged()
         {
             _parseState.Dispose();
+            _editor.Dispose();
+            _searchControl.Dispose();
+        }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~EditorContext()
+        {
+            Dispose(false);
         }
         #endregion
     }

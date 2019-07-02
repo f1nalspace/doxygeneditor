@@ -52,7 +52,7 @@ namespace TSP.DoxygenEditor.SymbolSearch
             comboBoxSearchType.BeginUpdate();
             comboBoxSearchType.Items.Clear();
             comboBoxSearchType.Items.Add("All types");
-            foreach (var t in allSearchTypes)
+            foreach (string t in allSearchTypes)
                 comboBoxSearchType.Items.Add(t);
             comboBoxSearchType.EndUpdate();
             comboBoxSearchType.SelectedIndex = 0;

@@ -28,7 +28,7 @@ namespace TSP.DoxygenEditor.Collections
 
         public LinkedListStream(IEnumerable<T> items)
         {
-            foreach (var item in items)
+            foreach (T item in items)
                 _items.AddLast(item);
             _currentNode = _items.First;
         }

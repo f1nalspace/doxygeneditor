@@ -22,6 +22,7 @@ using TSP.DoxygenEditor.Symbols;
 using System.Collections;
 using TSP.DoxygenEditor.FilterControls;
 using System.Threading;
+using System.Text;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -62,18 +63,39 @@ namespace TSP.DoxygenEditor.Views
             listview.AddColumn("Category", 150);
             listview.AddColumn("Line", 100);
             listview.AddColumn("File", 200);
+            listview.SetGroupColumn("File");
+            listview.Comparer = (a, b) =>
+            {
+                IssueTag tagA = a.Tag as IssueTag;
+                IssueTag tagB = b.Tag as IssueTag;
+
+                // Sort by file path first
+                if (!string.Equals(tagA.Context.FilePath, tagB.Context.FilePath))
+                    return string.Compare(tagA.Context.FilePath, tagB.Context.FilePath);
+
+                // Sort by line second
+                if (Math.Abs(tagA.Pos.Line - tagB.Pos.Line) > 0)
+                    return tagA.Pos.Line - tagB.Pos.Line;
+
+                // Sort by issue type second
+                if (Math.Abs(tagA.Type - tagB.Type) > 0)
+                    return Math.Sign(tagA.Type - tagB.Type);
+
+                return (0);
+            };
         }
 
         public MainForm()
         {
             InitializeComponent();
 
-            var assembly = Assembly.GetExecutingAssembly();
-            var asmName = assembly.GetName();
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            AssemblyName asmName = assembly.GetName();
             FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
             string companyName = verInfo.CompanyName;
             string appId = verInfo.FileDescription;
-            _appName = verInfo.ProductName;
+
+            _appName = $"{verInfo.ProductName}";
 
             if (string.IsNullOrWhiteSpace(companyName))
                 throw new Exception("Company name is missing in assembly!");
@@ -86,6 +108,15 @@ namespace TSP.DoxygenEditor.Views
 
             _globalConfig = new GlobalConfigModel(companyName, appId);
             _globalConfig.Load();
+
+            StringBuilder fileExtensionsFilter = new StringBuilder();
+            string allExtensions = string.Join(";", _globalConfig.SupportedFileExtensions.Select(c => string.Join(";", c.Extensions.Select(x => $"*{x}"))));
+            fileExtensionsFilter.Append($"All supported files|{allExtensions}|");
+            foreach (GlobalConfigModel.FileExtensions supportedFileExtensionsEntry in _globalConfig.SupportedFileExtensions)
+                fileExtensionsFilter.Append($"{supportedFileExtensionsEntry.Name}|{string.Join(";", supportedFileExtensionsEntry.Extensions.Select(x => $"*{x}"))}|");
+            fileExtensionsFilter.Append($"All files (*.*)|*.*");
+            dlgOpenFile.Filter = fileExtensionsFilter.ToString();
+            dlgSaveFile.Filter = fileExtensionsFilter.ToString();
 
             _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
             if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath))
@@ -154,6 +185,15 @@ namespace TSP.DoxygenEditor.Views
                 Text = $"{_appName} - Default Workspace";
             else
                 Text = $"{_appName} - {Path.GetFileNameWithoutExtension(_workspace.FilePath)}";
+
+            const int minDistance = 20;
+            int distance = scTreeAndFiles.ClientSize.Width / 2;
+            if (_workspace.View.TreeSplitterDistance > 0)
+            {
+                int d = (int)(scTreeAndFiles.ClientSize.Width * _workspace.View.TreeSplitterDistance);
+                distance = Math.Min(Math.Max(d, minDistance), scTreeAndFiles.ClientSize.Width - minDistance);
+            }
+            scTreeAndFiles.SplitterDistance = distance;
         }
 
         private void SetParseStatus(string status)
@@ -275,11 +315,12 @@ namespace TSP.DoxygenEditor.Views
             UpdateMenuSelection(context);
         }
 
-        private EditorContext AddFileTab(string name)
+        private EditorContext AddFileTab(string name, EditorFileType fileType)
         {
             int tabIndex = _newTabCounter++;
             TabPage newTab = new TabPage() { Text = name };
             EditorContext newContext = new EditorContext(this, _workspace, name, newTab, tabIndex);
+            newContext.FileType = fileType;
             newContext.IsShowWhitespace = miViewShowWhitespaces.Checked;
             newContext.TabUpdating += (s, e) => UpdateContext((EditorContext)s);
             newContext.FocusChanged += (s, e) =>
@@ -289,8 +330,8 @@ namespace TSP.DoxygenEditor.Views
             };
             newContext.ParseCompleted += (IParseInfo parseInfo) =>
             {
-                RebuildSymbolTree(newContext, parseInfo.DoxyTree);
-                AddPerformanceItems(newContext);
+                RebuildSymbolTree(newContext, parseInfo.DoxyBlockTree);
+                AddPerformanceItemsFor(newContext);
                 bool isComplete = Interlocked.Decrement(ref _parseProgressCount) == 0;
                 if (isComplete)
                 {
@@ -306,12 +347,12 @@ namespace TSP.DoxygenEditor.Views
             {
                 Interlocked.Increment(ref _parseTotalCount);
                 Interlocked.Increment(ref _parseProgressCount);
-                ClearPerformanceItems(newContext);
+                ClearPerformanceItemsFrom(newContext);
                 SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
             newContext.JumpToEditor += (id, pos) =>
             {
-                var foundContext = FindEditorContextById(id);
+                EditorContext foundContext = FindEditorContextById(id);
                 if (foundContext != null)
                 {
                     TabPage tab = (TabPage)foundContext.Tab;
@@ -330,7 +371,7 @@ namespace TSP.DoxygenEditor.Views
         {
             context.Stop();
             RemoveFromSymbolTree(context);
-            ClearPerformanceItems(context);
+            ClearPerformanceItemsFrom(context);
             GlobalSymbolCache.Remove(context);
 
             TabPage tab = (TabPage)context.Tab;
@@ -365,15 +406,17 @@ namespace TSP.DoxygenEditor.Views
             }
             else
             {
-                EditorContext newContext = AddFileTab(Path.GetFileName(filePath));
+                string fileExt = Path.GetExtension(filePath);
+                EditorFileType supportedFileType = _globalConfig.GetFileTypeByExtension(fileExt);
+                EditorContext newContext = AddFileTab(Path.GetFileName(filePath), supportedFileType);
                 TabPage tab = (TabPage)newContext.Tab;
                 tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
                 Tuple<bool, Exception> openRes = IOOpenFile(newContext, filePath);
                 if (!openRes.Item1)
                 {
                     Exception e = openRes.Item2;
-                    var values = new Dictionary<string, string>() { { "filepath", filePath } };
-                    var msg = e.ToErrorMessage("Open file", values);
+                    Dictionary<string, string> values = new Dictionary<string, string>() { { "filepath", filePath } };
+                    ErrorMessageModel msg = e.ToErrorMessage("Open file", values);
                     ShowError(msg.Caption, msg.ShortText, msg.Details);
                     RemoveFileTab(newContext);
                 }
@@ -488,8 +531,11 @@ namespace TSP.DoxygenEditor.Views
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            var allFilePaths = GetAllEditorContexts().Where(f => !string.IsNullOrWhiteSpace(f.FilePath)).Select(f => f.FilePath);
+            // Update workspace settings before application shutdown
+            IEnumerable<string> allFilePaths = GetAllEditorContexts().Where(f => !string.IsNullOrWhiteSpace(f.FilePath)).Select(f => f.FilePath);
             _workspace.History.UpdateLastOpenedFiles(allFilePaths);
+            _workspace.View.TreeSplitterDistance = scTreeAndFiles.SplitterDistance / (double)scTreeAndFiles.ClientSize.Width;
+
             IEnumerable<EditorContext> changes = GetChangedEditorContexts();
             if (changes.Count() > 0)
                 e.Cancel = !CloseTabs(changes);
@@ -517,7 +563,7 @@ namespace TSP.DoxygenEditor.Views
             {
                 if (_workspace.History.LastOpenedFileCount > 0)
                 {
-                    foreach (var lastOpenedFilePath in _workspace.History.LastOpenedFiles)
+                    foreach (string lastOpenedFilePath in _workspace.History.LastOpenedFiles)
                     {
                         if (!string.IsNullOrWhiteSpace(lastOpenedFilePath))
                             OpenFileTab(lastOpenedFilePath);
@@ -551,7 +597,7 @@ namespace TSP.DoxygenEditor.Views
                         TabPage tab = (TabPage)context.Tab;
                         tcFiles.SelectedTab = tab;
                         tcFiles.Focus();
-                        DoxygenNode entityNode = (DoxygenNode)selectedNode.Tag;
+                        DoxygenBlockNode entityNode = (DoxygenBlockNode)selectedNode.Tag;
                         context.GoToPosition(entityNode.Entity.StartRange.Index);
                     }
                 }
@@ -604,15 +650,15 @@ namespace TSP.DoxygenEditor.Views
             tvTree.EndUpdate();
         }
 
-        private static HashSet<DoxygenEntityKind> AllowedDoxyEntities = new HashSet<DoxygenEntityKind>()
+        private static HashSet<DoxygenBlockEntityKind> AllowedDoxyEntities = new HashSet<DoxygenBlockEntityKind>()
         {
-            DoxygenEntityKind.BlockSingle,
-            DoxygenEntityKind.BlockMulti,
-            DoxygenEntityKind.Group,
-            DoxygenEntityKind.Page,
-            DoxygenEntityKind.Section,
-            DoxygenEntityKind.SubSection,
-            DoxygenEntityKind.SubSubSection,
+            DoxygenBlockEntityKind.BlockSingle,
+            DoxygenBlockEntityKind.BlockMulti,
+            DoxygenBlockEntityKind.Group,
+            DoxygenBlockEntityKind.Page,
+            DoxygenBlockEntityKind.Section,
+            DoxygenBlockEntityKind.SubSection,
+            DoxygenBlockEntityKind.SubSubSection,
         };
 
         private List<TreeNode> BuildSymbolTree(IBaseNode rootEntityNode, TreeNode rootTreeNode, IBaseNode selectedEntityNode)
@@ -620,10 +666,10 @@ namespace TSP.DoxygenEditor.Views
             List<TreeNode> result = new List<TreeNode>();
             foreach (IBaseNode childEntityNode in rootEntityNode.Children)
             {
-                if (typeof(DoxygenNode).Equals(childEntityNode.GetType()))
+                if (typeof(DoxygenBlockNode).Equals(childEntityNode.GetType()))
                 {
-                    DoxygenNode doxyNode = (DoxygenNode)childEntityNode;
-                    DoxygenEntity entity = doxyNode.Entity;
+                    DoxygenBlockNode doxyNode = (DoxygenBlockNode)childEntityNode;
+                    DoxygenBlockEntity entity = doxyNode.Entity;
                     if (!AllowedDoxyEntities.Contains(entity.Kind))
                         continue;
 
@@ -649,9 +695,9 @@ namespace TSP.DoxygenEditor.Views
 
         private void RebuildSymbolTree(object fileTag, IBaseNode doxyTree)
         {
-            DoxygenNode lastEntity = null;
+            DoxygenBlockNode lastEntity = null;
             if (tvTree.SelectedNode != null)
-                lastEntity = tvTree.SelectedNode.Tag as DoxygenNode;
+                lastEntity = tvTree.SelectedNode.Tag as DoxygenBlockNode;
 
             TreeNode newSelectedNode = null;
 
@@ -715,8 +761,8 @@ namespace TSP.DoxygenEditor.Views
                     {
                         string filePath = context.FilePath;
                         Exception e = result.Item2;
-                        var values = new Dictionary<string, string>() { { "filepath", filePath } };
-                        var msg = e.ToErrorMessage("Save file", values);
+                        Dictionary<string, string> values = new Dictionary<string, string>() { { "filepath", filePath } };
+                        ErrorMessageModel msg = e.ToErrorMessage("Save file", values);
                         ShowError(msg.Caption, msg.ShortText, msg.Details);
                     }
                     return (result);
@@ -730,9 +776,9 @@ namespace TSP.DoxygenEditor.Views
             EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
             if (context.IsChanged)
             {
-                var caption = $"Revert file '{context.Name}'";
-                var text = $"The file '{context.Name}' has changes, do you want to reload and revert it?";
-                var dlgResult = MessageBox.Show(this, text, caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                string caption = $"Revert file '{context.Name}'";
+                string text = $"The file '{context.Name}' has changes, do you want to reload and revert it?";
+                DialogResult dlgResult = MessageBox.Show(this, text, caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
                 if (dlgResult != DialogResult.Yes)
                     return;
             }
@@ -741,7 +787,7 @@ namespace TSP.DoxygenEditor.Views
         private void MenuActionFileNew(object sender, EventArgs e)
         {
             string name = GetNextTabName("File");
-            EditorContext newContext = AddFileTab(name);
+            EditorContext newContext = AddFileTab(name, EditorFileType.Cpp);
             TabPage tab = (TabPage)newContext.Tab;
             tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
             newContext.SetFocus();
@@ -777,8 +823,8 @@ namespace TSP.DoxygenEditor.Views
                 if (!r.Item1)
                 {
                     Exception ex = r.Item2;
-                    var values = new Dictionary<string, string>() { { "filepath", filePath } };
-                    var msg = ex.ToErrorMessage("Save file", values);
+                    Dictionary<string, string> values = new Dictionary<string, string>() { { "filepath", filePath } };
+                    ErrorMessageModel msg = ex.ToErrorMessage("Save file", values);
                     ShowError(msg.Caption, msg.ShortText, msg.Details);
                 }
                 else
@@ -896,13 +942,13 @@ namespace TSP.DoxygenEditor.Views
             // @SPEED(final): Cache conversion to SymbolItemModel and types as well
             List<SymbolItemModel> symbols = new List<SymbolItemModel>();
             HashSet<string> types = new HashSet<string>();
-            var allSources = GlobalSymbolCache.GetSources(context);
-            foreach (var source in allSources)
+            IEnumerable<SourceSymbol> allSources = GlobalSymbolCache.GetSources(context);
+            foreach (SourceSymbol source in allSources)
             {
                 if (source.Node == null) continue;
                 symbols.Add(new SymbolItemModel()
                 {
-                    Caption = null,
+                    Caption = source.Caption,
                     Id = source.Name,
                     Type = source.Kind.ToString(),
                     Position = source.Range.Position,
@@ -972,17 +1018,19 @@ namespace TSP.DoxygenEditor.Views
         {
             public EditorContext Context { get; }
             public TextPosition Pos { get; }
-            public IssueTag(EditorContext context, TextPosition pos)
+            public IssueType Type { get; }
+            public IssueTag(EditorContext context, TextPosition pos, IssueType type)
             {
                 Context = context;
                 Pos = pos;
+                Type = type;
             }
         }
-        private void AddIssue(FilterListView listView, IssueTag tag, IssueType type, string message, string symbolName, string symbolType, string group, int line, string file)
+        private void AddIssue(FilterListView listView, IssueTag tag, string message, string symbolName, string symbolType, string group, int line, string file)
         {
             ListViewItem newItem = new ListViewItem(message);
             newItem.Tag = tag;
-            newItem.ImageIndex = (int)type;
+            newItem.ImageIndex = (int)tag.Type;
             newItem.SubItems.Add(symbolName);
             newItem.SubItems.Add(symbolType);
             newItem.SubItems.Add(group);
@@ -999,14 +1047,15 @@ namespace TSP.DoxygenEditor.Views
                 CppEntity cppEntity = cppNode.Entity;
                 if (cppEntity.IsDefinition && cppEntity.DocumentationNode != null && _workspace.ValidationCpp.RequireDoxygenReference)
                 {
-                    DoxygenNode doxyNode = (DoxygenNode)cppEntity.DocumentationNode;
-                    if (doxyNode.Entity.Kind == DoxygenEntityKind.BlockMulti)
+                    DoxygenBlockNode doxyNode = (DoxygenBlockNode)cppEntity.DocumentationNode;
+                    TextPosition docsPos = cppEntity.DocumentationNode.StartRange.Position;
+                    if (doxyNode.Entity.Kind == DoxygenBlockEntityKind.BlockMulti)
                     {
-                        DoxygenNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenEntityKind.See) as DoxygenNode;
+                        DoxygenBlockNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.See) as DoxygenBlockNode;
                         bool hasDocumented = false;
                         if (seeNode != null)
                         {
-                            DoxygenNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenEntityKind.Reference) as DoxygenNode;
+                            DoxygenBlockNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.Reference) as DoxygenBlockNode;
                             if (refNode != null)
                             {
                                 hasDocumented = true;
@@ -1015,12 +1064,12 @@ namespace TSP.DoxygenEditor.Views
 
                         if (!hasDocumented)
                         {
-                            AddIssue(lvDoxygenIssues, new IssueTag(mainContext, cppEntity.StartRange.Position), IssueType.Warning, "Not documented (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
+                            AddIssue(lvDoxygenIssues, new IssueTag(mainContext, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
                         }
                     }
                 }
             }
-            foreach (var child in rootNode.Children)
+            foreach (IBaseNode child in rootNode.Children)
             {
                 AddIssuesFromNode(contexts, mainContext, child, fileName, "Child");
             }
@@ -1042,34 +1091,34 @@ namespace TSP.DoxygenEditor.Views
             lvDoxygenIssues.ClearItems();
 
             // Validate symbols from cache
-            var validationConfig = new GlobalSymbolCache.ValidationConfigration()
+            GlobalSymbolCache.ValidationConfigration validationConfig = new GlobalSymbolCache.ValidationConfigration()
             {
                 ExcludeCppPreprocessorMatch = _workspace.ValidationCpp.ExcludePreprocessorMatch,
                 ExcludeCppPreprocessorUsage = _workspace.ValidationCpp.ExcludePreprocessorUsage,
             };
-            var symbolErrors = GlobalSymbolCache.Validate(validationConfig);
-            foreach (var errorPair in symbolErrors)
+            IEnumerable<KeyValuePair<ISymbolTableId, TextError>> symbolErrors = GlobalSymbolCache.Validate(validationConfig);
+            foreach (KeyValuePair<ISymbolTableId, TextError> errorPair in symbolErrors)
             {
-                var error = errorPair.Value;
-                var context = (EditorContext)errorPair.Key;
-                var symbol = (ReferenceSymbol)error.Tag;
-                var nodeType = symbol.Node.GetType();
+                TextError error = errorPair.Value;
+                EditorContext context = (EditorContext)errorPair.Key;
+                ReferenceSymbol symbol = (ReferenceSymbol)error.Tag;
+                Type nodeType = symbol.Node.GetType();
                 if (typeof(CppNode).Equals(nodeType))
-                    AddIssue(lvCppIssues, new IssueTag(context, error.Pos), IssueType.Error, error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, context.Name);
-                else if (typeof(DoxygenNode).Equals(nodeType))
-                    AddIssue(lvDoxygenIssues, new IssueTag(context, error.Pos), IssueType.Error, error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, context.Name);
+                    AddIssue(lvCppIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, context.Name);
+                else if (typeof(DoxygenBlockNode).Equals(nodeType))
+                    AddIssue(lvDoxygenIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, context.Name);
             }
 
             foreach (EditorContext context in contexts)
             {
                 IParseInfo parseInfo = context.ParseInfo;
-                foreach (var error in parseInfo.Errors)
+                foreach (TextError error in parseInfo.Errors)
                 {
-                    var errorType = error.Tag.GetType();
+                    Type errorType = error.Tag.GetType();
                     if (typeof(CppLexer).Equals(errorType) || typeof(CppParser).Equals(errorType))
-                        AddIssue(lvCppIssues, new IssueTag(context, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, context.Name);
-                    else if (typeof(DoxygenLexer).Equals(errorType) || typeof(DoxygenParser).Equals(errorType))
-                        AddIssue(lvDoxygenIssues, new IssueTag(context, error.Pos), IssueType.Error, error.Message, null, null, error.Category, error.Pos.Line + 1, context.Name);
+                        AddIssue(lvCppIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, context.Name);
+                    else if (typeof(DoxygenBlockLexer).Equals(errorType) || typeof(DoxygenConfigLexer).Equals(errorType) || typeof(DoxygenBlockParser).Equals(errorType))
+                        AddIssue(lvDoxygenIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, context.Name);
                 }
 
                 if (parseInfo.CppTree != null)
@@ -1106,7 +1155,7 @@ namespace TSP.DoxygenEditor.Views
         #endregion
 
         #region Performance
-        private void AddPerformanceItem(IEditorId id, PerformanceItemModel item)
+        private void AddPerformanceItem(IEditorId id, PerformanceItemModel item, ListViewGroup group)
         {
             ListViewItem newItem = new ListViewItem(id.Name);
             newItem.Tag = item;
@@ -1114,23 +1163,37 @@ namespace TSP.DoxygenEditor.Views
             newItem.SubItems.Add(item.Output);
             newItem.SubItems.Add(item.What);
             newItem.SubItems.Add(item.Duration.ToMilliseconds());
+            newItem.Group = group;
             lvPerformance.Items.Add(newItem);
         }
 
-        private void AddPerformanceItems(EditorContext context)
+       
+
+        private void AddPerformanceItemsFor(EditorContext context)
         {
             IParseInfo parseInfo = context.ParseInfo;
-            ClearPerformanceItems(context);
+            ClearPerformanceItemsFrom(context);
             lvPerformance.BeginUpdate();
-            foreach (var item in parseInfo.PerformanceItems)
+            Dictionary<string, ListViewGroup> groupNames = new Dictionary<string, ListViewGroup>();
+            foreach (PerformanceItemModel item in parseInfo.PerformanceItems)
             {
-                AddPerformanceItem(context, item);
+                string groupName = item.Id.Name;
+                ListViewGroup group;
+                if (!groupNames.ContainsKey(groupName))
+                {
+                    group = new ListViewGroup(groupName);
+                    lvPerformance.Groups.Add(group);
+                    groupNames.Add(groupName, group);
+                }
+                else group = groupNames[groupName];
+                AddPerformanceItem(context, item, group);
             }
             lvPerformance.Sort();
+            lvPerformance.AutoSizeColumnList();
             lvPerformance.EndUpdate();
         }
 
-        private void ClearPerformanceItems(IEditorId id)
+        private void ClearPerformanceItemsFrom(IEditorId id)
         {
             List<ListViewItem> itemsToRemove = new List<ListViewItem>();
             lvPerformance.BeginUpdate();
@@ -1140,10 +1203,15 @@ namespace TSP.DoxygenEditor.Views
                 if (performanceItem.Id == id)
                     itemsToRemove.Add(item);
             }
+            ListViewGroup group = null;
             foreach (ListViewItem item in itemsToRemove)
             {
                 lvPerformance.Items.Remove(item);
+                if (group == null && item.Group != null)
+                    group = item.Group;
             }
+            if (group != null)
+                lvPerformance.Groups.Remove(group);
             lvPerformance.EndUpdate();
         }
         #endregion
@@ -1156,7 +1224,8 @@ namespace TSP.DoxygenEditor.Views
             {
                 _workspace.Assign(dlg.Workspace);
                 IEnumerable<EditorContext> contexts = GetAllEditorContexts();
-                foreach (EditorContext context in contexts) {
+                foreach (EditorContext context in contexts)
+                {
                     context.Reparse();
                 }
             }
@@ -1168,7 +1237,7 @@ namespace TSP.DoxygenEditor.Views
             if (dlgSaveWorkspace.ShowDialog() == DialogResult.OK)
             {
                 _globalConfig.WorkspacePath = dlgSaveWorkspace.FileName;
-                var newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath);
+                WorkspaceModel newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath);
                 _workspace.Assign(newWorkspace);
                 UpdatedWorkspaceFile();
             }
@@ -1189,6 +1258,107 @@ namespace TSP.DoxygenEditor.Views
                 _globalConfig.WorkspacePath = _workspace.FilePath;
                 UpdatedWorkspaceFile();
             }
+        }
+
+        private void BuildDocumentationClick(object sender, EventArgs e)
+        {
+            miBuildDocumentation.Enabled = false;
+            tbtnBuildDocumentation.Enabled = false;
+
+            string baseDir = _workspace.Build.BaseDirectory;
+            string configFilePath = null;
+            if (!string.IsNullOrWhiteSpace(baseDir) && !string.IsNullOrWhiteSpace(_workspace.Build.ConfigFile))
+            {
+                if (Path.IsPathRooted(_workspace.Build.ConfigFile))
+                    configFilePath = _workspace.Build.ConfigFile;
+                else
+                    configFilePath = Path.Combine(baseDir, _workspace.Build.ConfigFile);
+            }
+            string pathToDoxygen = _workspace.Build.PathToDoxygen;
+            bool openInBrowser = _workspace.Build.OpenInBrowser;
+
+            EditorContext configContext = null;
+            IBaseNode configTree = null;
+            foreach (TabPage tab in tcFiles.TabPages)
+            {
+                EditorContext context = (EditorContext)tab.Tag;
+                if (context.FileType == EditorFileType.DoxyConfig)
+                {
+                    configContext = context;
+                    break;
+                }
+            }
+
+            if (configContext != null)
+            {
+                configFilePath = configContext.FilePath;
+                configTree = configContext.ParseInfo.DoxyConfigTree;
+                baseDir = Path.GetDirectoryName(configFilePath);
+            }
+
+            if ((configTree == null) && !string.IsNullOrWhiteSpace(configFilePath) && File.Exists(configFilePath))
+            {
+                // Config file comes from global configuration override, so we need to parse it
+                string configContents = File.ReadAllText(configFilePath);
+                if (!string.IsNullOrWhiteSpace(configFilePath))
+                {
+                    List<DoxygenToken> tokens = new List<DoxygenToken>();
+                    using (DoxygenConfigLexer lexer = new DoxygenConfigLexer(configContents, new TextPosition(), configContents.Length))
+                    {
+                        tokens.AddRange(lexer.Tokenize());
+                    }
+                    using (DoxygenConfigParser parser = new DoxygenConfigParser(null))
+                    {
+                        parser.ParseTokens(tokens);
+                        configTree = parser.Root;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(baseDir) && !string.IsNullOrWhiteSpace(configFilePath) && File.Exists(configFilePath))
+            {
+                string relativeOutputPath = null;
+
+                if (configTree != null)
+                {
+                    IEnumerable<DoxygenConfigNode> children = configTree.GetChildrenAs<DoxygenConfigNode>();
+                    foreach (DoxygenConfigNode child in children)
+                    {
+                        if (child.Entity.Kind == DoxygenConfigEntityKind.ConfigSet)
+                        {
+                            if ("OUTPUT_DIRECTORY".Equals(child.Entity.Id))
+                            {
+                                relativeOutputPath = child.Entity.Settings.FirstOrDefault();
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                string outputPath = !string.IsNullOrWhiteSpace(relativeOutputPath) ? Path.Combine(baseDir, relativeOutputPath) : null;
+                BuildDocumentationForm form = new BuildDocumentationForm(
+                    baseDir: baseDir,
+                    configFilePath: configFilePath,
+                    compilerPath: pathToDoxygen,
+                    outputPath: outputPath,
+                    openInBrowser: openInBrowser);
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    _workspace.Build.OpenInBrowser = form.OpenInBrowser;
+                }
+            }
+            else
+            {
+                string msg;
+                if (string.IsNullOrWhiteSpace(configFilePath))
+                    msg = "No doxygen configuration in tabs found";
+                else
+                    msg = $"doxygen configuration file '{configFilePath}' does not exists";
+                MessageBox.Show(this, $"{msg}.{Environment.NewLine}Please add a valid doxygen configuration file with the extension '.doxygen'", "Missing doxygen configuration", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            }
+
+            miBuildDocumentation.Enabled = true;
+            tbtnBuildDocumentation.Enabled = true;
         }
     }
 }

@@ -5,6 +5,7 @@
         Unknown = 0,
         DoxygenSection,
         DoxygenPage,
+        DoxygenConfigValue,
         CppType,
         CppStruct,
         CppClass,

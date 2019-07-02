@@ -33,16 +33,16 @@ namespace TSP.DoxygenEditor
 
         private void Lex(string source, params ExpectToken[] expectedTokens)
         {
-            using (DoxygenLexer lexer = new DoxygenLexer(source, new TextPosition(0), source.Length))
+            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(source, new TextPosition(0), source.Length))
             {
-                var tokens = lexer.Tokenize();
+                IEnumerable<DoxygenToken> tokens = lexer.Tokenize();
                 if (expectedTokens.Length > 0)
                 {
                     Assert.AreEqual(expectedTokens.Length, tokens.Count());
                     int index = 0;
-                    foreach (var token in tokens)
+                    foreach (DoxygenToken token in tokens)
                     {
-                        var et = expectedTokens[index];
+                        ExpectToken et = expectedTokens[index];
                         Assert.AreEqual(et.Kind, token.Kind);
                         Assert.IsTrue(token.Length >= et.MinLength, $"Expect min token length of {et.MinLength} but got {token.Length}");
                         Assert.IsTrue(token.Length <= et.MaxLength, $"Expect max token length of {et.MaxLength} but got {token.Length}");

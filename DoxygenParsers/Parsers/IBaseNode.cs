@@ -16,5 +16,6 @@ namespace TSP.DoxygenEditor.Parsers
         TextRange EndRange { get; }
         void AddChild(IBaseNode child);
         IBaseNode FindNodeByRange(TextRange range);
+        IEnumerable<TChild> GetChildrenAs<TChild>() where TChild : IBaseNode;
     }
 }

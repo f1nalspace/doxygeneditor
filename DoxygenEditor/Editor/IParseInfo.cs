@@ -10,8 +10,9 @@ namespace TSP.DoxygenEditor.Editor
     {
         IEnumerable<TextError> Errors { get; }
         IEnumerable<PerformanceItemModel> PerformanceItems { get; }
-        IBaseNode DoxyTree { get; }
+        IBaseNode DoxyBlockTree { get; }
+        IBaseNode DoxyConfigTree { get; }
         IBaseNode CppTree { get; }
-        SymbolTable SymbolTable { get; }
+        SymbolTable LocalSymbolTable { get; }
     }
 }

@@ -20,19 +20,63 @@ namespace TSP.DoxygenEditor.Models
         public class ViewOptions : IWorkspaceOptions<ViewOptions>
         {
             const string SectionName = "View";
+
             public bool IsWhitespaceVisible { get; internal set; } = false;
+            public double TreeSplitterDistance { get; internal set; } = 0.25;
 
             public void Assign(ViewOptions other)
             {
                 IsWhitespaceVisible = other.IsWhitespaceVisible;
+                TreeSplitterDistance = other.TreeSplitterDistance;
             }
             public void Load(IConfigurarionReader reader)
             {
                 IsWhitespaceVisible = reader.ReadBool(SectionName, () => IsWhitespaceVisible, false);
+                TreeSplitterDistance = reader.ReadDouble(SectionName, () => TreeSplitterDistance, 0.25);
             }
             public void Save(IConfigurarionWriter writer)
             {
                 writer.WriteBool(SectionName, () => IsWhitespaceVisible, IsWhitespaceVisible);
+                writer.WriteDouble(SectionName, () => TreeSplitterDistance, TreeSplitterDistance);
+            }
+        }
+
+        public interface IBuildOptions<T>
+        {
+            void Assign(T other);
+            void Load(IConfigurarionReader reader);
+            void Save(IConfigurarionWriter writer);
+        }
+
+        public class BuildOptions : IBuildOptions<BuildOptions>
+        {
+            const string SectionName = "Build";
+
+            public bool OpenInBrowser { get; internal set; } = true;
+            public string PathToDoxygen { get; internal set; }
+            public string BaseDirectory { get; internal set; }
+            public string ConfigFile { get; internal set; }
+
+            public void Assign(BuildOptions other)
+            {
+                OpenInBrowser = other.OpenInBrowser;
+                PathToDoxygen = other.PathToDoxygen;
+                BaseDirectory = other.BaseDirectory;
+                ConfigFile = other.ConfigFile;
+            }
+            public void Load(IConfigurarionReader reader)
+            {
+                OpenInBrowser = reader.ReadBool(SectionName, () => OpenInBrowser, true);
+                PathToDoxygen = reader.ReadString(SectionName, () => PathToDoxygen);
+                BaseDirectory = reader.ReadString(SectionName, () => BaseDirectory);
+                ConfigFile = reader.ReadString(SectionName, () => ConfigFile);
+            }
+            public void Save(IConfigurarionWriter writer)
+            {
+                writer.WriteBool(SectionName, () => OpenInBrowser, OpenInBrowser);
+                writer.WriteString(SectionName, () => PathToDoxygen, PathToDoxygen);
+                writer.WriteString(SectionName, () => BaseDirectory, BaseDirectory);
+                writer.WriteString(SectionName, () => ConfigFile, ConfigFile);
             }
         }
 
@@ -145,6 +189,7 @@ namespace TSP.DoxygenEditor.Models
         public HistoryOptions History { get; }
         public ParserCppOptions ParserCpp { get; }
         public ValidationCppOptions ValidationCpp { get; }
+        public BuildOptions Build { get; }
 
         public WorkspaceModel(string filePath)
         {
@@ -153,6 +198,7 @@ namespace TSP.DoxygenEditor.Models
             History = new HistoryOptions();
             ParserCpp = new ParserCppOptions();
             ValidationCpp = new ValidationCppOptions();
+            Build = new BuildOptions();
         }
 
         public void Assign(WorkspaceModel other)
@@ -162,6 +208,7 @@ namespace TSP.DoxygenEditor.Models
             History.Assign(other.History);
             ParserCpp.Assign(other.ParserCpp);
             ValidationCpp.Assign(other.ValidationCpp);
+            Build.Assign(other.Build);
         }
 
         public static WorkspaceModel Load(string filePath)
@@ -175,9 +222,11 @@ namespace TSP.DoxygenEditor.Models
                 result.History.Load(reader);
                 result.ParserCpp.Load(reader);
                 result.ValidationCpp.Load(reader);
+                result.Build.Load(reader);
             }
             return (result);
         }
+
         public void Save()
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(FilePath));
@@ -187,6 +236,7 @@ namespace TSP.DoxygenEditor.Models
                 History.Save(writer);
                 ParserCpp.Save(writer);
                 ValidationCpp.Save(writer);
+                Build.Save(writer);
                 writer.Save(FilePath);
             }
         }

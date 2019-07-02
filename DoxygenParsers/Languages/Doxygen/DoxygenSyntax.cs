@@ -149,7 +149,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         public abstract class CommandRule
         {
             public CommandKind Kind { get; }
-            public DoxygenEntityKind EntityKind { get; }
+            public DoxygenBlockEntityKind EntityKind { get; }
             public IEnumerable<ArgumentRule> Args { get; }
             public bool IsPush
             {
@@ -161,7 +161,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     return (result);
                 }
             }
-            public CommandRule(CommandKind kind, DoxygenEntityKind entityKind, IEnumerable<ArgumentRule> args)
+            public CommandRule(CommandKind kind, DoxygenBlockEntityKind entityKind, IEnumerable<ArgumentRule> args)
             {
                 Kind = kind;
                 EntityKind = entityKind;
@@ -170,50 +170,50 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         }
         public class BasicCommandRule : CommandRule
         {
-            public BasicCommandRule(params ArgumentRule[] args) : base(CommandKind.Basic, DoxygenEntityKind.Basic, args)
+            public BasicCommandRule(params ArgumentRule[] args) : base(CommandKind.Basic, DoxygenBlockEntityKind.Basic, args)
             {
             }
-            public BasicCommandRule(DoxygenEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Basic, entityKind, args)
+            public BasicCommandRule(DoxygenBlockEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Basic, entityKind, args)
             {
             }
         }
         public class VisualEnhancementCommandRule : CommandRule
         {
-            public VisualEnhancementCommandRule(params ArgumentRule[] args) : base(CommandKind.VisualEnhancement, DoxygenEntityKind.VisualEnhancement, args)
+            public VisualEnhancementCommandRule(params ArgumentRule[] args) : base(CommandKind.VisualEnhancement, DoxygenBlockEntityKind.VisualEnhancement, args)
             {
             }
         }
         public class ParagraphCommandRule : CommandRule
         {
-            public ParagraphCommandRule(params ArgumentRule[] args) : base(CommandKind.Paragraph, DoxygenEntityKind.Paragraph, args)
+            public ParagraphCommandRule(params ArgumentRule[] args) : base(CommandKind.Paragraph, DoxygenBlockEntityKind.Paragraph, args)
             {
             }
-            public ParagraphCommandRule(DoxygenEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Paragraph, entityKind, args)
+            public ParagraphCommandRule(DoxygenBlockEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Paragraph, entityKind, args)
             {
             }
         }
         public class SectionCommandRule : CommandRule
         {
-            public SectionCommandRule(DoxygenEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Section, entityKind, args)
+            public SectionCommandRule(DoxygenBlockEntityKind entityKind, params ArgumentRule[] args) : base(CommandKind.Section, entityKind, args)
             {
             }
         }
         public class EscapeCommandRule : CommandRule
         {
-            public EscapeCommandRule(params ArgumentRule[] args) : base(CommandKind.Escape, DoxygenEntityKind.None, args)
+            public EscapeCommandRule(params ArgumentRule[] args) : base(CommandKind.Escape, DoxygenBlockEntityKind.None, args)
             {
             }
         }
         public class StartBlockCommandRule : CommandRule
         {
-            public StartBlockCommandRule(params ArgumentRule[] args) : base(CommandKind.StartCommandBlock, DoxygenEntityKind.BlockCommand, args)
+            public StartBlockCommandRule(params ArgumentRule[] args) : base(CommandKind.StartCommandBlock, DoxygenBlockEntityKind.BlockCommand, args)
             {
             }
         }
         public class EndBlockCommandRule : CommandRule
         {
             public HashSet<string> StartCommandNames { get; }
-            public EndBlockCommandRule(string[] startCommandNames, params ArgumentRule[] args) : base(CommandKind.EndCommandBlock, DoxygenEntityKind.None, args)
+            public EndBlockCommandRule(string[] startCommandNames, params ArgumentRule[] args) : base(CommandKind.EndCommandBlock, DoxygenBlockEntityKind.None, args)
             {
                 StartCommandNames = new HashSet<string>(startCommandNames);
             }
@@ -312,7 +312,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "latexonly", new StartBlockCommandRule() },
             { "line", new BasicCommandRule(new ArgumentRule(ArgumentKind.UntilEndOfLine, "pattern").Required()) },
             { "link", new StartBlockCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "link-object").Required()) },
-            { "mainpage", new SectionCommandRule(DoxygenEntityKind.Page, new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Optional()) },
+            { "mainpage", new SectionCommandRule(DoxygenBlockEntityKind.Page, new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Optional()) },
             { "manonly", new StartBlockCommandRule() },
             { "memberof", new BasicCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
             { "msc", new StartBlockCommandRule(new ArgumentRule(ArgumentKind.QuotedString, "caption").Optional(), new ArgumentRule(ArgumentKind.Size, "sizeindication").Optional()) },
@@ -324,7 +324,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "note", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "text").Required()) },
             { "overload", new BasicCommandRule(new ArgumentRule(ArgumentKind.UntilEndOfLine, "function declaration").Optional()) },
             { "package", new BasicCommandRule(new ArgumentRule(ArgumentKind.Identifier, "name").Required()) },
-            { "page", new SectionCommandRule(DoxygenEntityKind.Page, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Optional()) },
+            { "page", new SectionCommandRule(DoxygenBlockEntityKind.Page, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Optional()) },
             { "par", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.UntilEndOfLine, "paragraph title").Optional(), new ArgumentRule(ArgumentKind.ComplexBlock, "paragraph").Required()) },
             { "paragraph", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.Identifier, "paragraph-name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "paragraph title").Required()) },
             { "param", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.Identifier, "dir", "[", "]", ArgumentFlags.DirectlyAfterCommand).Optional(), new ArgumentRule(ArgumentKind.Identifier, "parameter-name").Required(), new ArgumentRule(ArgumentKind.ComplexLine, "parameter description").Required()) },
@@ -340,17 +340,17 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "public", new BasicCommandRule() },
             { "publicsection", new BasicCommandRule() },
             { "pure", new BasicCommandRule() },
-            { "ref", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required(), new ArgumentRule(ArgumentKind.QuotedString, "text").Optional()) },
-            { "refitem", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
-            { "relates", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
-            { "relatesalso", new BasicCommandRule(DoxygenEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
+            { "ref", new BasicCommandRule(DoxygenBlockEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required(), new ArgumentRule(ArgumentKind.QuotedString, "text").Optional()) },
+            { "refitem", new BasicCommandRule(DoxygenBlockEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
+            { "relates", new BasicCommandRule(DoxygenBlockEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
+            { "relatesalso", new BasicCommandRule(DoxygenBlockEntityKind.Reference, new ArgumentRule(ArgumentKind.SingleObjectReference, "name").Required()) },
             { "remark", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "remark text").Required()) },
             { "return", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "description of the return value").Required()) },
             { "retval", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.Identifier, "return value").Required(), new ArgumentRule(ArgumentKind.ComplexBlock, "description").Required()) },
             { "rtfonly", new StartBlockCommandRule() },
-            { "sa", new ParagraphCommandRule(DoxygenEntityKind.See, new ArgumentRule(ArgumentKind.ComplexLine, "references").AtLeastOnce()) },
+            { "sa", new ParagraphCommandRule(DoxygenBlockEntityKind.See, new ArgumentRule(ArgumentKind.ComplexLine, "references").AtLeastOnce()) },
             { "secreflist", new StartBlockCommandRule() },
-            { "section", new SectionCommandRule(DoxygenEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
+            { "section", new SectionCommandRule(DoxygenBlockEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
             { "showinitializer", new BasicCommandRule() },
             { "showrefby", new BasicCommandRule() },
             { "showrefs", new BasicCommandRule() },
@@ -363,8 +363,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "startuml", new StartBlockCommandRule(new ArgumentRule(ArgumentKind.PrefixToPostfix, "file", "{", "}").Optional(), new ArgumentRule(ArgumentKind.QuotedString, "caption").Optional(), new ArgumentRule(ArgumentKind.Size, "sizeindication").Optional()) },
             { "struct", new BasicCommandRule(new ArgumentRule(ArgumentKind.Identifier, "name").Optional(), new ArgumentRule(ArgumentKind.HeaderFile, "header-file").Optional(), new ArgumentRule(ArgumentKind.HeaderName, "header-name").Optional()) },
             { "subpage", new BasicCommandRule(new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.QuotedString, "text").Optional()) },
-            { "subsection", new SectionCommandRule(DoxygenEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
-            { "subsubsection", new SectionCommandRule(DoxygenEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
+            { "subsection", new SectionCommandRule(DoxygenBlockEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
+            { "subsubsection", new SectionCommandRule(DoxygenBlockEntityKind.Section, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Required()) },
             { "tableofcontents", new BasicCommandRule(new ArgumentRule(ArgumentKind.PrefixToPostfix, "option", "{", "}", ArgumentFlags.DirectlyAfterCommand).Optional()) },
             { "test", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "paragraph describing a test case").Required()) },
             { "throw", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.SingleObjectReference, "exception-object").Required(), new ArgumentRule(ArgumentKind.ComplexBlock, "exception description").Required()) },

@@ -7,5 +7,6 @@
         DoxygenCode = 1 << 1,
         Doxygen = 1 << 2,
         Html = 1 << 3,
+        DoxygenConfig = 1 << 4,
     }
 }

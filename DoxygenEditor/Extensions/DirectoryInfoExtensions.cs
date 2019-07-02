@@ -11,7 +11,7 @@ namespace TSP.DoxygenEditor.Extensions
     {
         public static DirectoryInfo GetDirectory(this DirectoryInfo root, string name)
         {
-            var dirs = root.GetDirectories(name, SearchOption.TopDirectoryOnly);
+            DirectoryInfo[] dirs = root.GetDirectories(name, SearchOption.TopDirectoryOnly);
             if (dirs.Length == 1)
                 return (dirs[0]);
             return (null);

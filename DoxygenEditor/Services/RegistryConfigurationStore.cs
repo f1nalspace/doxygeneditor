@@ -21,13 +21,13 @@ namespace TSP.DoxygenEditor.Services
 
         public bool Load(string filePath)
         {
-            var softwareKey = Registry.CurrentUser.OpenSubKey("Software", false);
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", false);
             string[] names = filePath.Split('/');
             _rootKey = null;
-            var curKey = softwareKey;
+            RegistryKey curKey = softwareKey;
             for (int i = 0; i < names.Length; ++i)
             {
-                var newKey = curKey.OpenSubKey(names[i], false);
+                RegistryKey newKey = curKey.OpenSubKey(names[i], false);
                 if (newKey == null)
                 {
                     _rootKey = null;
@@ -42,13 +42,13 @@ namespace TSP.DoxygenEditor.Services
         public void Save(string filePath)
         {
             // Create keys
-            var softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
+            RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", true);
             string[] names = filePath.Split('/');
             _rootKey = null;
-            var curKey = softwareKey;
+            RegistryKey curKey = softwareKey;
             for (int i = 0; i < names.Length; ++i)
             {
-                var newKey = curKey.OpenSubKey(names[i], true);
+                RegistryKey newKey = curKey.OpenSubKey(names[i], true);
                 if (newKey == null)
                     newKey = curKey.CreateSubKey(names[i]);
                 _rootKey = newKey;
@@ -57,17 +57,17 @@ namespace TSP.DoxygenEditor.Services
             Debug.Assert(_rootKey != null);
 
             // Clear registry
-            var existingKeyNames = _rootKey.GetSubKeyNames();
-            foreach (var existingKeyName in existingKeyNames)
+            string[] existingKeyNames = _rootKey.GetSubKeyNames();
+            foreach (string existingKeyName in existingKeyNames)
                 _rootKey.DeleteSubKeyTree(existingKeyName);
 
-            foreach (var writeEntry in WriteEntries)
+            foreach (WriteEntry writeEntry in WriteEntries)
             {
                 string section = writeEntry.Section;
                 string name = writeEntry.Name;
                 object value = writeEntry.Value;
                 WriteKind kind = writeEntry.Kind;
-                var sectionKey = _rootKey.OpenSubKey(section, true);
+                RegistryKey sectionKey = _rootKey.OpenSubKey(section, true);
                 if (sectionKey == null)
                     sectionKey = _rootKey.CreateSubKey(section);
                 if (value != null)
@@ -85,8 +85,8 @@ namespace TSP.DoxygenEditor.Services
                             break;
                         case WriteKind.List:
                             {
-                                var list = (List<string>)value;
-                                var listKey = sectionKey.OpenSubKey(name, true);
+                                List<string> list = (List<string>)value;
+                                RegistryKey listKey = sectionKey.OpenSubKey(name, true);
                                 sectionKey.DeleteSubKeyTree(name);
                                 listKey = sectionKey.CreateSubKey(name);
                                 listKey.SetValue("Count", list.Count);
@@ -96,18 +96,18 @@ namespace TSP.DoxygenEditor.Services
                             break;
                         case WriteKind.Dictionary:
                             {
-                                var dict = (IDictionary<string, object>)value;
-                                var listKey = sectionKey.OpenSubKey(name, true);
+                                IDictionary<string, object> dict = (IDictionary<string, object>)value;
+                                RegistryKey listKey = sectionKey.OpenSubKey(name, true);
                                 sectionKey.DeleteSubKeyTree(name);
                                 listKey = sectionKey.CreateSubKey(name);
 
-                                foreach (var pair in dict)
+                                foreach (KeyValuePair<string, object> pair in dict)
                                 {
                                     Type valueType = pair.Value.GetType();
                                     if (valueType.IsValueType)
                                     {
-                                        var properties = valueType.GetProperties(System.Reflection.BindingFlags.Public);
-                                        foreach (var property in properties)
+                                        System.Reflection.PropertyInfo[] properties = valueType.GetProperties(System.Reflection.BindingFlags.Public);
+                                        foreach (System.Reflection.PropertyInfo property in properties)
                                         {
                                             Type propType = property.DeclaringType;
                                             string propName = property.Name;
@@ -139,7 +139,7 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootKey != null)
             {
-                var sectionKey = _rootKey.OpenSubKey(section, false);
+                RegistryKey sectionKey = _rootKey.OpenSubKey(section, false);
                 if (sectionKey != null)
                 {
                     object value = sectionKey.GetValue(name);
@@ -164,6 +164,7 @@ namespace TSP.DoxygenEditor.Services
         {
             return ReadString(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
+
         public int ReadInt(string section, string name, int defaultValue)
         {
             int? value = (int?)ReadRaw(section, name);
@@ -175,6 +176,19 @@ namespace TSP.DoxygenEditor.Services
         {
             return ReadInt(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
+
+        public double ReadDouble(string section, string name, double defaultValue)
+        {
+            double? value = (double?)ReadRaw(section, name);
+            if (value.HasValue)
+                return (value.Value);
+            return (defaultValue);
+        }
+        public double ReadDouble(string section, Expression<Func<object>> nameExpression, double defaultValue)
+        {
+            return ReadDouble(section, ReflectionUtils.GetName(nameExpression), defaultValue);
+        }
+
         public bool ReadBool(string section, string name, bool defaultValue)
         {
             int? value = (int?)ReadRaw(section, name);
@@ -190,10 +204,10 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootKey != null)
             {
-                var sectionKey = _rootKey.OpenSubKey(section, false);
+                RegistryKey sectionKey = _rootKey.OpenSubKey(section, false);
                 if (sectionKey != null)
                 {
-                    var listKey = sectionKey.OpenSubKey(name, false);
+                    RegistryKey listKey = sectionKey.OpenSubKey(name, false);
                     if (listKey != null)
                     {
                         int? count = (int?)listKey.GetValue("Count");
@@ -218,10 +232,10 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootKey != null)
             {
-                var sectionKey = _rootKey.OpenSubKey(section, false);
+                RegistryKey sectionKey = _rootKey.OpenSubKey(section, false);
                 if (sectionKey != null)
                 {
-                    var listKey = sectionKey.OpenSubKey(name, false);
+                    RegistryKey listKey = sectionKey.OpenSubKey(name, false);
                     if (listKey != null)
                     {
                         int? count = (int?)listKey.GetValue("Count");
@@ -234,8 +248,8 @@ namespace TSP.DoxygenEditor.Services
                                 {
                                     Type structType = typeof(TValue);
                                     TValue structValue = (TValue)Activator.CreateInstance(structType);
-                                    var properties = structType.GetProperties(System.Reflection.BindingFlags.Public);
-                                    foreach (var property in properties)
+                                    System.Reflection.PropertyInfo[] properties = structType.GetProperties(System.Reflection.BindingFlags.Public);
+                                    foreach (System.Reflection.PropertyInfo property in properties)
                                     {
                                         Type propType = property.DeclaringType;
                                         string propName = property.Name;
@@ -267,9 +281,29 @@ namespace TSP.DoxygenEditor.Services
             return ReadDictionary<TValue>(section, ReflectionUtils.GetName(nameExpression));
         }
 
-        public override void Dispose()
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
         {
             _rootKey?.Dispose();
         }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~RegistryConfigurationStore()
+        {
+            Dispose(false);
+        }
+        #endregion
     }
 }

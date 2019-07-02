@@ -16,7 +16,7 @@ namespace TSP.DoxygenEditor.Symbols
                 throw new ArgumentNullException("Id may not be null");
             if (_tableMap.ContainsKey(id))
             {
-                var table = _tableMap[id];
+                SymbolTable table = _tableMap[id];
                 table.Clear();
             }
         }
@@ -27,7 +27,7 @@ namespace TSP.DoxygenEditor.Symbols
                 throw new ArgumentNullException("Id may not be null");
             if (_tableMap.ContainsKey(id))
             {
-                var table = _tableMap[id];
+                SymbolTable table = _tableMap[id];
                 return (table);
             }
             return (null);
@@ -39,7 +39,7 @@ namespace TSP.DoxygenEditor.Symbols
                 throw new ArgumentNullException("Id may not be null");
             if (_tableMap.ContainsKey(id))
             {
-                var table = _tableMap[id];
+                SymbolTable table = _tableMap[id];
                 table.Clear();
                 ((IDictionary)_tableMap).Remove(id);
             }
@@ -63,10 +63,10 @@ namespace TSP.DoxygenEditor.Symbols
         {
             if (string.IsNullOrWhiteSpace(symbol))
                 throw new ArgumentNullException("Symbol may not be null or empty");
-            foreach (var entryPair in _tableMap)
+            foreach (KeyValuePair<ISymbolTableId, SymbolTable> entryPair in _tableMap)
             {
-                var id = entryPair.Key;
-                var table = entryPair.Value;
+                ISymbolTableId id = entryPair.Key;
+                SymbolTable table = entryPair.Value;
                 if (table.HasSource(symbol))
                     return (true);
             }
@@ -78,10 +78,10 @@ namespace TSP.DoxygenEditor.Symbols
             if (string.IsNullOrWhiteSpace(symbol))
                 throw new ArgumentNullException("Symbol may not be null or empty");
             Tuple<SourceSymbol, ISymbolTableId> bestSource = null;
-            foreach (var entryPair in _tableMap)
+            foreach (KeyValuePair<ISymbolTableId, SymbolTable> entryPair in _tableMap)
             {
-                var id = entryPair.Key;
-                var table = entryPair.Value;
+                ISymbolTableId id = entryPair.Key;
+                SymbolTable table = entryPair.Value;
                 if (tableFilter != null && !tableFilter(id))
                     continue;
                 SourceSymbol source = table.GetSource(symbol);
@@ -97,10 +97,10 @@ namespace TSP.DoxygenEditor.Symbols
         {
             if (string.IsNullOrWhiteSpace(symbol))
                 throw new ArgumentNullException("Symbol may not be null or empty");
-            foreach (var entryPair in _tableMap)
+            foreach (KeyValuePair<ISymbolTableId, SymbolTable> entryPair in _tableMap)
             {
-                var id = entryPair.Key;
-                var table = entryPair.Value;
+                ISymbolTableId id = entryPair.Key;
+                SymbolTable table = entryPair.Value;
                 if (tableFilter != null && !tableFilter(id))
                     continue;
                 SourceSymbol result = table.GetSource(symbol);
@@ -111,11 +111,11 @@ namespace TSP.DoxygenEditor.Symbols
 
         public static BaseSymbol FindSymbolFromRange(TextRange range)
         {
-            foreach (var entryPair in _tableMap)
+            foreach (KeyValuePair<ISymbolTableId, SymbolTable> entryPair in _tableMap)
             {
-                var id = entryPair.Key;
-                var table = entryPair.Value;
-                var result = table.FindSymbolFromRange(range);
+                ISymbolTableId id = entryPair.Key;
+                SymbolTable table = entryPair.Value;
+                BaseSymbol result = table.FindSymbolFromRange(range);
                 if (result != null)
                     return (result);
             }
@@ -124,11 +124,11 @@ namespace TSP.DoxygenEditor.Symbols
 
         public static IEnumerable<SourceSymbol> GetSources(ISymbolTableId id)
         {
-            var table = _tableMap.ContainsKey(id) ? _tableMap[id] : null;
+            SymbolTable table = _tableMap.ContainsKey(id) ? _tableMap[id] : null;
             if (table != null)
             {
-                var sources = table.SourceMap;
-                foreach (var source in sources)
+                IEnumerable<KeyValuePair<string, List<SourceSymbol>>> sources = table.SourceMap;
+                foreach (KeyValuePair<string, List<SourceSymbol>> source in sources)
                 {
                     foreach (SourceSymbol symbol in source.Value)
                         yield return symbol;
@@ -145,14 +145,14 @@ namespace TSP.DoxygenEditor.Symbols
         public static IEnumerable<KeyValuePair<ISymbolTableId, TextError>> Validate(ValidationConfigration config)
         {
             List<KeyValuePair<ISymbolTableId, TextError>> result = new List<KeyValuePair<ISymbolTableId, TextError>>();
-            foreach (var tablePair in _tableMap)
+            foreach (KeyValuePair<ISymbolTableId, SymbolTable> tablePair in _tableMap)
             {
-                var id = tablePair.Key;
-                var table = tablePair.Value;
-                foreach (var names in table.ReferenceMap)
+                ISymbolTableId id = tablePair.Key;
+                SymbolTable table = tablePair.Value;
+                foreach (KeyValuePair<string, List<ReferenceSymbol>> names in table.ReferenceMap)
                 {
                     string name = names.Key;
-                    foreach (var reference in names.Value)
+                    foreach (ReferenceSymbol reference in names.Value)
                     {
                         if (config.ExcludeCppPreprocessorMatch)
                         {

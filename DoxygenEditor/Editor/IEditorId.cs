@@ -9,5 +9,6 @@ namespace TSP.DoxygenEditor.Editor
         string Name { get; }
         string FilePath { get; }
         int TabIndex { get; }
+        EditorFileType FileType { get; }
     }
 }

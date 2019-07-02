@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.Pools
         }
         public void Release(IEnumerable<T> list)
         {
-            foreach (var item in list)
+            foreach (T item in list)
                 _objects.Enqueue(item);
         }
     }

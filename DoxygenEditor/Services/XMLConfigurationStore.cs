@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
 using System.Text;
@@ -64,7 +65,7 @@ namespace TSP.DoxygenEditor.Services
             XmlNode baseNode = _doc.CreateElement(_baseName, _defaultNamespace);
             _doc.AppendChild(baseNode);
             _rootNode = baseNode;
-            foreach (var writeEntry in WriteEntries)
+            foreach (WriteEntry writeEntry in WriteEntries)
             {
                 string section = writeEntry.Section;
                 string name = writeEntry.Name;
@@ -102,14 +103,18 @@ namespace TSP.DoxygenEditor.Services
                         case WriteKind.Int:
                             nameNode.InnerText = $"{(int)value}";
                             break;
+                        case WriteKind.Double:
+                            double d = (double)value;
+                            nameNode.InnerText = d.ToString(CultureInfo.InvariantCulture);
+                            break;
                         case WriteKind.String:
                             nameNode.InnerText = (string)value;
                             break;
                         case WriteKind.List:
                             {
-                                var list = (List<string>)value;
+                                List<string> list = (List<string>)value;
                                 nameNode.RemoveAll();
-                                foreach (var item in list)
+                                foreach (string item in list)
                                 {
                                     XmlNode itemNode = _doc.CreateElement("Item", _defaultNamespace);
                                     itemNode.InnerText = item;
@@ -119,16 +124,16 @@ namespace TSP.DoxygenEditor.Services
                             break;
                         case WriteKind.Dictionary:
                             {
-                                var dict = (IDictionary<string, object>)value;
+                                IDictionary<string, object> dict = (IDictionary<string, object>)value;
                                 nameNode.RemoveAll();
-                                foreach (var pair in dict)
+                                foreach (KeyValuePair<string, object> pair in dict)
                                 {
                                     XmlNode itemNode = _doc.CreateElement(pair.Key, _defaultNamespace);
                                     Type t = pair.Value.GetType();
                                     if (t.IsValueType)
                                     {
-                                        var properties = t.GetProperties();
-                                        foreach (var property in properties)
+                                        System.Reflection.PropertyInfo[] properties = t.GetProperties();
+                                        foreach (System.Reflection.PropertyInfo property in properties)
                                         {
                                             Type propType = property.DeclaringType;
                                             string propName = property.Name;
@@ -176,7 +181,7 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootNode != null)
             {
-                var nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
+                XmlNode nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
                 return (nameNode?.InnerText);
             }
             return (null);
@@ -201,6 +206,7 @@ namespace TSP.DoxygenEditor.Services
         {
             return ReadBool(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
+
         public int ReadInt(string section, string name, int defaultValue)
         {
             string rawValue = ReadRaw(section, name) as string;
@@ -215,6 +221,22 @@ namespace TSP.DoxygenEditor.Services
         public int ReadInt(string section, Expression<Func<object>> nameExpression, int defaultValue)
         {
             return ReadInt(section, ReflectionUtils.GetName(nameExpression), defaultValue);
+        }
+
+        public double ReadDouble(string section, string name, double defaultValue)
+        {
+            string rawValue = ReadRaw(section, name) as string;
+            if (rawValue != null)
+            {
+                double result;
+                if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+                    return (result);
+            }
+            return (defaultValue);
+        }
+        public double ReadDouble(string section, Expression<Func<object>> nameExpression, double defaultValue)
+        {
+            return ReadDouble(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
 
         public string ReadString(string section, string name, string defaultValue)
@@ -233,7 +255,7 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootNode != null)
             {
-                var nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
+                XmlNode nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
                 if (nameNode != null)
                 {
                     XmlNodeList itemsNodeList = nameNode.SelectNodes("d:Item", _nsMng);
@@ -254,7 +276,7 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootNode != null)
             {
-                var nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
+                XmlNode nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
                 if (nameNode != null)
                 {
                     XmlNodeList itemsNodeList = nameNode.SelectNodes("d:Item", _nsMng);
@@ -265,8 +287,8 @@ namespace TSP.DoxygenEditor.Services
                         {
                             Type structType = typeof(TValue);
                             TValue structValue = (TValue)Activator.CreateInstance(structType);
-                            var properties = structType.GetProperties(System.Reflection.BindingFlags.Public);
-                            foreach (var property in properties)
+                            System.Reflection.PropertyInfo[] properties = structType.GetProperties(System.Reflection.BindingFlags.Public);
+                            foreach (System.Reflection.PropertyInfo property in properties)
                             {
                                 Type propType = property.DeclaringType;
                                 string propName = property.Name;
@@ -300,9 +322,29 @@ namespace TSP.DoxygenEditor.Services
             return ReadDictionary<TValue>(section, ReflectionUtils.GetName(nameExpression));
         }
 
-        public override void Dispose()
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
         {
         }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~XMLConfigurationStore()
+        {
+            Dispose(false);
+        }
+        #endregion
 
     }
 }

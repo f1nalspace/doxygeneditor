@@ -80,6 +80,11 @@ namespace TSP.DoxygenEditor.Styles
         static int doxygenQuoteStringStyle = styleIndex++;
         static int doxygenArgumentStyle = styleIndex++;
 
+        static int doxygenConfigCommentStyle = styleIndex++;
+        static int doxygenConfigKeyStyle = styleIndex++;
+        static int doxygenConfigOpStyle = styleIndex++;
+        static int doxygenConfigValueStyle = styleIndex++;
+
         static Dictionary<DoxygenTokenKind, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenKind, int>() {
             { DoxygenTokenKind.DoxyBlockStartSingle, doxygenBlockStyle },
             { DoxygenTokenKind.DoxyBlockStartMulti, doxygenBlockStyle },
@@ -96,6 +101,13 @@ namespace TSP.DoxygenEditor.Styles
             { DoxygenTokenKind.CommandStart, doxygenCommandStyle },
             { DoxygenTokenKind.CommandEnd, doxygenCommandStyle },
             { DoxygenTokenKind.Code, Style.Default },
+
+            { DoxygenTokenKind.ConfigComment, doxygenConfigCommentStyle },
+            { DoxygenTokenKind.ConfigKey, doxygenConfigKeyStyle },
+            { DoxygenTokenKind.ConfigOpAddAssign, doxygenConfigOpStyle },
+            { DoxygenTokenKind.ConfigOpAssign, doxygenConfigOpStyle },
+            { DoxygenTokenKind.ConfigOpAddLine, doxygenConfigOpStyle },
+            { DoxygenTokenKind.ConfigValue, doxygenConfigValueStyle },
         };
 
         static int htmlTagCharsStyle = styleIndex++;
@@ -172,7 +184,7 @@ namespace TSP.DoxygenEditor.Styles
         public void RefreshData(IEnumerable<IBaseToken> tokens)
         {
             _entries.Clear();
-            foreach (var token in tokens)
+            foreach (IBaseToken token in tokens)
             {
                 if (token.Length == 0) continue;
                 if (typeof(CppToken).Equals(token.GetType()))
@@ -208,9 +220,8 @@ namespace TSP.DoxygenEditor.Styles
             }
         }
 
-        public void ApplyStyles(Scintilla editor)
+        private void ApplyCppStyle(Scintilla editor, ColorTheme theme)
         {
-            ColorTheme theme = ColorThemeManager.Current;
             CppColorTheme cppTheme = theme.Cpp;
 
             editor.Styles[cppMultiLineCommentStyle].Set(cppTheme[CppStyleKind.MultiLineComment]);
@@ -236,6 +247,11 @@ namespace TSP.DoxygenEditor.Styles
             editor.Styles[cppCharLiteralStyle].Set(cppTheme[CppStyleKind.CharLiteral]);
             editor.Styles[cppNumberLiteralStyle].Set(cppTheme[CppStyleKind.NumberLiteral]);
 
+        }
+
+        private void ApplyDoxygenStyle(Scintilla editor)
+        {
+            // Block styles
             editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
             editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
             editor.Styles[doxygenInvalidCommandStyle].ForeColor = Color.Red;
@@ -244,10 +260,30 @@ namespace TSP.DoxygenEditor.Styles
             editor.Styles[doxygenQuoteStringStyle].ForeColor = Color.Green;
             editor.Styles[doxygenArgumentStyle].ForeColor = Color.Red;
 
+            // Config styles
+            editor.Styles[doxygenConfigCommentStyle].ForeColor = Color.Gray;
+            editor.Styles[doxygenConfigKeyStyle].ForeColor = Color.Blue;
+            editor.Styles[doxygenConfigKeyStyle].Bold = false;
+            editor.Styles[doxygenConfigValueStyle].ForeColor = Color.Green;
+            editor.Styles[doxygenConfigOpStyle].ForeColor = Color.Black;
+            editor.Styles[doxygenConfigOpStyle].Bold = true;
+        }
+
+        private void ApplyHtmlStyle(Scintilla editor)
+        {
             editor.Styles[htmlTagCharsStyle].ForeColor = Color.DarkRed;
             editor.Styles[htmlTagNameStyle].ForeColor = Color.DarkRed;
             editor.Styles[htmlAttrNameStyle].ForeColor = Color.OrangeRed;
             editor.Styles[htmlAttrValueStyle].ForeColor = Color.CornflowerBlue;
+        }
+
+        public void ApplyStyles(Scintilla editor)
+        {
+            ColorTheme theme = ColorThemeManager.Current;
+
+            ApplyCppStyle(editor, theme);
+            ApplyDoxygenStyle(editor);
+            ApplyHtmlStyle(editor);
 
             editor.Indicators[0].Style = IndicatorStyle.FullBox;
             editor.Indicators[0].ForeColor = Color.Red;
@@ -262,8 +298,8 @@ namespace TSP.DoxygenEditor.Styles
             editor.StartStyling(startPos);
             editor.SetStyling(length, 0);
 
-            var rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0);
-            var intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
+            StyleEntry rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0);
+            IEnumerable<StyleEntry> intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
 
             foreach (StyleEntry entry in intersectingEntries)
             {

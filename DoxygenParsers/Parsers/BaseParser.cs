@@ -18,7 +18,7 @@ namespace TSP.DoxygenEditor.Parsers
         public IBaseNode Root { get; }
         public int TotalNodeCount { get; private set; }
 
-        public SymbolTable SymbolTable { get; }
+        public SymbolTable LocalSymbolTable { get; }
 
         class RootNode : BaseNode<TEntity>
         {
@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.Parsers
         public BaseParser(ISymbolTableId id)
         {
             Root = new RootNode();
-            SymbolTable = new SymbolTable(id);
+            LocalSymbolTable = new SymbolTable(id);
         }
         protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {
@@ -63,7 +63,7 @@ namespace TSP.DoxygenEditor.Parsers
         protected SearchResult<TToken> Search(LinkedListNode<IBaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc)
         {
             bool canTravel = (mode == SearchMode.Forward || mode == SearchMode.Backward);
-            var n = inNode;
+            LinkedListNode<IBaseToken> n = inNode;
             do
             {
                 if (n == null)
@@ -108,7 +108,7 @@ namespace TSP.DoxygenEditor.Parsers
             AlreadyAdvanced,
         }
 
-        public abstract ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream);
+        protected abstract ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream);
 
         public void ParseTokens(IEnumerable<IBaseToken> tokens)
         {
@@ -155,8 +155,28 @@ namespace TSP.DoxygenEditor.Parsers
             return (result);
         }
 
-        public virtual void Dispose()
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
         {
         }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~BaseParser()
+        {
+            Dispose(false);
+        }
+        #endregion
     }
 }

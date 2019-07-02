@@ -4,7 +4,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
 {
     public class BasicTextStream : TextStream
     {
-        private String _source;
+        private string _source;
 
         public BasicTextStream(string source, TextPosition pos, int length) : base(pos, length)
         {
@@ -37,10 +37,6 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     return (false);
             }
             return (true);
-        }
-
-        public override void Dispose()
-        {
         }
 
         public override char Peek()

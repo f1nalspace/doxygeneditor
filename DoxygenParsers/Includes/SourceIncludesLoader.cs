@@ -39,9 +39,20 @@ namespace TSP.DoxygenEditor.Includes
         private volatile int _runningTaskCount = 0;
 
         public delegate void IsCompletedEventHandler(object sender, IEnumerable<SymbolTable> tables);
-        public event IsCompletedEventHandler IsCompleted;
+        public IsCompletedEventHandler IsCompleted;
 
-        public delegate void ProgressChangedEventHandler(object sender, int parsedFileCount, int totalFileCount);
+        public class ProgressChangedEventArgs : EventArgs
+        {
+            public int ParsedFileCount { get; }
+            public int TotalFileCount { get; }
+            public ProgressChangedEventArgs(int parsedFileCount, int totalFileCount)
+            {
+                ParsedFileCount = parsedFileCount;
+                TotalFileCount = totalFileCount;
+            }
+        }
+
+        public delegate void ProgressChangedEventHandler(object sender, ProgressChangedEventArgs e);
         public event ProgressChangedEventHandler ProgressChanged;
 
         class IncludeFileId : ISymbolTableId
@@ -60,7 +71,7 @@ namespace TSP.DoxygenEditor.Includes
             _totalFileCount = files.Count();
             _progressFileCount = 0;
             _maxTaskCount = maxTaskCount;
-            foreach (var file in files)
+            foreach (string file in files)
                 _queue.Enqueue(file);
         }
 
@@ -72,10 +83,10 @@ namespace TSP.DoxygenEditor.Includes
             _state = State.Running;
             _runningTaskCount = 0;
             _progressFileCount = 0;
-            ProgressChanged?.Invoke(this, 0, _totalFileCount);
+            ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(0, _totalFileCount));
             for (int i = 0; i < _maxTaskCount; ++i)
             {
-                var task = Task.Factory.StartNew(() =>
+                Task<List<SymbolTable>> task = Task.Factory.StartNew(() =>
                 {
                     Interlocked.Increment(ref _runningTaskCount);
                     List<SymbolTable> tables = new List<SymbolTable>();
@@ -91,16 +102,16 @@ namespace TSP.DoxygenEditor.Includes
                                 List<CppToken> _tokens = new List<CppToken>();
                                 using (CppLexer lexer = new CppLexer(source, new TextPosition(), source.Length, Languages.LanguageKind.Cpp))
                                 {
-                                    foreach (var err in lexer.LexErrors)
+                                    foreach (TextError err in lexer.LexErrors)
                                         Debug.WriteLine($"Lex error[{filePath}]: {err.Message}");
                                     _tokens.AddRange(lexer.Tokenize());
                                 }
                                 using (CppParser parser = new CppParser(table.Id, new CppParser.CppConfiguration()))
                                 {
                                     parser.ParseTokens(_tokens);
-                                    foreach (var err in parser.ParseErrors)
+                                    foreach (TextError err in parser.ParseErrors)
                                         Debug.WriteLine($"Parse error[{filePath}]: {err.Message}");
-                                    table.AddTable(parser.SymbolTable);
+                                    table.AddTable(parser.LocalSymbolTable);
                                 }
                                 table.IsValid = true;
                             }
@@ -110,7 +121,7 @@ namespace TSP.DoxygenEditor.Includes
                             }
                             tables.Add(table);
                             Interlocked.Increment(ref _progressFileCount);
-                            ProgressChanged?.Invoke(this, _progressFileCount, _totalFileCount);
+                            ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progressFileCount, _totalFileCount));
                         }
                         Thread.Yield();
                     }
@@ -118,7 +129,7 @@ namespace TSP.DoxygenEditor.Includes
                 });
                 task.ContinueWith((t) =>
                 {
-                    foreach (var table in t.Result)
+                    foreach (SymbolTable table in t.Result)
                         _tables.Add(table);
                     while (_tasks.ContainsKey(t) && !_tasks.TryRemove(t, out _))
                         Thread.Yield();

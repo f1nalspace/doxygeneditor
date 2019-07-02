@@ -1,35 +1,18 @@
 ﻿using System.Collections.Generic;
 using TSP.DoxygenEditor.Lexers;
+using TSP.DoxygenEditor.Symbols;
 
 namespace TSP.DoxygenEditor.Parsers
 {
     public abstract class BaseSymbolResolver<TEntity, TToken> where TEntity : BaseEntity where TToken : BaseToken
     {
-        protected abstract void ResolveNode(BaseNode<TEntity> node);
-        protected abstract void ResolveToken(TToken token);
+        protected readonly SymbolTable _localSymbolTable;
 
-        private void ResolveChildrenNodes(BaseNode<TEntity> rootNode)
+        public BaseSymbolResolver(SymbolTable localSymbolTable)
         {
-            foreach (IBaseNode child in rootNode.Children)
-            {
-                if (typeof(BaseNode<TEntity>).Equals(child.GetType()))
-                {
-                    BaseNode<TEntity> cppChild = (BaseNode<TEntity>)child;
-                    ResolveNode(cppChild);
-                    ResolveChildrenNodes(cppChild);
-                }
-            }
+            _localSymbolTable = localSymbolTable;
         }
 
-        public void ResolveNodes(BaseNode<TEntity> rootNode)
-        {
-            ResolveChildrenNodes(rootNode);
-        }
-
-        public void ResolveTokens(IEnumerable<TToken> tokens)
-        {
-            foreach (var token in tokens)
-                ResolveToken(token);
-        }
+        public virtual void ResolveTokens(IEnumerable<TToken> tokens) { }
     }
 }

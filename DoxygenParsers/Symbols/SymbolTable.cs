@@ -18,12 +18,12 @@ namespace TSP.DoxygenEditor.Symbols
         {
             Id = other.Id;
             IsValid = other.IsValid;
-            foreach (var sourcePair in other.SourceMap)
+            foreach (KeyValuePair<string, List<SourceSymbol>> sourcePair in other.SourceMap)
             {
                 foreach (SourceSymbol symbol in sourcePair.Value)
                     AddSource(symbol);
             }
-            foreach (var refPair in other.ReferenceMap)
+            foreach (KeyValuePair<string, List<ReferenceSymbol>> refPair in other.ReferenceMap)
             {
                 foreach (ReferenceSymbol symbol in refPair.Value)
                     AddReference(symbol);
@@ -54,7 +54,7 @@ namespace TSP.DoxygenEditor.Symbols
                 List<SourceSymbol> list = _sources[name];
                 if (list.Count > 0)
                 {
-                    foreach (var item in list)
+                    foreach (SourceSymbol item in list)
                     {
                         if (result == null || item.Lang < result.Lang)
                             result = list[0];
@@ -104,14 +104,14 @@ namespace TSP.DoxygenEditor.Symbols
 
         public void AddTable(SymbolTable table)
         {
-            foreach (var sourcePair in table.SourceMap)
+            foreach (KeyValuePair<string, List<SourceSymbol>> sourcePair in table.SourceMap)
             {
-                foreach (var source in sourcePair.Value)
+                foreach (SourceSymbol source in sourcePair.Value)
                     AddSource(source);
             }
-            foreach (var referencePair in table.ReferenceMap)
+            foreach (KeyValuePair<string, List<ReferenceSymbol>> referencePair in table.ReferenceMap)
             {
-                foreach (var reference in referencePair.Value)
+                foreach (ReferenceSymbol reference in referencePair.Value)
                     AddReference(reference);
             }
         }

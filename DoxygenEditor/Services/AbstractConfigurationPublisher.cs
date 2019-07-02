@@ -11,6 +11,7 @@ namespace TSP.DoxygenEditor.Services
         {
             Bool,
             Int,
+            Double,
             String,
             List,
             Dictionary,
@@ -38,8 +39,6 @@ namespace TSP.DoxygenEditor.Services
         {
         }
 
-        public abstract void Dispose();
-
         protected void ClearWrites()
         {
             _writeEntries.Clear();
@@ -58,6 +57,7 @@ namespace TSP.DoxygenEditor.Services
         {
             WriteString(section, ReflectionUtils.GetName(nameExpression), value);
         }
+
         public void WriteInt(string section, string name, int value)
         {
             PushWrite(WriteKind.Int, section, name, value);
@@ -66,6 +66,16 @@ namespace TSP.DoxygenEditor.Services
         {
             WriteInt(section, ReflectionUtils.GetName(nameExpression), value);
         }
+
+        public void WriteDouble(string section, string name, double value)
+        {
+            PushWrite(WriteKind.Double, section, name, value);
+        }
+        public void WriteDouble(string section, Expression<Func<object>> nameExpression, double value)
+        {
+            WriteDouble(section, ReflectionUtils.GetName(nameExpression), value);
+        }
+
         public void WriteBool(string section, string name, bool value)
         {
             PushWrite(WriteKind.Bool, section, name, value);
@@ -74,6 +84,7 @@ namespace TSP.DoxygenEditor.Services
         {
             WriteBool(section, ReflectionUtils.GetName(nameExpression), value);
         }
+
         public void WriteList(string section, string name, IEnumerable<string> list)
         {
             PushWrite(WriteKind.List, section, name, new List<string>(list));
@@ -85,7 +96,7 @@ namespace TSP.DoxygenEditor.Services
         public void WriteDictionary<TValue>(string section, string name, IDictionary<string, TValue> dict) where TValue : struct
         {
             Dictionary<string, object> outDict = new Dictionary<string, object>();
-            foreach (var pair in dict)
+            foreach (KeyValuePair<string, TValue> pair in dict)
                 outDict[pair.Key] =  pair.Value;
             PushWrite(WriteKind.Dictionary, section, name, outDict);
         }
