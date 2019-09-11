@@ -468,7 +468,7 @@ namespace TSP.DoxygenEditor.Views
             // 
             this.miBuildDocumentation.Image = global::TSP.DoxygenEditor.Properties.Resources.BuildDefinition_16x;
             this.miBuildDocumentation.Name = "miBuildDocumentation";
-            this.miBuildDocumentation.Size = new System.Drawing.Size(238, 30);
+            this.miBuildDocumentation.Size = new System.Drawing.Size(234, 26);
             this.miBuildDocumentation.Text = "Build Documentation...";
             this.miBuildDocumentation.Click += new System.EventHandler(this.BuildDocumentationClick);
             // 
@@ -762,8 +762,8 @@ namespace TSP.DoxygenEditor.Views
             // 
             // columnHeader7
             // 
-            this.columnHeader7.Text = "File";
-            this.columnHeader7.Width = 200;
+            this.columnHeader7.Text = "Name";
+            this.columnHeader7.Width = 150;
             // 
             // columnHeader8
             // 

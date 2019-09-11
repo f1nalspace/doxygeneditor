@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoxygenParsers", "DoxygenPa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "DoxygenEditorUnitTest\UnitTests.csproj", "{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSMLexing", "FSMLexing\FSMLexing.csproj", "{F0640C02-3BBE-4381-8F15-9062DD910B2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,11 +29,18 @@ Global
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Debug|x64.Build.0 = Debug|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Release|x64.ActiveCfg = Release|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Release|x64.Build.0 = Release|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Debug|x64.ActiveCfg = Debug|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Debug|x64.Build.0 = Debug|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Release|x64.ActiveCfg = Release|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1A4C51AE-5F2F-43EE-8639-C6FDEB31B3C6}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

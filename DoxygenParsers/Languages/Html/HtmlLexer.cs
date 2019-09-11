@@ -59,7 +59,7 @@ namespace TSP.DoxygenEditor.Languages.Html
             {
                 while (!Buffer.IsEOF)
                 {
-                    Buffer.SkipAllWhitespaces();
+                    Buffer.SkipWhitespaces();
                     char c = Buffer.Peek();
                     if (!SyntaxUtils.IsIdentStart(c))
                         break;
@@ -74,13 +74,13 @@ namespace TSP.DoxygenEditor.Languages.Html
                                 break;
                         }
                         PushToken(HtmlTokenPool.Make(HtmlTokenKind.AttrName, Buffer.LexemeRange, true));
-                        Buffer.SkipAllWhitespaces(); // Allow whitespaces before =
+                        Buffer.SkipWhitespaces(); // Allow whitespaces before =
                         if (Buffer.Peek() == '=')
                         {
                             Buffer.StartLexeme();
                             Buffer.AdvanceColumn();
                             PushToken(HtmlTokenPool.Make(HtmlTokenKind.AttrChars, Buffer.LexemeRange, true));
-                            Buffer.SkipAllWhitespaces(); // Allow whitespaces after =
+                            Buffer.SkipWhitespaces(); // Allow whitespaces after =
                             if (Buffer.Peek() == '"' || Buffer.Peek() == '\'')
                             {
                                 char quote = Buffer.Peek();
@@ -105,12 +105,12 @@ namespace TSP.DoxygenEditor.Languages.Html
                 }
             }
 
-            Buffer.SkipAllWhitespaces(); // Allow whitespaces before /
+            Buffer.SkipWhitespaces(); // Allow whitespaces before /
             if (Buffer.Peek() == '/')
             {
                 startTagToken.ChangeKind(HtmlTokenKind.MetaTagStartAndClose);
                 Buffer.AdvanceColumn();
-                Buffer.SkipAllWhitespaces(); // Allow whitespaces after /
+                Buffer.SkipWhitespaces(); // Allow whitespaces after /
             }
 
             Buffer.SkipUntil('>');
@@ -130,7 +130,7 @@ namespace TSP.DoxygenEditor.Languages.Html
         {
             do
             {
-                Buffer.SkipAllWhitespaces();
+                Buffer.SkipWhitespaces();
                 switch (Buffer.Peek())
                 {
                     case TextStream.InvalidCharacter:

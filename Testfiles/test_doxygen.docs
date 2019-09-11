@@ -1,0 +1,6 @@
+﻿/*!
+	Some test code:
+	@code{.c}
+	that text should never be parsed as HTML!
+	@endcode
+*/

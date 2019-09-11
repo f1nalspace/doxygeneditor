@@ -54,6 +54,7 @@ SOFTWARE.
     - Bugfix: Fixed several minor/major issues
     - Bugfix: Fixed captions in symbol search was not shown
     - Bugfix: Fixed wrong auto indent after linebreak hopefully
+    - Bugfix: Fixed wrong colorization for doxygen code blocks
 
     ## v0.9.0.0:
     - Proper #define argument parsing & highlighting

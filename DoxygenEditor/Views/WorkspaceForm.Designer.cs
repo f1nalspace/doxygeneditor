@@ -37,6 +37,7 @@
             System.Windows.Forms.TreeNode treeNode5 = new System.Windows.Forms.TreeNode("Syntax-Highlighting");
             System.Windows.Forms.TreeNode treeNode6 = new System.Windows.Forms.TreeNode("Editor", new System.Windows.Forms.TreeNode[] {
             treeNode5});
+            System.Windows.Forms.TreeNode treeNode7 = new System.Windows.Forms.TreeNode("Build");
             this.panControls = new System.Windows.Forms.Panel();
             this.btnOk = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -53,14 +54,25 @@
             this.gbParserCppExcludedNodes = new System.Windows.Forms.GroupBox();
             this.cbParserCppSkipFunctionBodies = new System.Windows.Forms.CheckBox();
             this.tpValidationCpp = new System.Windows.Forms.TabPage();
-            this.tpEditorSyntaxHighlighting = new System.Windows.Forms.TabPage();
-            this.panOptionsTitleTop = new System.Windows.Forms.Panel();
-            this.lblOptionsTitle = new System.Windows.Forms.Label();
-            this.gbValidationCppExcludedTypes = new System.Windows.Forms.GroupBox();
-            this.cbValidationCppExcludePreprocessorMatch = new System.Windows.Forms.CheckBox();
-            this.cbValidationCppExcludePreprocessorUsage = new System.Windows.Forms.CheckBox();
             this.gbValidationCppDocumentation = new System.Windows.Forms.GroupBox();
             this.cbValidationCppRequireDoxygenReference = new System.Windows.Forms.CheckBox();
+            this.gbValidationCppExcludedTypes = new System.Windows.Forms.GroupBox();
+            this.cbValidationCppExcludePreprocessorUsage = new System.Windows.Forms.CheckBox();
+            this.cbValidationCppExcludePreprocessorMatch = new System.Windows.Forms.CheckBox();
+            this.tpEditorSyntaxHighlighting = new System.Windows.Forms.TabPage();
+            this.tpBuildOptions = new System.Windows.Forms.TabPage();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.btnSelectBuildDoxygenConfigPath = new System.Windows.Forms.Button();
+            this.btnSelectBuildSourcePath = new System.Windows.Forms.Button();
+            this.btnSelectBuildDoxgenExecutable = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
+            this.tbBuildDoxygenConfigFilePath = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.tbBuildSourcePath = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.tbBuildDoxygenExecutablePath = new System.Windows.Forms.TextBox();
+            this.panOptionsTitleTop = new System.Windows.Forms.Panel();
+            this.lblOptionsTitle = new System.Windows.Forms.Label();
             this.panControls.SuspendLayout();
             this.panTree.SuspendLayout();
             this.panOptionsFilterTop.SuspendLayout();
@@ -70,9 +82,11 @@
             this.gbParserCppExcludedSymbols.SuspendLayout();
             this.gbParserCppExcludedNodes.SuspendLayout();
             this.tpValidationCpp.SuspendLayout();
-            this.panOptionsTitleTop.SuspendLayout();
-            this.gbValidationCppExcludedTypes.SuspendLayout();
             this.gbValidationCppDocumentation.SuspendLayout();
+            this.gbValidationCppExcludedTypes.SuspendLayout();
+            this.tpBuildOptions.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.panOptionsTitleTop.SuspendLayout();
             this.SuspendLayout();
             // 
             // panControls
@@ -144,10 +158,13 @@
             treeNode5.Text = "Syntax-Highlighting";
             treeNode6.Name = "nodeEditor";
             treeNode6.Text = "Editor";
+            treeNode7.Name = "nodeBuild";
+            treeNode7.Text = "Build";
             this.tvOptions.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
             treeNode2,
             treeNode4,
-            treeNode6});
+            treeNode6,
+            treeNode7});
             this.tvOptions.Size = new System.Drawing.Size(170, 355);
             this.tvOptions.TabIndex = 1;
             this.tvOptions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvOptions_AfterSelect);
@@ -184,6 +201,7 @@
             this.tcMain.Controls.Add(this.tpParserCpp);
             this.tcMain.Controls.Add(this.tpValidationCpp);
             this.tcMain.Controls.Add(this.tpEditorSyntaxHighlighting);
+            this.tcMain.Controls.Add(this.tpBuildOptions);
             this.tcMain.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tcMain.ItemSize = new System.Drawing.Size(91, 25);
             this.tcMain.Location = new System.Drawing.Point(0, 24);
@@ -281,73 +299,6 @@
             this.tpValidationCpp.Text = "Validation\\C/C++";
             this.tpValidationCpp.UseVisualStyleBackColor = true;
             // 
-            // tpEditorSyntaxHighlighting
-            // 
-            this.tpEditorSyntaxHighlighting.Location = new System.Drawing.Point(4, 29);
-            this.tpEditorSyntaxHighlighting.Margin = new System.Windows.Forms.Padding(0);
-            this.tpEditorSyntaxHighlighting.Name = "tpEditorSyntaxHighlighting";
-            this.tpEditorSyntaxHighlighting.Size = new System.Drawing.Size(446, 334);
-            this.tpEditorSyntaxHighlighting.TabIndex = 2;
-            this.tpEditorSyntaxHighlighting.Text = "Editor\\Syntax-Highlighting";
-            this.tpEditorSyntaxHighlighting.UseVisualStyleBackColor = true;
-            // 
-            // panOptionsTitleTop
-            // 
-            this.panOptionsTitleTop.Controls.Add(this.lblOptionsTitle);
-            this.panOptionsTitleTop.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panOptionsTitleTop.Location = new System.Drawing.Point(0, 0);
-            this.panOptionsTitleTop.Name = "panOptionsTitleTop";
-            this.panOptionsTitleTop.Size = new System.Drawing.Size(454, 24);
-            this.panOptionsTitleTop.TabIndex = 2;
-            // 
-            // lblOptionsTitle
-            // 
-            this.lblOptionsTitle.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblOptionsTitle.Font = new System.Drawing.Font("Segoe UI", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblOptionsTitle.Location = new System.Drawing.Point(0, 0);
-            this.lblOptionsTitle.Name = "lblOptionsTitle";
-            this.lblOptionsTitle.Padding = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.lblOptionsTitle.Size = new System.Drawing.Size(454, 24);
-            this.lblOptionsTitle.TabIndex = 0;
-            this.lblOptionsTitle.Text = "[Options Title]";
-            // 
-            // gbValidationCppExcludedTypes
-            // 
-            this.gbValidationCppExcludedTypes.AutoSize = true;
-            this.gbValidationCppExcludedTypes.Controls.Add(this.cbValidationCppExcludePreprocessorUsage);
-            this.gbValidationCppExcludedTypes.Controls.Add(this.cbValidationCppExcludePreprocessorMatch);
-            this.gbValidationCppExcludedTypes.Dock = System.Windows.Forms.DockStyle.Top;
-            this.gbValidationCppExcludedTypes.Location = new System.Drawing.Point(0, 0);
-            this.gbValidationCppExcludedTypes.Margin = new System.Windows.Forms.Padding(0);
-            this.gbValidationCppExcludedTypes.Name = "gbValidationCppExcludedTypes";
-            this.gbValidationCppExcludedTypes.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
-            this.gbValidationCppExcludedTypes.Size = new System.Drawing.Size(446, 76);
-            this.gbValidationCppExcludedTypes.TabIndex = 1;
-            this.gbValidationCppExcludedTypes.TabStop = false;
-            this.gbValidationCppExcludedTypes.Text = "Excluded Types";
-            // 
-            // cbValidationCppExcludePreprocessorMatch
-            // 
-            this.cbValidationCppExcludePreprocessorMatch.AutoSize = true;
-            this.cbValidationCppExcludePreprocessorMatch.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbValidationCppExcludePreprocessorMatch.Location = new System.Drawing.Point(5, 24);
-            this.cbValidationCppExcludePreprocessorMatch.Name = "cbValidationCppExcludePreprocessorMatch";
-            this.cbValidationCppExcludePreprocessorMatch.Size = new System.Drawing.Size(436, 23);
-            this.cbValidationCppExcludePreprocessorMatch.TabIndex = 0;
-            this.cbValidationCppExcludePreprocessorMatch.Text = "Preprocessor Match";
-            this.cbValidationCppExcludePreprocessorMatch.UseVisualStyleBackColor = true;
-            // 
-            // cbValidationCppExcludePreprocessorUsage
-            // 
-            this.cbValidationCppExcludePreprocessorUsage.AutoSize = true;
-            this.cbValidationCppExcludePreprocessorUsage.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbValidationCppExcludePreprocessorUsage.Location = new System.Drawing.Point(5, 47);
-            this.cbValidationCppExcludePreprocessorUsage.Name = "cbValidationCppExcludePreprocessorUsage";
-            this.cbValidationCppExcludePreprocessorUsage.Size = new System.Drawing.Size(436, 23);
-            this.cbValidationCppExcludePreprocessorUsage.TabIndex = 1;
-            this.cbValidationCppExcludePreprocessorUsage.Text = "Preprocessor Usage";
-            this.cbValidationCppExcludePreprocessorUsage.UseVisualStyleBackColor = true;
-            // 
             // gbValidationCppDocumentation
             // 
             this.gbValidationCppDocumentation.AutoSize = true;
@@ -372,6 +323,183 @@
             this.cbValidationCppRequireDoxygenReference.TabIndex = 0;
             this.cbValidationCppRequireDoxygenReference.Text = "Require Doxygen Reference (@see @ref)";
             this.cbValidationCppRequireDoxygenReference.UseVisualStyleBackColor = true;
+            // 
+            // gbValidationCppExcludedTypes
+            // 
+            this.gbValidationCppExcludedTypes.AutoSize = true;
+            this.gbValidationCppExcludedTypes.Controls.Add(this.cbValidationCppExcludePreprocessorUsage);
+            this.gbValidationCppExcludedTypes.Controls.Add(this.cbValidationCppExcludePreprocessorMatch);
+            this.gbValidationCppExcludedTypes.Dock = System.Windows.Forms.DockStyle.Top;
+            this.gbValidationCppExcludedTypes.Location = new System.Drawing.Point(0, 0);
+            this.gbValidationCppExcludedTypes.Margin = new System.Windows.Forms.Padding(0);
+            this.gbValidationCppExcludedTypes.Name = "gbValidationCppExcludedTypes";
+            this.gbValidationCppExcludedTypes.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
+            this.gbValidationCppExcludedTypes.Size = new System.Drawing.Size(446, 76);
+            this.gbValidationCppExcludedTypes.TabIndex = 1;
+            this.gbValidationCppExcludedTypes.TabStop = false;
+            this.gbValidationCppExcludedTypes.Text = "Excluded Types";
+            // 
+            // cbValidationCppExcludePreprocessorUsage
+            // 
+            this.cbValidationCppExcludePreprocessorUsage.AutoSize = true;
+            this.cbValidationCppExcludePreprocessorUsage.Dock = System.Windows.Forms.DockStyle.Top;
+            this.cbValidationCppExcludePreprocessorUsage.Location = new System.Drawing.Point(5, 47);
+            this.cbValidationCppExcludePreprocessorUsage.Name = "cbValidationCppExcludePreprocessorUsage";
+            this.cbValidationCppExcludePreprocessorUsage.Size = new System.Drawing.Size(436, 23);
+            this.cbValidationCppExcludePreprocessorUsage.TabIndex = 1;
+            this.cbValidationCppExcludePreprocessorUsage.Text = "Preprocessor Usage";
+            this.cbValidationCppExcludePreprocessorUsage.UseVisualStyleBackColor = true;
+            // 
+            // cbValidationCppExcludePreprocessorMatch
+            // 
+            this.cbValidationCppExcludePreprocessorMatch.AutoSize = true;
+            this.cbValidationCppExcludePreprocessorMatch.Dock = System.Windows.Forms.DockStyle.Top;
+            this.cbValidationCppExcludePreprocessorMatch.Location = new System.Drawing.Point(5, 24);
+            this.cbValidationCppExcludePreprocessorMatch.Name = "cbValidationCppExcludePreprocessorMatch";
+            this.cbValidationCppExcludePreprocessorMatch.Size = new System.Drawing.Size(436, 23);
+            this.cbValidationCppExcludePreprocessorMatch.TabIndex = 0;
+            this.cbValidationCppExcludePreprocessorMatch.Text = "Preprocessor Match";
+            this.cbValidationCppExcludePreprocessorMatch.UseVisualStyleBackColor = true;
+            // 
+            // tpEditorSyntaxHighlighting
+            // 
+            this.tpEditorSyntaxHighlighting.Location = new System.Drawing.Point(4, 29);
+            this.tpEditorSyntaxHighlighting.Margin = new System.Windows.Forms.Padding(0);
+            this.tpEditorSyntaxHighlighting.Name = "tpEditorSyntaxHighlighting";
+            this.tpEditorSyntaxHighlighting.Size = new System.Drawing.Size(446, 334);
+            this.tpEditorSyntaxHighlighting.TabIndex = 2;
+            this.tpEditorSyntaxHighlighting.Text = "Editor\\Syntax-Highlighting";
+            this.tpEditorSyntaxHighlighting.UseVisualStyleBackColor = true;
+            // 
+            // tpBuildOptions
+            // 
+            this.tpBuildOptions.Controls.Add(this.groupBox1);
+            this.tpBuildOptions.Location = new System.Drawing.Point(4, 29);
+            this.tpBuildOptions.Name = "tpBuildOptions";
+            this.tpBuildOptions.Padding = new System.Windows.Forms.Padding(3);
+            this.tpBuildOptions.Size = new System.Drawing.Size(446, 334);
+            this.tpBuildOptions.TabIndex = 3;
+            this.tpBuildOptions.Text = "Build";
+            this.tpBuildOptions.UseVisualStyleBackColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.btnSelectBuildDoxygenConfigPath);
+            this.groupBox1.Controls.Add(this.btnSelectBuildSourcePath);
+            this.groupBox1.Controls.Add(this.btnSelectBuildDoxgenExecutable);
+            this.groupBox1.Controls.Add(this.label3);
+            this.groupBox1.Controls.Add(this.tbBuildDoxygenConfigFilePath);
+            this.groupBox1.Controls.Add(this.label2);
+            this.groupBox1.Controls.Add(this.tbBuildSourcePath);
+            this.groupBox1.Controls.Add(this.label1);
+            this.groupBox1.Controls.Add(this.tbBuildDoxygenExecutablePath);
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBox1.Location = new System.Drawing.Point(3, 3);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(0);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
+            this.groupBox1.Size = new System.Drawing.Size(440, 119);
+            this.groupBox1.TabIndex = 2;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Paths";
+            // 
+            // btnSelectBuildDoxygenConfigPath
+            // 
+            this.btnSelectBuildDoxygenConfigPath.Location = new System.Drawing.Point(402, 82);
+            this.btnSelectBuildDoxygenConfigPath.Name = "btnSelectBuildDoxygenConfigPath";
+            this.btnSelectBuildDoxygenConfigPath.Size = new System.Drawing.Size(30, 23);
+            this.btnSelectBuildDoxygenConfigPath.TabIndex = 8;
+            this.btnSelectBuildDoxygenConfigPath.Text = "...";
+            this.btnSelectBuildDoxygenConfigPath.UseVisualStyleBackColor = true;
+            this.btnSelectBuildDoxygenConfigPath.Click += new System.EventHandler(this.btnSelectBuildDoxygenConfigPath_Click);
+            // 
+            // btnSelectBuildSourcePath
+            // 
+            this.btnSelectBuildSourcePath.Location = new System.Drawing.Point(402, 52);
+            this.btnSelectBuildSourcePath.Name = "btnSelectBuildSourcePath";
+            this.btnSelectBuildSourcePath.Size = new System.Drawing.Size(30, 23);
+            this.btnSelectBuildSourcePath.TabIndex = 7;
+            this.btnSelectBuildSourcePath.Text = "...";
+            this.btnSelectBuildSourcePath.UseVisualStyleBackColor = true;
+            this.btnSelectBuildSourcePath.Click += new System.EventHandler(this.btnSelectBuildSourcePath_Click);
+            // 
+            // btnSelectBuildDoxgenExecutable
+            // 
+            this.btnSelectBuildDoxgenExecutable.Location = new System.Drawing.Point(402, 20);
+            this.btnSelectBuildDoxgenExecutable.Name = "btnSelectBuildDoxgenExecutable";
+            this.btnSelectBuildDoxgenExecutable.Size = new System.Drawing.Size(30, 23);
+            this.btnSelectBuildDoxgenExecutable.TabIndex = 6;
+            this.btnSelectBuildDoxgenExecutable.Text = "...";
+            this.btnSelectBuildDoxgenExecutable.UseVisualStyleBackColor = true;
+            this.btnSelectBuildDoxgenExecutable.Click += new System.EventHandler(this.btnSelectBuildDoxgenExecutable_Click);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(8, 86);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(154, 19);
+            this.label3.TabIndex = 5;
+            this.label3.Text = "Doxygen Configuration:";
+            // 
+            // tbBuildDoxygenConfigFilePath
+            // 
+            this.tbBuildDoxygenConfigFilePath.Location = new System.Drawing.Point(168, 83);
+            this.tbBuildDoxygenConfigFilePath.Name = "tbBuildDoxygenConfigFilePath";
+            this.tbBuildDoxygenConfigFilePath.Size = new System.Drawing.Size(228, 25);
+            this.tbBuildDoxygenConfigFilePath.TabIndex = 4;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(49, 55);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(113, 19);
+            this.label2.TabIndex = 3;
+            this.label2.Text = "Source Directory:";
+            // 
+            // tbBuildSourcePath
+            // 
+            this.tbBuildSourcePath.Location = new System.Drawing.Point(168, 52);
+            this.tbBuildSourcePath.Name = "tbBuildSourcePath";
+            this.tbBuildSourcePath.Size = new System.Drawing.Size(228, 25);
+            this.tbBuildSourcePath.TabIndex = 2;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(28, 24);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(134, 19);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "Doxygen Executable:";
+            // 
+            // tbBuildDoxygenExecutablePath
+            // 
+            this.tbBuildDoxygenExecutablePath.Location = new System.Drawing.Point(168, 21);
+            this.tbBuildDoxygenExecutablePath.Name = "tbBuildDoxygenExecutablePath";
+            this.tbBuildDoxygenExecutablePath.Size = new System.Drawing.Size(228, 25);
+            this.tbBuildDoxygenExecutablePath.TabIndex = 0;
+            // 
+            // panOptionsTitleTop
+            // 
+            this.panOptionsTitleTop.Controls.Add(this.lblOptionsTitle);
+            this.panOptionsTitleTop.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panOptionsTitleTop.Location = new System.Drawing.Point(0, 0);
+            this.panOptionsTitleTop.Name = "panOptionsTitleTop";
+            this.panOptionsTitleTop.Size = new System.Drawing.Size(454, 24);
+            this.panOptionsTitleTop.TabIndex = 2;
+            // 
+            // lblOptionsTitle
+            // 
+            this.lblOptionsTitle.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblOptionsTitle.Font = new System.Drawing.Font("Segoe UI", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblOptionsTitle.Location = new System.Drawing.Point(0, 0);
+            this.lblOptionsTitle.Name = "lblOptionsTitle";
+            this.lblOptionsTitle.Padding = new System.Windows.Forms.Padding(0, 8, 0, 0);
+            this.lblOptionsTitle.Size = new System.Drawing.Size(454, 24);
+            this.lblOptionsTitle.TabIndex = 0;
+            this.lblOptionsTitle.Text = "[Options Title]";
             // 
             // WorkspaceForm
             // 
@@ -405,11 +533,14 @@
             this.gbParserCppExcludedNodes.PerformLayout();
             this.tpValidationCpp.ResumeLayout(false);
             this.tpValidationCpp.PerformLayout();
-            this.panOptionsTitleTop.ResumeLayout(false);
-            this.gbValidationCppExcludedTypes.ResumeLayout(false);
-            this.gbValidationCppExcludedTypes.PerformLayout();
             this.gbValidationCppDocumentation.ResumeLayout(false);
             this.gbValidationCppDocumentation.PerformLayout();
+            this.gbValidationCppExcludedTypes.ResumeLayout(false);
+            this.gbValidationCppExcludedTypes.PerformLayout();
+            this.tpBuildOptions.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.panOptionsTitleTop.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -440,5 +571,16 @@
         private System.Windows.Forms.CheckBox cbValidationCppExcludePreprocessorUsage;
         private System.Windows.Forms.GroupBox gbValidationCppDocumentation;
         private System.Windows.Forms.CheckBox cbValidationCppRequireDoxygenReference;
+        private System.Windows.Forms.TabPage tpBuildOptions;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.TextBox tbBuildDoxygenExecutablePath;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox tbBuildSourcePath;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox tbBuildDoxygenConfigFilePath;
+        private System.Windows.Forms.Button btnSelectBuildDoxgenExecutable;
+        private System.Windows.Forms.Button btnSelectBuildDoxygenConfigPath;
+        private System.Windows.Forms.Button btnSelectBuildSourcePath;
     }
 }

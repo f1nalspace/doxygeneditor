@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Parsers;
 using TSP.DoxygenEditor.Symbols;
@@ -52,6 +53,30 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                 refKind = ReferenceSymbolKind.CppMember;
                             }
                             _localSymbolTable.AddReference(new ReferenceSymbol(token.Lang, refKind, token.Value, token.Range, null));
+                        }
+                        else
+                        {
+                            IEnumerable<ReferenceSymbol> references = _localSymbolTable.GetReferences(value);
+                            if (references.Count() > 0)
+                            {
+                                ReferenceSymbol reference = references.First();
+                                switch (reference.Kind)
+                                {
+                                    case ReferenceSymbolKind.CppMacroMatch:
+                                    case ReferenceSymbolKind.CppMacroUsage:
+                                        token.Kind = CppTokenKind.PreprocessorDefineUsage;
+                                        break;
+                                    case ReferenceSymbolKind.CppFunction:
+                                        token.Kind = CppTokenKind.FunctionIdent;
+                                        break;
+                                    case ReferenceSymbolKind.CppType:
+                                        token.Kind = CppTokenKind.UserTypeIdent;
+                                        break;
+                                    case ReferenceSymbolKind.CppMember:
+                                        token.Kind = CppTokenKind.MemberIdent;
+                                        break;
+                                }
+                            }
                         }
                     }
                 }

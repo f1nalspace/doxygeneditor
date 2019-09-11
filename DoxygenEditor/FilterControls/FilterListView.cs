@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using TSP.DoxygenEditor.Extensions;
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 
 namespace TSP.DoxygenEditor.FilterControls
 {
@@ -152,49 +153,83 @@ namespace TSP.DoxygenEditor.FilterControls
             int filterCol = _filterColumn;
             int groupCol = _groupColumn;
             int colCount = _listView.Columns.Count;
+            bool disabledGroups = false;
             Dictionary<string, ListViewGroup> groupsMap = new Dictionary<string, ListViewGroup>();
             _listView.Items.Clear();
             _listView.Groups.Clear();
-            foreach (ListViewItem item in _items)
+            if (string.IsNullOrWhiteSpace(filterText))
             {
-                bool canAdd = false;
-                item.Group = null;
-                if (string.IsNullOrWhiteSpace(filterText))
-                    canAdd = true;
-                else
+                if (!disabledGroups && (groupCol > -1 && groupCol < colCount))
                 {
-                    for (int colIndex = 0; colIndex < colCount; ++colIndex)
-                    {
-                        if (filterCol > -1 && filterCol != colIndex)
-                            continue;
-                        bool matches = MatchWildcard(item.SubItems[colIndex].Text, filterText, true);
-                        canAdd |= matches;
-                        if (canAdd)
-                            break;
-                    }
-                }
-                if (canAdd)
-                {
-                    if (groupCol > -1 && groupCol < colCount)
+                    foreach (ListViewItem item in _items)
                     {
                         string groupValue = item.SubItems[groupCol].Text;
+                        ListViewGroup group = null;
                         if (!string.IsNullOrWhiteSpace(groupValue))
                         {
-                            if (!groupsMap.ContainsKey(groupValue))
+                            if (!groupsMap.TryGetValue(groupValue, out group))
                             {
-                                ListViewGroup group = new ListViewGroup(groupValue);
+                                group = new ListViewGroup(groupValue);
                                 groupsMap.Add(groupValue, group);
                                 _listView.Groups.Add(group);
                             }
-                            item.Group = groupsMap[groupValue];
+                        }
+                        item.Group = group;
+                        _listView.Items.Add(item);
+                    }
+                }
+                else
+                {
+                    foreach (ListViewItem item in _items)
+                    {
+                        item.Group = null;
+                        _listView.Items.Add(item);
+                    }
+                }
+            }
+            else
+            {
+                foreach (ListViewItem item in _items)
+                {
+                    bool canAdd = false;
+                    if (string.IsNullOrWhiteSpace(filterText))
+                        canAdd = true;
+                    else
+                    {
+                        for (int colIndex = 0; colIndex < colCount; ++colIndex)
+                        {
+                            if (filterCol > -1 && filterCol != colIndex)
+                                continue;
+                            bool matches = MatchWildcard(item.SubItems[colIndex].Text, filterText, true);
+                            canAdd |= matches;
+                            if (canAdd)
+                                break;
                         }
                     }
-                    _listView.Items.Add(item);
+                    if (canAdd)
+                    {
+                        ListViewGroup group = null;
+                        if (!disabledGroups && (groupCol > -1 && groupCol < colCount))
+                        {
+                            string groupValue = item.SubItems[groupCol].Text;
+                            if (!string.IsNullOrWhiteSpace(groupValue))
+                            {
+                                if (!groupsMap.TryGetValue(groupValue, out group))
+                                {
+                                    group = new ListViewGroup(groupValue);
+                                    groupsMap.Add(groupValue, group);
+                                    _listView.Groups.Add(group);
+                                }
+                            }
+                        }
+                        _listView.Items.Add(item);
+                        item.Group = group;
+                    }
                 }
             }
             if (_listView.ListViewItemSorter != null)
                 _listView.Sort();
-            _listView.AutoSizeColumnList();
+            //_listView.AutoSizeColumnList();
         }
 
         public void BeginUpdate()
@@ -208,6 +243,7 @@ namespace TSP.DoxygenEditor.FilterControls
 
         public void SelectItemOrIndex(object tag, int index)
         {
+            if (index == -1) return;
             ListViewItem foundItem = null;
             if (tag != null)
             {
@@ -220,7 +256,7 @@ namespace TSP.DoxygenEditor.FilterControls
                     }
                 }
             }
-            if (foundItem == null && index > -1)
+            if (foundItem == null)
             {
                 if (_listView.Items.Count > 0)
                     foundItem = _listView.Items[Math.Min(index, _listView.Items.Count - 1)];

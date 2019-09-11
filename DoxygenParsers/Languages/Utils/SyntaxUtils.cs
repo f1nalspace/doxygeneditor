@@ -7,6 +7,7 @@ namespace TSP.DoxygenEditor.Languages.Utils
 {
     public static class SyntaxUtils
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetLineBreakChars(char a, char b)
         {
             Debug.Assert(a == '\r' || a == '\n');

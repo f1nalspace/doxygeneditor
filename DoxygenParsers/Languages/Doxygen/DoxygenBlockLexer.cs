@@ -163,7 +163,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     if (!arg.Flags.HasFlag(DoxygenSyntax.ArgumentFlags.DirectlyAfterCommand))
                     {
                         if (SyntaxUtils.IsSpacing(first) || first == '\t')
-                            Buffer.SkipSpacings(TextStream.SkipType.All);
+                            Buffer.SkipSpaces(TextStream.RepeatKind.All);
                         else
                         {
                             // No more arguments are following
@@ -644,10 +644,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     }
                 }
                 else if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                    Buffer.AdvanceLine(lb);
-                }
+                    Buffer.AdvanceLineAuto();
                 else if ('\t'.Equals(c0))
                     Buffer.AdvanceTab();
                 else
@@ -678,7 +675,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '\v':
                     case '\f':
                     case '\t':
-                        Buffer.SkipSpacings(TextStream.SkipType.All);
+                        Buffer.SkipSpaces(TextStream.RepeatKind.All);
                         break;
 
                     case '\r':
@@ -696,7 +693,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             bool wasEmptyLine = Buffer.MatchCharacters(state.CurrentLineStartIndex, len, char.IsWhiteSpace) || (len == 0);
 
                             Buffer.StartLexeme();
-                            Buffer.SkipLineBreaks(TextStream.SkipType.Single);
+                            Buffer.SkipLineBreaks(TextStream.RepeatKind.Single);
                             state.CurrentLineStartIndex = Buffer.StreamPosition;
                             PushToken(DoxygenTokenPool.Make(wasEmptyLine ? DoxygenTokenKind.EmptyLine : DoxygenTokenKind.EndOfLine, Buffer.LexemeRange, true));
                         }

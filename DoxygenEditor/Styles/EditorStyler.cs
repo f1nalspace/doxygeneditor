@@ -16,7 +16,7 @@ namespace TSP.DoxygenEditor.Styles
 {
     class EditorStyler : IStylerData, IVisualStyler
     {
-        static int styleIndex = 1;
+        static int styleIndex = 100;
 
         static readonly int cppMultiLineCommentStyle = styleIndex++;
         static readonly int cppMultiLineCommentDocStyle = styleIndex++;
@@ -137,6 +137,7 @@ namespace TSP.DoxygenEditor.Styles
             public int Index { get; }
             public int Length { get; }
             public int Style { get; }
+            public string Value { get; }
 
             public int End
             {
@@ -147,15 +148,16 @@ namespace TSP.DoxygenEditor.Styles
                 }
             }
 
-            public StyleEntry(LanguageKind lang, int index, int length, int style)
+            public StyleEntry(LanguageKind lang, int index, int length, int style, string value)
             {
                 Lang = lang;
                 Index = index;
                 Length = length;
                 Style = style;
+                Value = value;
             }
 
-            public StyleEntry(LanguageKind lang, IBaseToken token, int style) : this(lang, token.Index, token.Length, style)
+            public StyleEntry(LanguageKind lang, IBaseToken token, int style, string value) : this(lang, token.Index, token.Length, style, value)
             {
             }
 
@@ -163,6 +165,11 @@ namespace TSP.DoxygenEditor.Styles
             {
                 bool result = (Index <= other.End) && (End >= other.Index);
                 return (result);
+            }
+
+            public override string ToString()
+            {
+                return $"{Index} => {Length} as {Lang} with style {Style} = {Value}";
             }
         }
 
@@ -190,32 +197,28 @@ namespace TSP.DoxygenEditor.Styles
                 if (typeof(CppToken).Equals(token.GetType()))
                 {
                     CppToken cppToken = (CppToken)token;
-                    if (cppTokenTypeToStyleDict.ContainsKey(cppToken.Kind))
-                    {
-                        int style = cppTokenTypeToStyleDict[cppToken.Kind];
-                        _entries.Add(new StyleEntry(LanguageKind.Cpp, token, style));
-                    }
+                    int style;
+                    if (cppTokenTypeToStyleDict.TryGetValue(cppToken.Kind, out style))
+                        _entries.Add(new StyleEntry(LanguageKind.Cpp, token, style, token.Value));
                 }
                 else if (typeof(DoxygenToken).Equals(token.GetType()))
                 {
                     DoxygenToken doxygenToken = (DoxygenToken)token;
-                    if (doxygenTokenTypeToStyleDict.ContainsKey(doxygenToken.Kind))
+                    int style;
+                    if (doxygenTokenTypeToStyleDict.TryGetValue(doxygenToken.Kind, out style))
                     {
-                        int style = doxygenTokenTypeToStyleDict[doxygenToken.Kind];
                         LanguageKind styleKind = LanguageKind.Doxygen;
                         if (doxygenToken.Kind == DoxygenTokenKind.Code)
                             styleKind = LanguageKind.DoxygenCode;
-                        _entries.Add(new StyleEntry(styleKind, token, style));
+                        _entries.Add(new StyleEntry(styleKind, token, style, doxygenToken.Value));
                     }
                 }
                 else if (typeof(HtmlToken).Equals(token.GetType()))
                 {
                     HtmlToken htmlToken = (HtmlToken)token;
-                    if (htmlTokenTypeToStyleDict.ContainsKey(htmlToken.Kind))
-                    {
-                        int style = htmlTokenTypeToStyleDict[htmlToken.Kind];
-                        _entries.Add(new StyleEntry(LanguageKind.Html, token, style));
-                    }
+                    int style;
+                    if (htmlTokenTypeToStyleDict.TryGetValue(htmlToken.Kind, out style))
+                        _entries.Add(new StyleEntry(LanguageKind.Html, token, style, htmlToken.Value));
                 }
             }
         }
@@ -298,7 +301,7 @@ namespace TSP.DoxygenEditor.Styles
             editor.StartStyling(startPos);
             editor.SetStyling(length, 0);
 
-            StyleEntry rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0);
+            StyleEntry rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0, null);
             IEnumerable<StyleEntry> intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
 
             foreach (StyleEntry entry in intersectingEntries)

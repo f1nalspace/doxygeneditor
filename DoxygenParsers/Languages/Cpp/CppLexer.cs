@@ -293,7 +293,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     else stream.AdvanceColumn();
                 }
                 else if (char.IsWhiteSpace(c0))
-                    stream.SkipAllWhitespaces();
+                    stream.SkipWhitespaces();
                 else
                     stream.AdvanceColumn();
             }
@@ -665,7 +665,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
             do
             {
-                Buffer.SkipSpacings(TextStream.SkipType.All);
+                Buffer.SkipSpaces(TextStream.RepeatKind.All);
                 Buffer.StartLexeme();
                 char first = Buffer.Peek();
                 char second = Buffer.Peek(1);
@@ -729,7 +729,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     CppToken identToken = CppTokenPool.Make(_lang, identResult.Kind, Buffer.LexemeRange, identResult.IsComplete);
                     PushToken(identToken);
 
-                    Buffer.SkipSpacings(TextStream.SkipType.All);
+                    Buffer.SkipSpaces(TextStream.RepeatKind.All);
                     Buffer.StartLexeme();
 
                     if (identToken.Kind == CppTokenKind.PreprocessorKeyword)
@@ -765,7 +765,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                         if (SyntaxUtils.IsSpacing(Buffer.Peek()) || Buffer.Peek() == '\t')
                                         {
                                             hadSpaces = true;
-                                            Buffer.SkipSpacings(TextStream.SkipType.All);
+                                            Buffer.SkipSpaces(TextStream.RepeatKind.All);
                                         }
 
                                         if (!state.Preprocessor.HasDefine)
@@ -783,7 +783,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                                 bool requireIdent = false;
                                                 while (!Buffer.IsEOF)
                                                 {
-                                                    Buffer.SkipSpacings(TextStream.SkipType.All);
+                                                    Buffer.SkipSpaces(TextStream.RepeatKind.All);
                                                     Buffer.StartLexeme();
 
                                                     char c0 = Buffer.Peek();
@@ -879,7 +879,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                         LexResult definedValueResult = LexIdent(false);
                                         CppToken definedValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineMatch, Buffer.LexemeRange, definedValueResult.IsComplete);
                                         PushToken(definedValueToken);
-                                        Buffer.SkipSpacings(TextStream.SkipType.All);
+                                        Buffer.SkipSpaces(TextStream.RepeatKind.All);
                                         if (Buffer.Peek() != ')')
                                         {
                                             AddError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
@@ -924,7 +924,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             case "pragma":
                                 {
                                     // @TODO(final): Proper pragma lexing
-                                    Buffer.SkipSpacings(TextStream.SkipType.All);
+                                    Buffer.SkipSpaces(TextStream.RepeatKind.All);
                                     if (Buffer.Peek() == '(')
                                     {
                                         Buffer.AdvanceColumn();
@@ -969,7 +969,7 @@ preprocessorDone:
             CppLexerState state = (CppLexerState)hiddenState;
             bool allowWhitespaces = !state.Preprocessor.IsInside;
             if (allowWhitespaces)
-                Buffer.SkipAllWhitespaces();
+                Buffer.SkipWhitespaces();
             if (Buffer.IsEOF)
                 return (false);
             int line = Buffer.TextPosition.Line;

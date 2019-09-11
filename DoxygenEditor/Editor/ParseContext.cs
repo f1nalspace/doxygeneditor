@@ -394,9 +394,9 @@ namespace TSP.DoxygenEditor.Editor
                 int countCppTokens = _tokens.Count(t => typeof(CppToken).Equals(t.GetType()));
                 int countHtmlTokens = _tokens.Count(t => typeof(HtmlToken).Equals(t.GetType()));
                 int countDoxyTokens = _tokens.Count(t => typeof(DoxygenToken).Equals(t.GetType()));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen block lexer", totalStats.DoxyDuration));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen block lexer", totalStats.DoxyDuration));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
             }
             else if (_id.FileType == EditorFileType.DoxyConfig)
             {
@@ -410,7 +410,7 @@ namespace TSP.DoxygenEditor.Editor
                     totalStats.DoxyDuration += timer.Elapsed;
                 }
                 int countDoxyTokens = _tokens.Count(t => typeof(DoxygenToken).Equals(t.GetType()));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen config lexer", totalStats.DoxyDuration));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen config lexer", totalStats.DoxyDuration));
             }
         }
 
@@ -458,7 +458,7 @@ namespace TSP.DoxygenEditor.Editor
                     LocalSymbolTable.AddTable(doxyParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen block parser", timer.Elapsed));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen block parser", timer.Elapsed));
 
                 // C++ parsing
                 timer.Restart();
@@ -483,7 +483,7 @@ namespace TSP.DoxygenEditor.Editor
                     LocalSymbolTable.AddTable(cppParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
             }
             else if (_id.FileType == EditorFileType.DoxyConfig)
             {
@@ -497,14 +497,14 @@ namespace TSP.DoxygenEditor.Editor
                     LocalSymbolTable.AddTable(configParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen config parser", timer.Elapsed));
+                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen config parser", timer.Elapsed));
             }
 
             // Refresh data for styler
             timer.Restart();
             stylerData.RefreshData(_tokens);
             timer.Stop();
-            _performanceItems.Add(new PerformanceItemModel(_id, _id.TabIndex, $"{_tokens.Count} tokens", $"{stylerData.Count} styles", "Styler", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{stylerData.Count} styles", "Styler", timer.Elapsed));
         }
     }
 }

@@ -20,6 +20,8 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public TextRange LexemeRange => new TextRange(LexemeStart, LexemeWidth);
         public TextPosition TextPosition { get; set; }
         public int ColumnsPerTab { get; } = 4;
+
+#if DEBUG
         public string Remaining
         {
             get
@@ -28,6 +30,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                 return GetSourceText(StreamPosition, l);
             }
         }
+#endif
 
         public TextStream(TextPosition pos, int length)
         {
@@ -52,11 +55,13 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public void AdvanceColumns(int numChars)
         {
             TextPosition p = TextPosition;
+#if DEBUG
             for (int i = 0; i < numChars; ++i)
             {
                 char c = Peek(i);
                 Debug.Assert(c != '\t' && !SyntaxUtils.IsLineBreak(c));
             }
+#endif
             p.Column += numChars;
             p.Index += numChars;
             TextPosition = p;
@@ -109,14 +114,16 @@ namespace TSP.DoxygenEditor.TextAnalysis
             if (first == '\t')
                 AdvanceTab();
             else if (SyntaxUtils.IsLineBreak(first))
-                AdvanceLineAuto();
+            {
+                int lb = SyntaxUtils.GetLineBreakChars(first, second);
+                AdvanceLine(lb);
+            }
             else
                 AdvanceColumn();
         }
 
         public int AdvanceAuto(int numChars = 1)
         {
-            // @NOTE(final): This is super slow, so only use it when needed
             Debug.Assert(numChars >= 1);
             TextPosition p = TextPosition;
             int result = 0;
@@ -128,7 +135,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                 {
                     int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
                     p.Line++;
-                    p.Column = 1;
+                    p.Column = 0;
                     p.Index += lb;
                     result += lb;
                 }
@@ -149,13 +156,13 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return (result);
         }
 
-        public enum SkipType
+        public enum RepeatKind
         {
             Single,
             All
         }
 
-        public void SkipAllWhitespaces()
+        public void SkipWhitespaces()
         {
             do
             {
@@ -173,7 +180,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             } while (!IsEOF);
         }
 
-        public void SkipSpacings(SkipType type)
+        public void SkipSpaces(RepeatKind repeat)
         {
             do
             {
@@ -186,10 +193,10 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     AdvanceColumn();
                 else
                     break;
-            } while (!IsEOF && type == SkipType.All);
+            } while (!IsEOF && repeat == RepeatKind.All);
         }
 
-        public void SkipLineBreaks(SkipType type)
+        public void SkipLineBreaks(RepeatKind repeat)
         {
             do
             {
@@ -203,7 +210,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     AdvanceLine(lb);
                 }
                 else break;
-            } while (!IsEOF && type == SkipType.All);
+            } while (!IsEOF && repeat == RepeatKind.All);
         }
 
         public void SkipUntil(char c)

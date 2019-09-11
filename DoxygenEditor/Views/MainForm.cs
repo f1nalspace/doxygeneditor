@@ -33,6 +33,7 @@ namespace TSP.DoxygenEditor.Views
         private readonly string _appName;
         private readonly string _dataPath;
         private readonly string _defaultWorkspaceFilePath;
+        private readonly object _performanceItemsSummaryRoot = new object();
 
         class PerformanceListViewItemComparer : IComparer
         {
@@ -319,38 +320,39 @@ namespace TSP.DoxygenEditor.Views
         {
             int tabIndex = _newTabCounter++;
             TabPage newTab = new TabPage() { Text = name };
-            EditorContext newContext = new EditorContext(this, _workspace, name, newTab, tabIndex);
-            newContext.FileType = fileType;
-            newContext.IsShowWhitespace = miViewShowWhitespaces.Checked;
-            newContext.TabUpdating += (s, e) => UpdateContext((EditorContext)s);
-            newContext.FocusChanged += (s, e) =>
+            EditorContext context = new EditorContext(this, _workspace, name, newTab, tabIndex);
+            context.FileType = fileType;
+            context.IsShowWhitespace = miViewShowWhitespaces.Checked;
+            context.TabUpdating += (s, e) => UpdateContext((EditorContext)s);
+            context.FocusChanged += (s, e) =>
             {
-                UpdateMenuEditChange(newContext);
-                UpdateMenuSelection(newContext);
+                UpdateMenuEditChange(context);
+                UpdateMenuSelection(context);
             };
-            newContext.ParseCompleted += (IParseInfo parseInfo) =>
+            context.ParseCompleted += (IParseInfo parseInfo) =>
             {
-                RebuildSymbolTree(newContext, parseInfo.DoxyBlockTree);
-                AddPerformanceItemsFor(newContext);
+                RebuildSymbolTree(context, parseInfo.DoxyBlockTree);
+                AddPerformanceItemsFor(context);
                 bool isComplete = Interlocked.Decrement(ref _parseProgressCount) == 0;
                 if (isComplete)
                 {
                     Interlocked.Exchange(ref _parseTotalCount, 0);
                     IEnumerable<EditorContext> contexts = GetAllEditorContexts();
-                    RefreshIssues(contexts);
+                    IssuesTimings timings = RefreshIssues(contexts);
+                    RefreshPerformanceSummary(timings);
                     SetParseStatus("");
                 }
                 else
                     SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
-            newContext.ParseStarting += (IParseInfo parseInfo) =>
+            context.ParseStarting += (IParseInfo parseInfo) =>
             {
                 Interlocked.Increment(ref _parseTotalCount);
                 Interlocked.Increment(ref _parseProgressCount);
-                ClearPerformanceItemsFrom(newContext);
+                ClearPerformanceItemsFrom(context);
                 SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
-            newContext.JumpToEditor += (id, pos) =>
+            context.JumpToEditor += (id, pos) =>
             {
                 EditorContext foundContext = FindEditorContextById(id);
                 if (foundContext != null)
@@ -360,11 +362,11 @@ namespace TSP.DoxygenEditor.Views
                     foundContext.GoToPosition(pos);
                 }
             };
-            newTab.Tag = newContext;
-            newTab.Controls.Add(newContext.ContainerPanel);
+            newTab.Tag = context;
+            newTab.Controls.Add(context.ContainerPanel);
             tcFiles.TabPages.Add(newTab);
-            AddToSymbolTree(newContext, newContext.Name);
-            return (newContext);
+            AddToSymbolTree(context, context.Name);
+            return (context);
         }
 
         private void RemoveFileTab(EditorContext context)
@@ -379,7 +381,8 @@ namespace TSP.DoxygenEditor.Views
             context.Dispose();
 
             IEnumerable<EditorContext> contexts = GetAllEditorContexts();
-            RefreshIssues(contexts);
+            IssuesTimings timings = RefreshIssues(contexts);
+            RefreshPerformanceSummary(timings);
         }
 
         private void OpenFileTab(string filePath)
@@ -1074,29 +1077,56 @@ namespace TSP.DoxygenEditor.Views
                 AddIssuesFromNode(contexts, mainContext, child, fileName, "Child");
             }
         }
-        private void RefreshIssues(IEnumerable<EditorContext> contexts)
+
+        struct IssuesTimings
         {
-            int selectedCppIssueIndex = lvCppIssues.SelectedIndex;
-            int selectedDoxyIssueIndex = lvCppIssues.SelectedIndex;
-            IssueTag selectedCppIssue = lvCppIssues.SelectedItem?.Tag as IssueTag;
-            IssueTag selectedDoxyIssue = lvDoxygenIssues.SelectedItem?.Tag as IssueTag;
+            public TimeSpan ValidationDuration { get; set; }
+            public TimeSpan ClearDuration { get; set; }
+            public TimeSpan CollectDuration { get; set; }
+            public TimeSpan RefreshDuration { get; set; }
+            public TimeSpan SelectDuration { get; set; }
+            public TimeSpan TotalDuration { get; set; }
+        }
 
-            lvCppIssues.BeginUpdate();
-            lvDoxygenIssues.BeginUpdate();
-
-            lvCppIssues.ClearSelection();
-            lvDoxygenIssues.ClearSelection();
-
-            lvCppIssues.ClearItems();
-            lvDoxygenIssues.ClearItems();
+        private IssuesTimings RefreshIssues(IEnumerable<EditorContext> contexts)
+        {
+            Stopwatch total = Stopwatch.StartNew();
+            Stopwatch w = new Stopwatch();
+            IssuesTimings result = new IssuesTimings();
 
             // Validate symbols from cache
+            w.Restart();
             GlobalSymbolCache.ValidationConfigration validationConfig = new GlobalSymbolCache.ValidationConfigration()
             {
                 ExcludeCppPreprocessorMatch = _workspace.ValidationCpp.ExcludePreprocessorMatch,
                 ExcludeCppPreprocessorUsage = _workspace.ValidationCpp.ExcludePreprocessorUsage,
             };
             IEnumerable<KeyValuePair<ISymbolTableId, TextError>> symbolErrors = GlobalSymbolCache.Validate(validationConfig);
+            result.ValidationDuration = w.StopAndReturn();
+
+            lvCppIssues.BeginUpdate();
+            lvDoxygenIssues.BeginUpdate();
+
+            //
+            // Clear issues
+            //
+            w.Restart();
+            lvCppIssues.ClearSelection();
+            lvDoxygenIssues.ClearSelection();
+            lvCppIssues.ClearItems();
+            lvDoxygenIssues.ClearItems();
+            result.ClearDuration = w.StopAndReturn();
+
+            //
+            // Collect issues
+            //
+            w.Restart();
+            int selectedCppIssueIndex = lvCppIssues.SelectedIndex;
+            int selectedDoxyIssueIndex = lvCppIssues.SelectedIndex;
+            IssueTag selectedCppIssue = lvCppIssues.SelectedItem?.Tag as IssueTag;
+            IssueTag selectedDoxyIssue = lvDoxygenIssues.SelectedItem?.Tag as IssueTag;
+
+            w.Restart();
             foreach (KeyValuePair<ISymbolTableId, TextError> errorPair in symbolErrors)
             {
                 TextError error = errorPair.Value;
@@ -1126,18 +1156,33 @@ namespace TSP.DoxygenEditor.Views
                     AddIssuesFromNode(contexts, context, parseInfo.CppTree, context.Name, "Root");
                 }
             }
+            result.CollectDuration = w.StopAndReturn();
 
+            //
+            // Refresh items
+            //
+            w.Restart();
             lvCppIssues.RefreshItems();
             lvDoxygenIssues.RefreshItems();
+            result.RefreshDuration = w.StopAndReturn();
 
+            //
+            // Select item
+            //
+            w.Restart();
             lvCppIssues.SelectItemOrIndex(selectedCppIssue, selectedCppIssueIndex);
             lvDoxygenIssues.SelectItemOrIndex(selectedDoxyIssue, selectedDoxyIssueIndex);
+            result.SelectDuration = w.StopAndReturn();
+
+            result.TotalDuration = total.StopAndReturn();
 
             lvCppIssues.EndUpdate();
             lvDoxygenIssues.EndUpdate();
 
             tpCppIssues.Text = $"C/C++ Issues [{lvCppIssues.ItemCount}]";
             tpDoxygenIssues.Text = $"Doxygen Issues [{lvDoxygenIssues.ItemCount}]";
+
+            return (result);
         }
 
         private void Issues_ItemDoubleClick(object sender, ListViewItem item)
@@ -1155,9 +1200,10 @@ namespace TSP.DoxygenEditor.Views
         #endregion
 
         #region Performance
-        private void AddPerformanceItem(IEditorId id, PerformanceItemModel item, ListViewGroup group)
+        private void AddPerformanceItem(PerformanceItemModel item, ListViewGroup group)
         {
-            ListViewItem newItem = new ListViewItem(id.Name);
+            Debug.Assert(item != null);
+            ListViewItem newItem = new ListViewItem(item.Name);
             newItem.Tag = item;
             newItem.SubItems.Add(item.Input);
             newItem.SubItems.Add(item.Output);
@@ -1167,7 +1213,7 @@ namespace TSP.DoxygenEditor.Views
             lvPerformance.Items.Add(newItem);
         }
 
-       
+
 
         private void AddPerformanceItemsFor(EditorContext context)
         {
@@ -1177,7 +1223,7 @@ namespace TSP.DoxygenEditor.Views
             Dictionary<string, ListViewGroup> groupNames = new Dictionary<string, ListViewGroup>();
             foreach (PerformanceItemModel item in parseInfo.PerformanceItems)
             {
-                string groupName = item.Id.Name;
+                string groupName = item.Name;
                 ListViewGroup group;
                 if (!groupNames.ContainsKey(groupName))
                 {
@@ -1186,21 +1232,22 @@ namespace TSP.DoxygenEditor.Views
                     groupNames.Add(groupName, group);
                 }
                 else group = groupNames[groupName];
-                AddPerformanceItem(context, item, group);
+                AddPerformanceItem(item, group);
             }
             lvPerformance.Sort();
             lvPerformance.AutoSizeColumnList();
             lvPerformance.EndUpdate();
         }
 
-        private void ClearPerformanceItemsFrom(IEditorId id)
+        private void ClearPerformanceItemsFrom(object tag, bool beUpdate = true)
         {
             List<ListViewItem> itemsToRemove = new List<ListViewItem>();
-            lvPerformance.BeginUpdate();
+            if (beUpdate)
+                lvPerformance.BeginUpdate();
             foreach (ListViewItem item in lvPerformance.Items)
             {
                 PerformanceItemModel performanceItem = (PerformanceItemModel)item.Tag;
-                if (performanceItem.Id == id)
+                if (performanceItem.Tag == tag)
                     itemsToRemove.Add(item);
             }
             ListViewGroup group = null;
@@ -1212,6 +1259,22 @@ namespace TSP.DoxygenEditor.Views
             }
             if (group != null)
                 lvPerformance.Groups.Remove(group);
+            if (beUpdate)
+                lvPerformance.EndUpdate();
+        }
+
+        private void RefreshPerformanceSummary(IssuesTimings timings)
+        {
+            lvPerformance.BeginUpdate();
+            ClearPerformanceItemsFrom(_performanceItemsSummaryRoot, false);
+            ListViewGroup newGroup = new ListViewGroup("Summary");
+            lvPerformance.Groups.Add(newGroup);
+            AddPerformanceItem(new PerformanceItemModel(_performanceItemsSummaryRoot, "Summary", -1, "", $"", "Issues (Total)", timings.TotalDuration), newGroup);
+            AddPerformanceItem(new PerformanceItemModel(_performanceItemsSummaryRoot, "Summary", -1, "", $"", "Validation", timings.ValidationDuration), newGroup);
+            AddPerformanceItem(new PerformanceItemModel(_performanceItemsSummaryRoot, "Summary", -1, "", $"", "Issues (Clear)", timings.ClearDuration), newGroup);
+            AddPerformanceItem(new PerformanceItemModel(_performanceItemsSummaryRoot, "Summary", -1, "", $"", "Issues (Collect)", timings.CollectDuration), newGroup);
+            AddPerformanceItem(new PerformanceItemModel(_performanceItemsSummaryRoot, "Summary", -1, "", $"", "Issues (Refresh)", timings.RefreshDuration), newGroup);
+            AddPerformanceItem(new PerformanceItemModel(_performanceItemsSummaryRoot, "Summary", -1, "", $"", "Issues (Select)", timings.SelectDuration), newGroup);
             lvPerformance.EndUpdate();
         }
         #endregion

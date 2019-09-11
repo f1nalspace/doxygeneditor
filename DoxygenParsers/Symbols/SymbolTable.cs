@@ -64,6 +64,16 @@ namespace TSP.DoxygenEditor.Symbols
             return (result);
         }
 
+        public IEnumerable<ReferenceSymbol> GetReferences(string name)
+        {
+            if (_references.ContainsKey(name))
+            {
+                List<ReferenceSymbol> list = _references[name];
+                return (list);
+            }
+            return (new ReferenceSymbol[0]);
+        }
+
         public IEnumerable<SourceSymbol> GetSources(string name)
         {
             if (_sources.ContainsKey(name))

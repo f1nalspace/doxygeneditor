@@ -43,7 +43,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 Buffer.AdvanceColumn();
             }
             PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.ConfigKey, Buffer.LexemeRange, true));
-            Buffer.SkipSpacings(TextStream.SkipType.All);
+            Buffer.SkipSpaces(TextStream.RepeatKind.All);
 
             char first = Buffer.Peek();
             char second = Buffer.Peek(1);
@@ -66,7 +66,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 return;
             }
             PushToken(DoxygenTokenPool.Make(opKind, Buffer.LexemeRange, true));
-            Buffer.SkipSpacings(TextStream.SkipType.All);
+            Buffer.SkipSpaces(TextStream.RepeatKind.All);
 
             while (!Buffer.IsEOF)
             {
@@ -104,7 +104,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 if (SyntaxUtils.IsSpacing(Buffer.Peek()))
                     allowNext = true;
 
-                Buffer.SkipSpacings(TextStream.SkipType.All);
+                Buffer.SkipSpaces(TextStream.RepeatKind.All);
 
                 if (Buffer.Peek() == '\\')
                 {
@@ -125,7 +125,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 if (!allowNext)
                     break;
 
-                Buffer.SkipSpacings(TextStream.SkipType.All);
+                Buffer.SkipSpaces(TextStream.RepeatKind.All);
             }
         }
 
@@ -141,12 +141,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '\v':
                     case '\f':
                     case '\t':
-                        Buffer.SkipSpacings(TextStream.SkipType.All);
+                        Buffer.SkipSpaces(TextStream.RepeatKind.All);
                         break;
 
                     case '\r':
                     case '\n':
-                        Buffer.SkipLineBreaks(TextStream.SkipType.Single);
+                        Buffer.SkipLineBreaks(TextStream.RepeatKind.Single);
                         break;
 
                     case '#':

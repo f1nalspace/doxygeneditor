@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -33,30 +34,27 @@ namespace TSP.DoxygenEditor.Extensions
 
         public static void AutoSizeColumnList(this ListView listView)
         {
-            //Prevents flickering
             listView.BeginUpdate();
 
-            Dictionary<int, int> columnSize = new Dictionary<int, int>();
+            int[] columnSize = new int[32];
+            int columnCount = listView.Columns.Count;
+            Debug.Assert(columnCount < columnSize.Length);
 
-            //Auto size using header
+            // Auto size using header
             listView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
 
-            //Grab column size based on header
-            foreach (ColumnHeader colHeader in listView.Columns)
-                columnSize.Add(colHeader.Index, colHeader.Width);
+            // Grab column size based on header
+            for (int i = 0; i < columnCount; ++i)
+                columnSize[i] = listView.Columns[i].Width;
 
-            //Auto size using data
+            // Auto size using data
             listView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
 
-            //Grab comumn size based on data and set max width
-            foreach (ColumnHeader colHeader in listView.Columns)
+            // Grab comumn size based on data and set max width
+            for (int i = 0; i < columnCount; ++i)
             {
-                int nColWidth;
-                if (columnSize.TryGetValue(colHeader.Index, out nColWidth))
-                    colHeader.Width = Math.Max(nColWidth, colHeader.Width);
-                else
-                    //Default to 50
-                    colHeader.Width = Math.Max(50, colHeader.Width);
+                ColumnHeader colHeader = listView.Columns[i];
+                colHeader.Width = Math.Max(columnSize[i], colHeader.Width);
             }
 
             listView.EndUpdate();
