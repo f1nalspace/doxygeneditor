@@ -2,6 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <Platform>x64</Platform>
+    <Platforms>$(Platform)</Platforms>
+    <PlatformName>$(Platform)</PlatformName>
+    <PlatformTarget>$(Platform)</PlatformTarget>
     <OutputType>WinExe</OutputType>
     <RootNamespace>TSP.DoxygenEditor</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -38,8 +41,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
-    <Content Include="Resources\QuickFind_16x.png" />
-    <Content Include="Resources\QuickReplace_16x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DoxygenParsers\DoxygenParsers.csproj" />
