@@ -38,6 +38,8 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 	Version History
 -------------------------------------------------------------------------------
+    ## v0.9.2.0:
+    - Bugfix: Fixed htmlonly doxygen block was parsed as doxygen
 
     ## v0.9.1.0:
     - New: Grouping for issues and performance listview

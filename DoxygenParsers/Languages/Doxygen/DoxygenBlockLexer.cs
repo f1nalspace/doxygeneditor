@@ -621,10 +621,10 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
         }
 
-        private bool LexUntilCodeEnd(CommandResult commandResult)
+        private bool LexUntilCommandEnd(CommandResult commandResult, string beginCommand, string endCommand)
         {
-            // Special case, we dont want to parse doxygen stuff inside a code section
-            // so we wait until a @endcode follows
+            // Special case, we dont want to parse doxygen stuff inside several sections, such as "code" or "htmlonly".
+            // So we wait until the end-command such as "endcode" or "endhtml" comes
             bool isComplete = false;
             while (!Buffer.IsEOF)
             {
@@ -636,7 +636,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     Buffer.AdvanceColumn();
                     Buffer.AdvanceColumnsWhile(SyntaxUtils.IsIdentPart);
                     string ident = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, Buffer.LexemeWidth - 1);
-                    if ("endcode".Equals(ident))
+                    if (endCommand.Equals(ident))
                     {
                         PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.CommandEnd, Buffer.LexemeRange, true));
                         isComplete = true;
@@ -652,7 +652,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
             if (!isComplete)
             {
-                AddError(commandResult.StartPos, $"Unterminated code-block, expect '@endcode' or '\\endcode'", "Code", commandResult.CommandName);
+                AddError(commandResult.StartPos, $"Unterminated command-block, expect '@{endCommand}' or '\\{endCommand}'", "{beginCommand}", commandResult.CommandName);
                 return (false);
             }
             return (true);
@@ -804,7 +804,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 {
                                     if ("code".Equals(commandResult.CommandName))
                                     {
-                                        if (!LexUntilCodeEnd(commandResult))
+                                        if (!LexUntilCommandEnd(commandResult, "code", "endcode"))
+                                            return (false);
+                                    }
+                                    else if ("htmlonly".Equals(commandResult.CommandName))
+                                    {
+                                        if (!LexUntilCommandEnd(commandResult, "htmlonly", "endhtmlonly"))
                                             return (false);
                                     }
                                 }
