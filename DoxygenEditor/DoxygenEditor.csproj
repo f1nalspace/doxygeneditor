@@ -214,6 +214,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
+    <Content Include="Resources\QuickFind_16x.png" />
+    <Content Include="Resources\QuickReplace_16x.png" />
     <None Include="Resources\BuildDefinition_16x.png" />
     <None Include="Resources\StatusCriticalError_32x.png" />
     <None Include="Resources\Refresh_16x.png" />
