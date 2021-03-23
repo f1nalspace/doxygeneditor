@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("TSPSoftware")]
 [assembly: AssemblyProduct("DoxygenUnitTests")]
-[assembly: AssemblyCopyright("Copyright © 2018 Torsten Spaete")]
+[assembly: AssemblyCopyright("Copyright (c) 2017-2021 Torsten Spaete")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

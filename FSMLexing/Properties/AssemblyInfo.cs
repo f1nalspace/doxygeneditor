@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("FSMLexing")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("TSPSoftware")]
 [assembly: AssemblyProduct("FSMLexing")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCopyright("Copyright (C) 2018-2021 Torsten Spaete")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

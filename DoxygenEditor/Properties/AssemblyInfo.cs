@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("TSPSoftware")]
 [assembly: AssemblyProduct("Doxygen Editor")]
-[assembly: AssemblyCopyright("Copyright (c) 2018 Torsten Spaete")]
+[assembly: AssemblyCopyright("Copyright (c) 2017-2021 Torsten Spaete")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
