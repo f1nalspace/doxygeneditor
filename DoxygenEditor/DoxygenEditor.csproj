@@ -1,37 +1,20 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
-    <ProjectGuid>{70A53966-525E-4F6D-AA1C-229B428F2A98}</ProjectGuid>
+    <TargetFramework>net48</TargetFramework>
+    <Platform>x64</Platform>
     <OutputType>WinExe</OutputType>
     <RootNamespace>TSP.DoxygenEditor</RootNamespace>
-    <AssemblyName>DoxygenEditor</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\build\x64-Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>..\build\x64-Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>doxygeneditor.ico</ApplicationIcon>
@@ -40,208 +23,31 @@
     <StartupObject>TSP.DoxygenEditor.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ScintillaNET, Version=3.6.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\jacobslusser.ScintillaNET.3.6.3\lib\net40\ScintillaNET.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
     <Reference Include="System.Data.Linq" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Editor\EditorContext.cs" />
-    <Compile Include="Editor\EditorFileType.cs" />
-    <Compile Include="Extensions\StopWatchExtensions.cs" />
-    <Compile Include="Styles\ColorTheme.cs" />
-    <Compile Include="Styles\EditorStyler.cs" />
-    <Compile Include="Editor\IEditorId.cs" />
-    <Compile Include="Editor\IParseControl.cs" />
-    <Compile Include="Editor\IParseInfo.cs" />
-    <Compile Include="Styles\IVisualStyler.cs" />
-    <Compile Include="Styles\IStylerData.cs" />
-    <Compile Include="Editor\ParseContext.cs" />
-    <Compile Include="ErrorDialog\ErrorDialogForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ErrorDialog\ErrorDialogForm.Designer.cs">
-      <DependentUpon>ErrorDialogForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Extensions\ColorExtensions.cs" />
-    <Compile Include="Extensions\DictionaryExtensions.cs" />
-    <Compile Include="Extensions\DirectoryInfoExtensions.cs" />
-    <Compile Include="Extensions\ErrorMessageModelExtensions.cs" />
-    <Compile Include="Extensions\ExceptionExtensions.cs" />
-    <Compile Include="Extensions\LinkedListExtensions.cs" />
-    <Compile Include="Extensions\ScintillaStyleExtensions.cs" />
-    <Compile Include="Extensions\TimeSpanExtensions.cs" />
-    <Compile Include="Extensions\UIExtensions.cs" />
-    <Compile Include="FilterControls\FilterBarControl.cs">
+    <Compile Update="FilterControls\FilterBarControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="FilterControls\FilterBarControl.Designer.cs">
-      <DependentUpon>FilterBarControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="FilterControls\FilterListView.cs">
+    <Compile Update="FilterControls\FilterListView.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="FilterControls\FilterListView.Designer.cs">
-      <DependentUpon>FilterListView.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Models\GlobalConfigModel.cs" />
-    <Compile Include="Models\PerformanceItemModel.cs" />
-    <Compile Include="Services\AbstractConfigurationPublisher.cs" />
-    <Compile Include="Services\DefaultConfigurationConverter.cs" />
-    <Compile Include="Services\IConfigurarionReader.cs" />
-    <Compile Include="Services\IConfigurarionWriter.cs" />
-    <Compile Include="Services\IConfigurationConverter.cs" />
-    <Compile Include="Services\RegistryConfigurationStore.cs" />
-    <Compile Include="Services\XMLConfigurationStore.cs" />
-    <Compile Include="Utils\ReflectionUtils.cs" />
-    <Compile Include="Utils\RexUtils.cs" />
-    <Compile Include="Models\ErrorMessageModel.cs" />
-    <Compile Include="Models\SymbolItemModel.cs" />
-    <Compile Include="Natives\NativeMethods.cs" />
-    <Compile Include="Solid\IOCContainer.cs" />
-    <Compile Include="SearchReplace\SearchReplaceControl.cs">
+    <Compile Update="SearchReplace\SearchReplaceControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="SearchReplace\SearchReplaceControl.Designer.cs">
-      <DependentUpon>SearchReplaceControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Models\LogItemModel.cs" />
-    <Compile Include="SearchReplace\SearchReplaceTypes.cs" />
-    <Compile Include="Models\WorkspaceModel.cs" />
-    <Compile Include="Models\TypeStringModel.cs" />
-    <Compile Include="Views\AboutForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Views\AboutForm.Designer.cs">
-      <DependentUpon>AboutForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Views\BuildDocumentationForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Views\BuildDocumentationForm.Designer.cs">
-      <DependentUpon>BuildDocumentationForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Views\DirectoryInputForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Views\DirectoryInputForm.Designer.cs">
-      <DependentUpon>DirectoryInputForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Views\MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Views\MainForm.Designer.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SymbolSearch\SymbolSearchForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SymbolSearch\SymbolSearchForm.Designer.cs">
-      <DependentUpon>SymbolSearchForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Views\WorkspaceForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Views\WorkspaceForm.Designer.cs">
-      <DependentUpon>WorkspaceForm.cs</DependentUpon>
-    </Compile>
-    <EmbeddedResource Include="ErrorDialog\ErrorDialogForm.resx">
-      <DependentUpon>ErrorDialogForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="FilterControls\FilterBarControl.resx">
-      <DependentUpon>FilterBarControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SearchReplace\SearchReplaceControl.resx">
-      <DependentUpon>SearchReplaceControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\AboutForm.resx">
-      <DependentUpon>AboutForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\BuildDocumentationForm.resx">
-      <DependentUpon>BuildDocumentationForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\DirectoryInputForm.resx">
-      <DependentUpon>DirectoryInputForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\MainForm.resx">
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <EmbeddedResource Include="SymbolSearch\SymbolSearchForm.resx">
-      <DependentUpon>SymbolSearchForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\WorkspaceForm.resx">
-      <DependentUpon>WorkspaceForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <None Include="packages.config" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config">
-      <SubType>Designer</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="doxygeneditor.ico" />
     <Content Include="Resources\QuickFind_16x.png" />
     <Content Include="Resources\QuickReplace_16x.png" />
-    <None Include="Resources\BuildDefinition_16x.png" />
-    <None Include="Resources\StatusCriticalError_32x.png" />
-    <None Include="Resources\Refresh_16x.png" />
-    <None Include="Resources\CollapseArrow_16x.png" />
-    <None Include="Resources\ExpandArrow_16x.png" />
-    <None Include="Resources\LICENSE.txt" />
-    <None Include="Resources\SelectAll_16x.png" />
-    <None Include="Resources\Paste_16x.png" />
-    <None Include="Resources\Copy_16x.png" />
-    <None Include="Resources\Cut_16x.png" />
-    <None Include="Resources\Exit_16x.png" />
-    <None Include="Resources\CloseDocument_16x.png" />
-    <None Include="Resources\CloseGroup_16x.png" />
-    <None Include="Resources\SaveAll_16x.png" />
-    <None Include="Resources\Redo_16x.png" />
-    <None Include="Resources\Undo_16x.png" />
-    <None Include="Resources\SaveAs_16x.png" />
-    <None Include="Resources\Save_16x.png" />
-    <None Include="Resources\OpenFile_16x.png" />
-    <None Include="Resources\NewFile_16x.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DoxygenParsers\DoxygenParsers.csproj">
-      <Project>{3fcfb7f9-107f-432f-aa9f-09c64eedc1a8}</Project>
-      <Name>DoxygenParsers</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\DoxygenParsers\DoxygenParsers.csproj" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <PackageReference Include="jacobslusser.ScintillaNET" Version="3.6.3" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+  </ItemGroup>
 </Project>
