@@ -1,6 +1,8 @@
-﻿using System;
+﻿using ClangSharp.Interop;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace FSMLexing
 {
@@ -35,6 +37,10 @@ namespace FSMLexing
 
             Negate,
             LogicalNot,
+
+            Divide,
+
+            SingleLineComment,
         }
 
         public struct Token
@@ -58,6 +64,114 @@ namespace FSMLexing
 
         class FSMLexer
         {
+            enum EquivalenceClass : int
+            {
+                Invalid = -1,       // Invalid
+                EOF = 0,            // End-of-file
+
+                Char,               // Any char
+
+                Letter,             // a-z A-Z
+                Underscore,         // _
+                Digit,              // 0-9
+                Space,              //   
+                Tab,                // \t
+                LF,                 // \n
+                CR,                 // \r
+
+                Plus,               // +
+                Minus,              // -
+                Star,               // *
+                Slash,              // /
+                Equals,             // =
+                Lesser,             // <
+                Greater,            // >
+                Pipe,               // |
+                Ampersand,          // &
+
+                ExclamationMark,    // !
+
+            }
+
+            private static readonly Dictionary<char, EquivalenceClass> SpecialEquivalentCharMap = new Dictionary<char, EquivalenceClass>() {
+                { '_', EquivalenceClass.Underscore },
+
+                { 'a', EquivalenceClass.Letter },
+                { 'b', EquivalenceClass.Letter },
+                { 'c', EquivalenceClass.Letter },
+                { 'd', EquivalenceClass.Letter },
+                { 'e', EquivalenceClass.Letter },
+                { 'f', EquivalenceClass.Letter },
+                { 'g', EquivalenceClass.Letter },
+                { 'h', EquivalenceClass.Letter },
+                { 'i', EquivalenceClass.Letter },
+                { 'j', EquivalenceClass.Letter },
+                { 'k', EquivalenceClass.Letter },
+                { 'l', EquivalenceClass.Letter },
+                { 'm', EquivalenceClass.Letter },
+                { 'n', EquivalenceClass.Letter },
+                { 'o', EquivalenceClass.Letter },
+                { 'p', EquivalenceClass.Letter },
+                { 'q', EquivalenceClass.Letter },
+                { 'r', EquivalenceClass.Letter },
+                { 's', EquivalenceClass.Letter },
+                { 't', EquivalenceClass.Letter },
+                { 'u', EquivalenceClass.Letter },
+                { 'v', EquivalenceClass.Letter },
+                { 'w', EquivalenceClass.Letter },
+                { 'x', EquivalenceClass.Letter },
+                { 'y', EquivalenceClass.Letter },
+                { 'z', EquivalenceClass.Letter },
+                { 'A', EquivalenceClass.Letter },
+                { 'B', EquivalenceClass.Letter },
+                { 'C', EquivalenceClass.Letter },
+                { 'D', EquivalenceClass.Letter },
+                { 'E', EquivalenceClass.Letter },
+                { 'F', EquivalenceClass.Letter },
+                { 'G', EquivalenceClass.Letter },
+                { 'H', EquivalenceClass.Letter },
+                { 'I', EquivalenceClass.Letter },
+                { 'J', EquivalenceClass.Letter },
+                { 'K', EquivalenceClass.Letter },
+                { 'L', EquivalenceClass.Letter },
+                { 'M', EquivalenceClass.Letter },
+                { 'N', EquivalenceClass.Letter },
+                { 'O', EquivalenceClass.Letter },
+                { 'P', EquivalenceClass.Letter },
+                { 'Q', EquivalenceClass.Letter },
+                { 'R', EquivalenceClass.Letter },
+                { 'S', EquivalenceClass.Letter },
+                { 'T', EquivalenceClass.Letter },
+                { 'U', EquivalenceClass.Letter },
+                { 'V', EquivalenceClass.Letter },
+                { 'W', EquivalenceClass.Letter },
+                { 'X', EquivalenceClass.Letter },
+                { 'Y', EquivalenceClass.Letter },
+                { 'Z', EquivalenceClass.Letter },
+
+                { '0', EquivalenceClass.Digit },
+                { '1', EquivalenceClass.Digit },
+                { '2', EquivalenceClass.Digit },
+                { '3', EquivalenceClass.Digit },
+                { '4', EquivalenceClass.Digit },
+                { '5', EquivalenceClass.Digit },
+                { '6', EquivalenceClass.Digit },
+                { '7', EquivalenceClass.Digit },
+                { '8', EquivalenceClass.Digit },
+                { '9', EquivalenceClass.Digit },
+
+                { ' ', EquivalenceClass.Space },
+                { '\t', EquivalenceClass.Tab },
+                { '\n', EquivalenceClass.LF },
+                { '\r', EquivalenceClass.CR },
+
+                { '+', EquivalenceClass.Plus },
+                { '=', EquivalenceClass.Equals },
+                { '!', EquivalenceClass.ExclamationMark },
+                { '/', EquivalenceClass.Slash },
+                { '*', EquivalenceClass.Star },
+            };
+
             enum State
             {
                 // Last states must be before start
@@ -65,7 +179,7 @@ namespace FSMLexing
                 EOF,
                 Done,
 
-                DoneAfterNext,
+                DoneAfterNext, // Regardless what comes next, the token is finished
                 Start,
                 Number,
                 Ident,
@@ -81,52 +195,64 @@ namespace FSMLexing
                 DoubleEquals,
 
                 ExclamationMark,
-                ExclamationMarkEquals
+                ExclamationMarkEquals,
+
+                Slash,
+                SingleLineComment,
             }
 
-            enum EquivalenceClass
-            {
-                Invalid = 0,
-                EOF,
-                Letter,
-                Underscore,
-                Digit,
-                Space,
-                Tab,
-                LF,
-                CR,
-                Plus,
-                Equals,
-                ExclamationMark,
-            }
+            private const int ASCIIStart = 10;
+            private const int ASCIIEnd = 126;
 
-            private readonly int stateCount;
-            private readonly int equivalenceClassCount;
-            private State[,] transitions = null;
-            private EquivalenceClass[] equivalenceClasses = null;
+            private const int UnicodeStart = 256;
+            private const int UnicodeEnd = 65535;
+
+            private const int ColumnsPerTab = 4;
+
+            // Mapping any char to a EquivalenceClass
+            private static readonly EquivalenceClass[] equivalenceCharMap = new EquivalenceClass[char.MaxValue];
+
+            private static readonly int stateCount = Enum.GetNames(typeof(State)).Length;
+            private static readonly int equivalenceClassCount = Enum.GetNames(typeof(EquivalenceClass)).Length;
+            private static int[] columnCount = new int[equivalenceClassCount];
+            private static int[] lineBreakStartCount = new int[stateCount];
+
+            private readonly State[,] transitions = new State[stateCount, equivalenceClassCount];
+
             private TokenKind[] tokenKinds = null;
-            private int[] columnCount = null;
-            private int[] lineBreakStartCount = null;
 
-            private int columnsPerTab = 4;
+            static FSMLexer()
+            {
+                equivalenceCharMap[0] = EquivalenceClass.Invalid;
+                for (int i = 1; i < char.MaxValue; ++i)
+                {
+                    equivalenceCharMap[i] = EquivalenceClass.Char;
+                    if (SpecialEquivalentCharMap.TryGetValue((char)i, out EquivalenceClass eqClass))
+                        equivalenceCharMap[i] = eqClass;
+                }
+                for (int state = 1; state < stateCount; ++state)
+                    lineBreakStartCount[state] = ((State)state == State.CRStart || (State)state == State.LFStart) ? 1 : 0;
+                for (int eqCls = 1; eqCls < equivalenceClassCount; ++eqCls)
+                    columnCount[eqCls] = (EquivalenceClass.Tab == (EquivalenceClass)eqCls) ? ColumnsPerTab : 1;
+                columnCount[(int)EquivalenceClass.LF] = 0;
+                columnCount[(int)EquivalenceClass.CR] = 0;
+            }
 
             public FSMLexer()
             {
-                stateCount = Enum.GetNames(typeof(State)).Length;
-                equivalenceClassCount = Enum.GetNames(typeof(EquivalenceClass)).Length;
-                BuildTables();
             }
 
+#if false
             private void SetEquivalentClass(char ch, EquivalenceClass eqCls)
             {
-                equivalenceClasses[(int)ch] = eqCls;
+                equivalenceCharMap[(int)ch] = eqCls;
             }
             private void SetEquivalentClasses(Func<char, bool> inFunc, EquivalenceClass eqCls)
             {
-                for (int i = 0; i < 256; ++i)
+                for (int i = 0; i < equivalenceClassCount; ++i)
                 {
                     if (inFunc((char)i))
-                        equivalenceClasses[i] = eqCls;
+                        equivalenceCharMap[i] = eqCls;
                 }
             }
             private void SetTransition(State fromState, EquivalenceClass eqCls, State toState)
@@ -179,10 +305,10 @@ namespace FSMLexing
                     tokenKinds[stateIndex] = TokenKind.Unknown;
 
                 // Equivalent classes
-                equivalenceClasses = new EquivalenceClass[256];
+                equivalenceCharMap = new EquivalenceClass[256];
                 for (int charIndex = 0; charIndex < 256; ++charIndex)
-                    equivalenceClasses[charIndex] = EquivalenceClass.Invalid;
-                equivalenceClasses['\0'] = EquivalenceClass.EOF;
+                    equivalenceCharMap[charIndex] = EquivalenceClass.Invalid;
+                equivalenceCharMap['\0'] = EquivalenceClass.EOF;
 
                 SetEquivalentClasses(char.IsDigit, EquivalenceClass.Digit);
                 SetEquivalentClasses(char.IsLetter, EquivalenceClass.Letter);
@@ -194,6 +320,8 @@ namespace FSMLexing
                 SetEquivalentClass('+', EquivalenceClass.Plus);
                 SetEquivalentClass('=', EquivalenceClass.Equals);
                 SetEquivalentClass('!', EquivalenceClass.ExclamationMark);
+                SetEquivalentClass('/', EquivalenceClass.Slash);
+                SetEquivalentClass('*', EquivalenceClass.Star);
 
                 // Counts
                 columnCount = new int[equivalenceClassCount];
@@ -201,7 +329,7 @@ namespace FSMLexing
                 for (int state = 1; state < stateCount; ++state)
                     lineBreakStartCount[state] = ((State)state == State.CRStart || (State)state == State.LFStart) ? 1 : 0;
                 for (int eqCls = 1; eqCls < equivalenceClassCount; ++eqCls)
-                    columnCount[eqCls] = (EquivalenceClass.Tab == (EquivalenceClass)eqCls) ? columnsPerTab : 1;
+                    columnCount[eqCls] = (EquivalenceClass.Tab == (EquivalenceClass)eqCls) ? ColumnsPerTab : 1;
                 columnCount[(int)EquivalenceClass.LF] = 0;
                 columnCount[(int)EquivalenceClass.CR] = 0;
 
@@ -273,7 +401,16 @@ namespace FSMLexing
                 SetTransition(State.LFStart, EquivalenceClass.CR, State.DoneAfterNext);
                 tokenKinds[(int)State.CRStart] = TokenKind.Linebreak;
                 tokenKinds[(int)State.LFStart] = TokenKind.Linebreak;
+
+                // Comments
+                SetTransition(State.Start, EquivalenceClass.Slash, State.Slash);
+                SetTransitions(State.Slash, State.Done);
+                SetTransition(State.Slash, EquivalenceClass.Slash, State.SingleLineComment);
+                SetTransitions(State.SingleLineComment, (c) => (c != EquivalenceClass.CR && c != EquivalenceClass.LF && c != EquivalenceClass.EOF), State.Done);
+                tokenKinds[(int)State.Slash] = TokenKind.Divide;
+                tokenKinds[(int)State.SingleLineComment] = TokenKind.SingleLineComment;
             }
+#endif
 
             public bool NextToken(string source, ref TextPosition pos, ref Token outToken)
             {
@@ -283,9 +420,9 @@ namespace FSMLexing
                 TokenKind tokenKind = TokenKind.Unknown;
 
                 State state = State.Start;
-                int ch = 0;
-                EquivalenceClass eqCls = EquivalenceClass.Invalid;
-                State prevState = State.Start;
+                int ch;
+                EquivalenceClass eqCls;
+                State prevState;
 
                 int lastIndex;
                 do
@@ -293,10 +430,17 @@ namespace FSMLexing
                     lastIndex = pos.Index;
 
                     ch = source[pos.Index++];
-                    eqCls = equivalenceClasses[(int)ch];
+                    int charIndex = (int)ch;
+                    Debug.Assert(charIndex >= 0 && charIndex < equivalenceCharMap.Length);
+                    eqCls = equivalenceCharMap[charIndex];
                     prevState = state;
                     state = transitions[(int)prevState, (int)eqCls];
                     if (state == State.Done) break;
+                    if (state == State.Failed)
+                    {
+                        Console.Error.WriteLine($"State change failed for previous state: {prevState}, newState: {state}, eqCls: {eqCls}, char: '{ch}'");
+                        break;
+                    }
 
                     int columnsOffset = columnCount[(int)eqCls];
                     int linesOffset = lineBreakStartCount[(int)state];
@@ -309,9 +453,9 @@ namespace FSMLexing
 
                     if (state != prevState)
                     {
-                        TokenKind newKind = tokenKinds[(int)state];
-                        if (tokenKind == TokenKind.Unknown || newKind > tokenKind)
-                            tokenKind = newKind;
+                        //TokenKind newKind = tokenKinds[(int)state];
+                        //if (tokenKind == TokenKind.Unknown || newKind > tokenKind)
+                        //    tokenKind = newKind;
                     }
                 } while (state > State.Done);
 
@@ -323,13 +467,14 @@ namespace FSMLexing
                 outToken.Length = (pos.Index - tokenStart.Index);
                 outToken.Value = source.Substring(outToken.Position.Index, outToken.Length);
 
-                return (pos.Index < source.Length);
+                return (pos.Index < source.Length) && state != State.Failed;
             }
         }
 
         static void Main(string[] args)
         {
-            string source = "42  abc\t_myAw3someIdent\n\t123+56\r\nThis is it!9+=25=3==5\0";
+            //string source = "42  abc\t_myAw3someIdent\n\t123+56\r\nThis is it!9+=25=3==5\0";
+            string source = "// hallo welt\n\0";
             FSMLexer lexer = new FSMLexer();
             Token token = new Token();
             TextPosition pos = new TextPosition();
