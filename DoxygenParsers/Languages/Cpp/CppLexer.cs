@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using ClangSharp.Interop;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Languages.Utils;
@@ -10,6 +13,131 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 {
     public class CppLexer : BaseLexer<CppToken>
     {
+        private unsafe Span<CXToken> Tokenize(CXTranslationUnit translationUnit, CXSourceRange sourceRange)
+        {
+            CXToken* pTokens;
+            uint numTokens;
+            clang.tokenize(translationUnit, sourceRange, &pTokens, &numTokens);
+            var result = new CXToken[checked((int)numTokens)];
+            fixed (CXToken* pResult = result)
+            {
+                var size = sizeof(CXToken) * numTokens;
+                System.Buffer.MemoryCopy(pTokens, pResult, size, size);
+            }
+            return result;
+        }
+
+        public override bool IsFullParser => true;
+
+        protected override State CreateState() => null;
+
+        private static CppToken Convert(CXTranslationUnit translationUnit, CXToken cxToken)
+        {
+            CppToken result = new CppToken();
+            Debug.WriteLine(cxToken.ToString());
+            switch (cxToken.Kind)
+            {
+                case CXTokenKind.CXToken_Punctuation:
+                    break;
+                case CXTokenKind.CXToken_Keyword:
+                    break;
+                case CXTokenKind.CXToken_Identifier:
+                    break;
+                case CXTokenKind.CXToken_Literal:
+                    break;
+                case CXTokenKind.CXToken_Comment:
+                    break;
+            }
+            return (result);
+        }
+
+        protected override bool LexNext(State state) => throw new NotSupportedException();
+
+        private readonly LanguageKind _lang;
+
+        public CppLexer(string source, string filePath, TextPosition pos, int length, LanguageKind lang) : base(source, filePath, pos, length)
+        {
+            _lang = lang;
+        }
+
+        protected override void LexFull()
+        {
+            CXIndex index = CXIndex.Create();
+
+            string filePath = Path.ChangeExtension(Buffer.FilePath, ".c");
+            string source = Buffer.GetSourceText(0, Buffer.StreamLength);
+            CXUnsavedFile virtualFile = CXUnsavedFile.Create(filePath, source);
+
+            CXTranslationUnit translationUnit = CXTranslationUnit.Parse(
+                index,
+                filePath,
+                new ReadOnlySpan<string>(new[] { "-fparse-all-comments", "-std=c99" }),
+                new ReadOnlySpan<CXUnsavedFile>(new[] { virtualFile }),
+                CXTranslationUnit_Flags.CXTranslationUnit_Incomplete |
+                CXTranslationUnit_Flags.CXTranslationUnit_SingleFileParse);
+
+            if (translationUnit.Cursor.Kind >= CXCursorKind.CXCursor_FirstInvalid &&
+                translationUnit.Cursor.Kind <= CXCursorKind.CXCursor_LastInvalid)
+                throw new FormatException($"Cannot parse C/C++ file '{Buffer.FilePath}'!");
+
+            CXFile file = translationUnit.GetFile(filePath);
+            CXSourceLocation fromLocation = translationUnit.GetLocationForOffset(file, 0);
+            CXSourceLocation toLocation = translationUnit.GetLocationForOffset(file, (uint)source.Length);
+            CXSourceRange fullRange = CXSourceRange.Create(fromLocation, toLocation);
+            Span<CXToken> cxTokens = Tokenize(translationUnit, fullRange);
+
+            foreach (CXToken cxToken in cxTokens)
+            {
+                CXSourceRange sourceRange = cxToken.GetExtent(translationUnit);
+                sourceRange.Start.GetFileLocation(out _, out uint startLine, out uint startColumn, out uint startOffset);
+                sourceRange.End.GetFileLocation(out _, out uint endLine, out uint endColumn, out uint endOffset);
+
+                uint len = endOffset - startOffset;
+
+                TextRange textRange = new TextRange(new TextPosition((int)startOffset, (int)startLine, (int)startColumn), (int)len);
+
+                CppTokenKind tokenKind = CppTokenKind.Unknown;
+
+                switch (cxToken.Kind)
+                {
+                    case CXTokenKind.CXToken_Comment:
+                        {
+                            if (source[(int)startOffset] != '/')
+                                throw new FormatException($"Invalid comment start for token '{cxToken}'");
+
+                            if (((startOffset + 1) < source.Length) && (source[(int)startOffset + 1] == '*'))
+                            {
+                                tokenKind = CppTokenKind.MultiLineComment;
+                                if ((startOffset + 2) < source.Length && DoxygenSyntax.MultiLineDocChars.Contains(source[(int)startOffset + 2]))
+                                    tokenKind = CppTokenKind.MultiLineCommentDoc;
+                            }
+                            else
+                            {
+                                tokenKind = CppTokenKind.SingleLineComment;
+                                if (((startOffset + 2) < source.Length) && DoxygenSyntax.SingleLineDocChars.Contains(source[(int)startOffset + 2]))
+                                    tokenKind = CppTokenKind.SingleLineCommentDoc;
+                            }
+                        }
+                        break;
+                    case CXTokenKind.CXToken_Punctuation:
+                        break;
+                    case CXTokenKind.CXToken_Keyword:
+                        break;
+                    case CXTokenKind.CXToken_Identifier:
+                        break;
+                    case CXTokenKind.CXToken_Literal:
+                        break;
+                }
+
+                CppToken token = new CppToken();
+                token.Set(LanguageKind.Cpp, tokenKind, textRange, true);
+                PushToken(token);
+            }
+
+            Buffer.TextPosition = new TextPosition(Buffer.StreamOnePastEnd);
+        }
+
+#if false
         // @TODO(final): Make reserved-keywords configurable
         public static readonly HashSet<string> ReservedKeywords = new HashSet<string>{
             // C99
@@ -1341,5 +1469,6 @@ preprocessorDone:
             }
             return PushToken(CppTokenPool.Make(_lang, lexRes.Kind, Buffer.LexemeRange, lexRes.IsComplete), lexRes.Intern);
         }
+#endif
     }
 }

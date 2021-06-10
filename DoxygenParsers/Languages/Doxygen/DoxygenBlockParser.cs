@@ -193,7 +193,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         {
                             string referenceValue = nameParam.Value;
                             TextPosition startPos = new TextPosition(0, nameParam.Token.Position.Line, nameParam.Token.Position.Column);
-                            using (TextStream referenceTextStream = new BasicTextStream(referenceValue, startPos, referenceValue.Length))
+                            using (TextStream referenceTextStream = new BasicTextStream(referenceValue, null, startPos, referenceValue.Length))
                             {
                                 ReferenceSymbolKind referenceTarget = ReferenceSymbolKind.Any;
                                 while (!referenceTextStream.IsEOF)

@@ -22,15 +22,17 @@ namespace TSP.DoxygenEditor.Lexers
             Intern,
         }
 
+        public virtual bool IsFullParser => false;
+
         public abstract class State
         {
             public abstract void StartLex(TextStream stream);
         }
         protected abstract State CreateState();
 
-        public BaseLexer(string source, TextPosition pos, int length)
+        public BaseLexer(string source, string filePath, TextPosition pos, int length)
         {
-            Buffer = new BasicTextStream(source, pos, length);
+            Buffer = new BasicTextStream(source, filePath, pos, length);
         }
 
         protected void AddError(TextPosition pos, string message, string what, string symbol = null)
@@ -47,7 +49,7 @@ namespace TSP.DoxygenEditor.Lexers
             else
                 token.Value = value;
             T lastToken = _tokens.LastOrDefault();
-            if (lastToken != null)
+            if (lastToken != null && !lastToken.Equals(token))
                 Debug.Assert(token.Index >= lastToken.End);
             _tokens.Add(token);
             return (true);
@@ -59,20 +61,28 @@ namespace TSP.DoxygenEditor.Lexers
 
         protected abstract bool LexNext(State state);
 
+        protected virtual void LexFull() { }
+
         public IEnumerable<T> Tokenize()
         {
             _tokens.Clear();
-            State state = CreateState();
-            do
+            if (IsFullParser)
+                LexFull();
+            else
             {
-                int p = Buffer.StreamPosition;
-                state.StartLex(Buffer);
-                bool r = LexNext(state);
-                if (!r)
-                    break;
-                else
-                    Debug.Assert(Buffer.StreamPosition > p);
-            } while (!Buffer.IsEOF);
+                State state = CreateState();
+                do
+                {
+                    int p = Buffer.StreamPosition;
+                    state.StartLex(Buffer);
+                    bool r = LexNext(state);
+                    if (!r)
+                        break;
+                    else
+                        Debug.Assert(Buffer.StreamPosition > p);
+                } while (!Buffer.IsEOF);
+            }
+            Debug.Assert(Buffer.IsEOF);
             return (_tokens);
         }
 

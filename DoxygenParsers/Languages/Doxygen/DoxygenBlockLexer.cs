@@ -44,7 +44,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return new DoxygenState();
         }
 
-        public DoxygenBlockLexer(string source, TextPosition pos, int length) : base(source, pos, length)
+        public DoxygenBlockLexer(string source, string filename, TextPosition pos, int length) : base(source, filename, pos, length)
         {
 
         }
@@ -658,6 +658,80 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return (true);
         }
 
+        private static bool LexMultiLineComment(TextStream stream, bool init, out CppTokenKind outKind)
+        {
+            outKind = CppTokenKind.MultiLineComment;
+            if (init)
+            {
+                Debug.Assert(stream.Peek(0) == '/');
+                Debug.Assert(stream.Peek(1) == '*');
+                stream.AdvanceColumns(2);
+                char n = stream.Peek();
+                if (DoxygenSyntax.MultiLineDocChars.Contains(n))
+                {
+                    stream.AdvanceColumn();
+                    outKind = CppTokenKind.MultiLineCommentDoc;
+                    if (n == '*' && stream.Peek() == '/')
+                    {
+                        stream.AdvanceColumn();
+                        return true;
+                    }
+                }
+            }
+            bool isComplete = false;
+            while (!stream.IsEOF)
+            {
+                char c0 = stream.Peek();
+                if (c0 == '*')
+                {
+                    char c1 = stream.Peek(1);
+                    if (c1 == '/')
+                    {
+                        stream.AdvanceColumns(2);
+                        isComplete = true;
+                        break;
+                    }
+                    else stream.AdvanceColumn();
+                }
+                else if (char.IsWhiteSpace(c0))
+                    stream.SkipWhitespaces();
+                else
+                    stream.AdvanceColumn();
+            }
+            return isComplete;
+        }
+
+        private static bool LexSingleLineComment(TextStream stream, bool init, out CppTokenKind outKind)
+        {
+            outKind = CppTokenKind.SingleLineComment;
+            if (init)
+            {
+                Debug.Assert(stream.Peek(0) == '/');
+                Debug.Assert(stream.Peek(1) == '/');
+                stream.AdvanceColumns(2);
+                if (DoxygenSyntax.SingleLineDocChars.Contains(stream.Peek()))
+                {
+                    stream.AdvanceColumn();
+                    outKind = CppTokenKind.SingleLineCommentDoc;
+                }
+            }
+            while (!stream.IsEOF)
+            {
+                char c0 = stream.Peek();
+                char c1 = stream.Peek(1);
+                if (c0 == TextStream.InvalidCharacter)
+                    break;
+                else if (SyntaxUtils.IsLineBreak(c0))
+                    break;
+                else if (c0 == '\t')
+                    stream.AdvanceTab();
+                else
+                    stream.AdvanceColumn();
+            }
+            bool isComplete = stream.IsEOF || SyntaxUtils.IsLineBreak(stream.Peek());
+            return isComplete;
+        }
+
         protected override bool LexNext(State hiddenState)
         {
             DoxygenState state = (DoxygenState)hiddenState;
@@ -727,10 +801,10 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 else
                                 {
                                     // Just skip until normal multi-line comment ends
-                                    CppLexer.LexResult r = CppLexer.LexMultiLineComment(Buffer, true);
-                                    if (!r.IsComplete)
+                                    bool r = LexMultiLineComment(Buffer, true, out CppTokenKind tokenKind);
+                                    if (!r)
                                     {
-                                        AddError(Buffer.TextPosition, $"Unterminated multi-line comment, expect '*/' but got EOF", r.Kind.ToString());
+                                        AddError(Buffer.TextPosition, $"Unterminated multi-line comment, expect '*/' but got EOF", tokenKind.ToString());
                                         return (false);
                                     }
                                     continue;
@@ -751,10 +825,10 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                 else
                                 {
                                     // Just skip until normal single-line comment ends
-                                    CppLexer.LexResult r = CppLexer.LexSingleLineComment(Buffer, true);
-                                    if (!r.IsComplete)
+                                    bool r = LexSingleLineComment(Buffer, true, out CppTokenKind tokenKind);
+                                    if (!r)
                                     {
-                                        AddError(Buffer.TextPosition, $"Unterminated single-line comment, expect linebreak but got EOF", r.Kind.ToString());
+                                        AddError(Buffer.TextPosition, $"Unterminated single-line comment, expect linebreak but got EOF", tokenKind.ToString());
                                         return (false);
                                     }
                                     continue;

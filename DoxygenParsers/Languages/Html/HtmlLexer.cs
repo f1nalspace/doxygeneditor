@@ -20,7 +20,7 @@ namespace TSP.DoxygenEditor.Languages.Html
             return new HtmlLexerState();
         }
 
-        public HtmlLexer(string source, TextPosition pos, int length) : base(source, pos, length)
+        public HtmlLexer(string source, string filename, TextPosition pos, int length) : base(source, filename, pos, length)
         {
         }
 

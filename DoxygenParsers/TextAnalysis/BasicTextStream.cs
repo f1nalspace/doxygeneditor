@@ -6,7 +6,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
     {
         private string _source;
 
-        public BasicTextStream(string source, TextPosition pos, int length) : base(pos, length)
+        public BasicTextStream(string source, string filePath, TextPosition pos, int length) : base(filePath, pos, length)
         {
             _source = source;
         }

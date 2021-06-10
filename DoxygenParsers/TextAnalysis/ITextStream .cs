@@ -2,6 +2,7 @@
 {
     public interface ITextStream
     {
+        string FilePath { get; }
         int StreamBase { get; }
         int StreamLength { get; }
         int StreamPosition { get; }

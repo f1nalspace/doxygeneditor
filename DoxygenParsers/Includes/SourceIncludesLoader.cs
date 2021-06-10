@@ -100,7 +100,7 @@ namespace TSP.DoxygenEditor.Includes
                             {
                                 string source = File.ReadAllText(filePath);
                                 List<CppToken> _tokens = new List<CppToken>();
-                                using (CppLexer lexer = new CppLexer(source, new TextPosition(), source.Length, Languages.LanguageKind.Cpp))
+                                using (CppLexer lexer = new CppLexer(source, filePath, new TextPosition(), source.Length, Languages.LanguageKind.Cpp))
                                 {
                                     foreach (TextError err in lexer.LexErrors)
                                         Debug.WriteLine($"Lex error[{filePath}]: {err.Message}");

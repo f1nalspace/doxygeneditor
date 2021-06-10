@@ -9,6 +9,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         private TextPosition _lexemeStart;
 
         public const char InvalidCharacter = char.MaxValue;
+        public string FilePath { get; }
         public int StreamBase { get; }
         public int StreamLength { get; }
         public int StreamOnePastEnd { get; }
@@ -32,8 +33,9 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
 #endif
 
-        public TextStream(TextPosition pos, int length)
+        public TextStream(string filePath, TextPosition pos, int length)
         {
+            FilePath = filePath;
             StreamBase = pos.Index;
             StreamLength = length;
             StreamOnePastEnd = StreamBase + StreamLength;

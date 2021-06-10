@@ -14,7 +14,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
         }
 
-        public DoxygenConfigLexer(string source, TextPosition pos, int length) : base(source, pos, length)
+        public DoxygenConfigLexer(string source, string filename, TextPosition pos, int length) : base(source, filename, pos, length)
         {
         }
 

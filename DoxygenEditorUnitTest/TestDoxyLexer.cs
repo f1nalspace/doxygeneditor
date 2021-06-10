@@ -33,7 +33,7 @@ namespace TSP.DoxygenEditor
 
         private void Lex(string source, params ExpectToken[] expectedTokens)
         {
-            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(source, new TextPosition(0), source.Length))
+            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(source, null, new TextPosition(0), source.Length))
             {
                 IEnumerable<DoxygenToken> tokens = lexer.Tokenize();
                 if (expectedTokens.Length > 0)
