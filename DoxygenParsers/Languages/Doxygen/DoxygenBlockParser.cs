@@ -31,11 +31,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
         {
             if (newEntity.Kind == DoxygenBlockEntityKind.BlockSingle || newEntity.Kind == DoxygenBlockEntityKind.BlockMulti)
             {
-                if (Top != null)
-                {
-                    Debug.Assert(Top.Entity.Kind == DoxygenBlockEntityKind.Group);
+                if (Top != null && Top.Entity.Kind == DoxygenBlockEntityKind.Group)
                     Pop();
-                }
                 DoxygenBlockNode blockNode = new DoxygenBlockNode(Top, newEntity);
                 Push(blockNode);
                 return (blockNode);
