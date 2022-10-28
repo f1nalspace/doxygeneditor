@@ -89,10 +89,14 @@ namespace TSP.DoxygenEditor.Languages.Html
                                 while (!Buffer.IsEOF)
                                 {
                                     char attrC = Buffer.Peek();
-                                    if (attrC != quote && attrC != '\n')
-                                        Buffer.AdvanceColumn();
-                                    else
+                                    if (attrC == quote)
                                         break;
+                                    else if (SyntaxUtils.IsLineBreak(attrC))
+                                        Buffer.AdvanceLineAuto();
+                                    else if (attrC == '\t')
+                                        Buffer.AdvanceTab();
+                                    else
+                                        Buffer.AdvanceColumn();
                                 }
                                 if (Buffer.Peek() == quote)
                                     Buffer.AdvanceColumn();
