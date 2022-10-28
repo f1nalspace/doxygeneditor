@@ -1,33 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <Platform>x64</Platform>
-    <Platforms>$(Platform)</Platforms>
-    <PlatformName>$(Platform)</PlatformName>
-    <PlatformTarget>$(Platform)</PlatformTarget>
-    <OutputType>Library</OutputType>
-    <RootNamespace>TSP.DoxygenEditor</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <OutputPath>..\build\x64-Debug\</OutputPath>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\build\x64-Release\</OutputPath>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="Languages\Doxygen\DoxygenEntity.cs" />
-    <Compile Remove="Languages\Doxygen\DoxygenEntityKind.cs" />
-    <Compile Remove="Languages\Doxygen\DoxygenLexer.cs" />
-    <Compile Remove="Languages\Doxygen\DoxygenNode.cs" />
-    <Compile Remove="Languages\Doxygen\DoxygenParser.cs" />
-    <Compile Remove="Multithreading\SourceIncludesLoader.cs" />
-    <Compile Remove="Parsers\RefrenceSymbol.cs" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<Platform>x64</Platform>
+		<Platforms>$(Platform)</Platforms>
+		<PlatformName>$(Platform)</PlatformName>
+		<PlatformTarget>$(Platform)</PlatformTarget>
+		<OutputType>Library</OutputType>
+		<RootNamespace>TSP.DoxygenEditor</RootNamespace>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<OutputPath>..\build\DoxygenParsers\$(PlatformName)-$(Configuration)\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Languages\Doxygen\DoxygenEntity.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenEntityKind.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenLexer.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenNode.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenParser.cs" />
+		<Compile Remove="Multithreading\SourceIncludesLoader.cs" />
+		<Compile Remove="Parsers\RefrenceSymbol.cs" />
+	</ItemGroup>
 </Project>
