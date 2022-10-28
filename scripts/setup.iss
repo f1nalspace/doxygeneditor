@@ -8,7 +8,7 @@
 #define MyAppPublisher "Torsten Spaete"
 #define MyAppURL "https://github.com/f1nalspace/doxygeneditor"
 #define MyAppExeName "DoxygenEditor.exe"
-#define RequiredNETVersion "v4.6.2"
+#define RequiredNETVersion "v4.8"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
