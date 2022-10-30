@@ -71,8 +71,8 @@ namespace TSP.DoxygenEditor.Views
                 IssueTag tagB = b.Tag as IssueTag;
 
                 // Sort by file path first
-                if (!string.Equals(tagA.Context.FilePath, tagB.Context.FilePath))
-                    return string.Compare(tagA.Context.FilePath, tagB.Context.FilePath);
+                if (!string.Equals(tagA.Editor.FilePath, tagB.Editor.FilePath))
+                    return string.Compare(tagA.Editor.FilePath, tagB.Editor.FilePath);
 
                 // Sort by line second
                 if (Math.Abs(tagA.Pos.Line - tagB.Pos.Line) > 0)
@@ -172,8 +172,8 @@ namespace TSP.DoxygenEditor.Views
                 if (tcFiles.TabPages.Count > 0)
                 {
                     Debug.Assert(tcFiles.SelectedTab != null);
-                    EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-                    UpdateMenuSelection(context);
+                    IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+                    UpdateMenuSelection(editor);
                 }
                 else UpdateMenuSelection(null);
             };
@@ -215,13 +215,13 @@ namespace TSP.DoxygenEditor.Views
         {
             if (m.Msg == NativeMethods.WM_CLIPBOARDUPDATE)
             {
-                EditorContext context = null;
+                IEditor editor = null;
                 if (tcFiles.TabPages.Count > 0)
                 {
                     Debug.Assert(tcFiles.SelectedTab != null);
-                    context = (EditorContext)tcFiles.SelectedTab.Tag;
+                    editor = (IEditor)tcFiles.SelectedTab.Tag;
                 }
-                UpdateMenuEditChange(context);
+                UpdateMenuEditChange(editor);
             }
             base.WndProc(ref m);
         }
@@ -242,10 +242,10 @@ namespace TSP.DoxygenEditor.Views
             int highIndex = 0;
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                if (context.FilePath == null)
+                IEditor editor = (IEditor)tab.Tag;
+                if (editor.FilePath == null)
                 {
-                    string name = context.Name;
+                    string name = editor.Name;
                     Match m = _rexIndexFromName.Match(name);
                     if (m.Success)
                     {
@@ -259,129 +259,129 @@ namespace TSP.DoxygenEditor.Views
             return (result);
         }
 
-        private IEnumerable<EditorContext> GetChangedEditorContexts()
+        private IEnumerable<IEditor> GetChangedEditors()
         {
-            List<EditorContext> result = new List<EditorContext>();
+            List<IEditor> result = new List<IEditor>();
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                if (context.IsChanged)
-                    result.Add(context);
+                IEditor editor = (IEditor)tab.Tag;
+                if (editor.IsChanged)
+                    result.Add(editor);
             }
             return (result);
         }
 
-        private EditorContext FindEditorContextById(ISymbolTableId id)
+        private IEditor FindEditorById(ISymbolTableId id)
         {
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                if (context == id)
-                    return (context);
+                IEditor editor = (IEditor)tab.Tag;
+                if (editor == id)
+                    return (editor);
             }
             return (null);
         }
 
-        private IEnumerable<EditorContext> GetAllEditorContexts()
+        private IEnumerable<IEditor> GetAllEditors()
         {
-            List<EditorContext> result = new List<EditorContext>();
+            List<IEditor> result = new List<IEditor>();
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                result.Add(context);
+                IEditor editor = (IEditor)tab.Tag;
+                result.Add(editor);
             }
             return (result);
         }
 
-        private void UpdateContext(EditorContext context)
+        private void UpdateEditor(IEditor editor)
         {
-            IEnumerable<EditorContext> changedContexts = GetChangedEditorContexts();
-            bool anyChanges = changedContexts.Count() > 0;
+            IEnumerable<IEditor> changedEditors = GetChangedEditors();
+            bool anyChanges = changedEditors.Count() > 0;
 
-            miFileRefresh.Enabled = tbtnFileRefresh.Enabled = context != null;
-            miFileSave.Enabled = tbtnFileSave.Enabled = context != null && context.IsChanged;
+            miFileRefresh.Enabled = tbtnFileRefresh.Enabled = editor != null;
+            miFileSave.Enabled = tbtnFileSave.Enabled = editor != null && editor.IsChanged;
             miFileSaveAll.Enabled = tbtnFileSaveAll.Enabled = anyChanges;
             miFileClose.Enabled = tcFiles.SelectedTab != null;
             miFileCloseAll.Enabled = tcFiles.TabCount > 0;
 
-            if (context != null)
+            if (editor != null)
             {
-                string title = context.Name;
-                if (context.IsChanged) title += "*";
-                TabPage tab = (TabPage)context.Tab;
+                string title = editor.Name;
+                if (editor.IsChanged) title += "*";
+                TabPage tab = (TabPage)editor.Tab;
                 tab.Text = title;
             }
 
-            UpdateMenuEditChange(context);
-            UpdateMenuSelection(context);
+            UpdateMenuEditChange(editor);
+            UpdateMenuSelection(editor);
         }
 
-        private EditorContext AddFileTab(string name, EditorFileType fileType)
+        private IEditor AddFileTab(string name, EditorFileType fileType)
         {
             int tabIndex = _newTabCounter++;
             TabPage newTab = new TabPage() { Text = name };
-            EditorContext context = new EditorContext(this, _workspace, name, newTab, tabIndex);
-            context.FileType = fileType;
-            context.IsShowWhitespace = miViewShowWhitespaces.Checked;
-            context.TabUpdating += (s, e) => UpdateContext((EditorContext)s);
-            context.FocusChanged += (s, e) =>
+            IEditor editor = new ScintillaEditor(this, _workspace, name, newTab, tabIndex);
+            editor.FileType = fileType;
+            editor.IsShowWhitespace = miViewShowWhitespaces.Checked;
+            editor.TabUpdating += (s, e) => UpdateEditor((IEditor)s);
+            editor.FocusChanged += (s, e) =>
             {
-                UpdateMenuEditChange(context);
-                UpdateMenuSelection(context);
+                UpdateMenuEditChange(editor);
+                UpdateMenuSelection(editor);
             };
-            context.ParseCompleted += (IParseInfo parseInfo) =>
+            editor.ParseCompleted += (IParseInfo parseInfo) =>
             {
-                RebuildSymbolTree(context, parseInfo.DoxyBlockTree);
-                AddPerformanceItemsFor(context);
+                RebuildSymbolTree(editor, parseInfo.DoxyBlockTree);
+                AddPerformanceItemsFor(editor);
                 bool isComplete = Interlocked.Decrement(ref _parseProgressCount) == 0;
                 if (isComplete)
                 {
                     Interlocked.Exchange(ref _parseTotalCount, 0);
-                    IEnumerable<EditorContext> contexts = GetAllEditorContexts();
-                    IssuesTimings timings = RefreshIssues(contexts);
+                    IEnumerable<IEditor> editors = GetAllEditors();
+                    IssuesTimings timings = RefreshIssues(editors);
                     RefreshPerformanceSummary(timings);
                     SetParseStatus("");
                 }
                 else
                     SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
-            context.ParseStarting += (IParseInfo parseInfo) =>
+            editor.ParseStarting += (IParseInfo parseInfo) =>
             {
                 Interlocked.Increment(ref _parseTotalCount);
                 Interlocked.Increment(ref _parseProgressCount);
-                ClearPerformanceItemsFrom(context);
+                ClearPerformanceItemsFrom(editor);
                 SetParseStatus($"Parsing {_parseProgressCount} of {_parseTotalCount}");
             };
-            context.JumpToEditor += (id, pos) =>
+            editor.JumpToEditor += (id, pos) =>
             {
-                EditorContext foundContext = FindEditorContextById(id);
-                if (foundContext != null)
+                IEditor foundEditor = FindEditorById(id);
+                if (foundEditor != null)
                 {
-                    TabPage tab = (TabPage)foundContext.Tab;
+                    TabPage tab = (TabPage)foundEditor.Tab;
                     tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
-                    foundContext.GoToPosition(pos);
+                    foundEditor.GoToPosition(pos);
                 }
             };
-            newTab.Tag = context;
-            newTab.Controls.Add(context.ContainerPanel);
+            newTab.Tag = editor;
+            newTab.Controls.Add(editor.ContainerPanel);
             tcFiles.TabPages.Add(newTab);
-            AddToSymbolTree(context, context.Name);
-            return (context);
+            AddToSymbolTree(editor, editor.Name);
+            return (editor);
         }
 
-        private void RemoveFileTab(EditorContext context)
+        private void RemoveFileTab(IEditor editor)
         {
-            context.Stop();
-            RemoveFromSymbolTree(context);
-            ClearPerformanceItemsFrom(context);
-            GlobalSymbolCache.Remove(context);
+            editor.Stop();
+            RemoveFromSymbolTree(editor);
+            ClearPerformanceItemsFrom(editor);
+            GlobalSymbolCache.Remove(editor);
 
-            TabPage tab = (TabPage)context.Tab;
+            TabPage tab = (TabPage)editor.Tab;
             tcFiles.TabPages.Remove(tab);
-            context.Dispose();
+            editor.Dispose();
 
-            IEnumerable<EditorContext> contexts = GetAllEditorContexts();
-            IssuesTimings timings = RefreshIssues(contexts);
+            IEnumerable<IEditor> editors = GetAllEditors();
+            IssuesTimings timings = RefreshIssues(editors);
             RefreshPerformanceSummary(timings);
         }
 
@@ -390,38 +390,38 @@ namespace TSP.DoxygenEditor.Views
             Debug.Assert(!string.IsNullOrWhiteSpace(filePath));
 
             // Is the file already open?
-            EditorContext alreadyOpenContext = null;
+            IEditor alreadyOpenEditor = null;
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                if (string.Equals(context.FilePath, filePath))
+                IEditor editor = (IEditor)tab.Tag;
+                if (string.Equals(editor.FilePath, filePath))
                 {
-                    alreadyOpenContext = context;
+                    alreadyOpenEditor = editor;
                     break;
                 }
             }
 
-            if (alreadyOpenContext != null)
+            if (alreadyOpenEditor != null)
             {
                 // Focus existing tab
-                tcFiles.SelectedTab = (TabPage)alreadyOpenContext.Tab;
-                alreadyOpenContext.SetFocus();
+                tcFiles.SelectedTab = (TabPage)alreadyOpenEditor.Tab;
+                alreadyOpenEditor.SetFocus();
             }
             else
             {
                 string fileExt = Path.GetExtension(filePath);
                 EditorFileType supportedFileType = _globalConfig.GetFileTypeByExtension(fileExt);
-                EditorContext newContext = AddFileTab(Path.GetFileName(filePath), supportedFileType);
-                TabPage tab = (TabPage)newContext.Tab;
+                IEditor newEditor = AddFileTab(Path.GetFileName(filePath), supportedFileType);
+                TabPage tab = (TabPage)newEditor.Tab;
                 tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
-                Tuple<bool, Exception> openRes = IOOpenFile(newContext, filePath);
+                Tuple<bool, Exception> openRes = IOOpenFile(newEditor, filePath);
                 if (!openRes.Item1)
                 {
                     Exception e = openRes.Item2;
                     Dictionary<string, string> values = new Dictionary<string, string>() { { "filepath", filePath } };
                     ErrorMessageModel msg = e.ToErrorMessage("Open file", values);
                     ShowError(msg.Caption, msg.ShortText, msg.Details);
-                    RemoveFileTab(newContext);
+                    RemoveFileTab(newEditor);
                 }
                 else
                 {
@@ -432,29 +432,29 @@ namespace TSP.DoxygenEditor.Views
                     if (tcFiles.TabPages.Count == 2)
                     {
                         TabPage firstTab = tcFiles.TabPages[0];
-                        EditorContext existingContext = (EditorContext)firstTab.Tag;
-                        if (existingContext.FilePath == null && !existingContext.IsChanged)
-                            RemoveFileTab(existingContext);
+                        IEditor existingEditor = (IEditor)firstTab.Tag;
+                        if (existingEditor.FilePath == null && !existingEditor.IsChanged)
+                            RemoveFileTab(existingEditor);
                     }
 
                     // Focus new tab
                     tcFiles.SelectedTab = tab;
-                    newContext.SetFocus();
+                    newEditor.SetFocus();
                 }
             }
         }
 
-        private bool CloseTabs(IEnumerable<EditorContext> contexts)
+        private bool CloseTabs(IEnumerable<IEditor> editors)
         {
-            foreach (EditorContext context in contexts)
+            foreach (IEditor editor in editors)
             {
-                if (context.IsChanged)
+                if (editor.IsChanged)
                 {
-                    Tuple<bool, Exception> saveRes = SaveWithConfirmation(context, false);
+                    Tuple<bool, Exception> saveRes = SaveWithConfirmation(editor, false);
                     if (!saveRes.Item1)
                         return (false);
                 }
-                RemoveFileTab(context);
+                RemoveFileTab(editor);
             }
             return (true);
         }
@@ -478,50 +478,50 @@ namespace TSP.DoxygenEditor.Views
         private void tcFiles_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (tcFiles.SelectedIndex == -1)
-                UpdateContext(null);
+                UpdateEditor(null);
             else
             {
                 TabPage selectedTab = tcFiles.TabPages[tcFiles.SelectedIndex];
-                EditorContext context = (EditorContext)selectedTab.Tag;
-                UpdateContext(context);
+                IEditor editor = (IEditor)selectedTab.Tag;
+                UpdateEditor(editor);
             }
         }
         #endregion
 
         #region IO
-        private Tuple<bool, Exception> IOOpenFile(EditorContext context, string filePath)
+        private Tuple<bool, Exception> IOOpenFile(IEditor editor, string filePath)
         {
             try
             {
                 using (StreamReader reader = new StreamReader(filePath))
                 {
                     string contents = reader.ReadToEnd();
-                    context.FileEncoding = reader.CurrentEncoding;
-                    context.SetText(contents);
+                    editor.FileEncoding = reader.CurrentEncoding;
+                    editor.SetText(contents);
                 }
             }
             catch (IOException e)
             {
                 return new Tuple<bool, Exception>(false, e);
             }
-            context.Name = Path.GetFileName(filePath);
-            context.FilePath = filePath;
-            context.IsChanged = false;
-            UpdateContext(context);
+            editor.Name = Path.GetFileName(filePath);
+            editor.FilePath = filePath;
+            editor.IsChanged = false;
+            UpdateEditor(editor);
             return new Tuple<bool, Exception>(true, null);
         }
 
-        private Tuple<bool, Exception> IOSaveFile(EditorContext context)
+        private Tuple<bool, Exception> IOSaveFile(IEditor editor)
         {
             try
             {
-                using (StreamWriter writer = new StreamWriter(context.FilePath, false, context.FileEncoding))
+                using (StreamWriter writer = new StreamWriter(editor.FilePath, false, editor.FileEncoding))
                 {
-                    writer.Write(context.GetText());
+                    writer.Write(editor.GetText());
                     writer.Flush();
                 }
-                context.IsChanged = false;
-                UpdateContext(context);
+                editor.IsChanged = false;
+                UpdateEditor(editor);
                 return new Tuple<bool, Exception>(true, null);
             }
             catch (IOException e)
@@ -535,11 +535,11 @@ namespace TSP.DoxygenEditor.Views
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             // Update workspace settings before application shutdown
-            IEnumerable<string> allFilePaths = GetAllEditorContexts().Where(f => !string.IsNullOrWhiteSpace(f.FilePath)).Select(f => f.FilePath);
+            IEnumerable<string> allFilePaths = GetAllEditors().Where(f => !string.IsNullOrWhiteSpace(f.FilePath)).Select(f => f.FilePath);
             _workspace.History.UpdateLastOpenedFiles(allFilePaths);
             _workspace.View.TreeSplitterDistance = scTreeAndFiles.SplitterDistance / (double)scTreeAndFiles.ClientSize.Width;
 
-            IEnumerable<EditorContext> changes = GetChangedEditorContexts();
+            IEnumerable<IEditor> changes = GetChangedEditors();
             if (changes.Count() > 0)
                 e.Cancel = !CloseTabs(changes);
             if (!e.Cancel)
@@ -596,12 +596,12 @@ namespace TSP.DoxygenEditor.Views
 
                     if (parentNode != null)
                     {
-                        EditorContext context = (EditorContext)parentNode.Tag;
-                        TabPage tab = (TabPage)context.Tab;
+                        IEditor editor = (IEditor)parentNode.Tag;
+                        TabPage tab = (TabPage)editor.Tab;
                         tcFiles.SelectedTab = tab;
                         tcFiles.Focus();
                         DoxygenBlockNode entityNode = (DoxygenBlockNode)selectedNode.Tag;
-                        context.GoToPosition(entityNode.Entity.StartRange.Index);
+                        editor.GoToPosition(entityNode.Entity.StartRange.Index);
                     }
                 }
             }
@@ -726,20 +726,20 @@ namespace TSP.DoxygenEditor.Views
         #endregion
 
         #region Menu
-        private Tuple<bool, Exception> SaveFileAs(EditorContext context, string filePath)
+        private Tuple<bool, Exception> SaveFileAs(IEditor editor, string filePath)
         {
-            context.FilePath = filePath;
-            context.Name = Path.GetFileName(filePath);
-            RenamedInSymbolTree(context, context.Name);
-            Tuple<bool, Exception> result = IOSaveFile(context);
+            editor.FilePath = filePath;
+            editor.Name = Path.GetFileName(filePath);
+            RenamedInSymbolTree(editor, editor.Name);
+            Tuple<bool, Exception> result = IOSaveFile(editor);
             return (result);
         }
 
-        private Tuple<bool, Exception> SaveWithConfirmation(EditorContext context, bool skipConfirmation)
+        private Tuple<bool, Exception> SaveWithConfirmation(IEditor editor, bool skipConfirmation)
         {
-            Debug.Assert(context.IsChanged);
-            string caption = $"File '{context.Name}' was changed";
-            string text = $"The file '{context.Name}' contains changes, do you want to save it first before continue?";
+            Debug.Assert(editor.IsChanged);
+            string caption = $"File '{editor.Name}' was changed";
+            string text = $"The file '{editor.Name}' contains changes, do you want to save it first before continue?";
             DialogResult r = skipConfirmation ? DialogResult.OK : MessageBox.Show(this, text, caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
             if (r == DialogResult.Cancel)
                 return new Tuple<bool, Exception>(false, null);
@@ -747,22 +747,22 @@ namespace TSP.DoxygenEditor.Views
                 return new Tuple<bool, Exception>(true, null);
             else
             {
-                if (string.IsNullOrEmpty(context.FilePath))
+                if (string.IsNullOrEmpty(editor.FilePath))
                 {
                     if (dlgSaveFile.ShowDialog() == DialogResult.OK)
                     {
                         string filePath = dlgSaveFile.FileName;
-                        Tuple<bool, Exception> result = SaveFileAs(context, filePath);
+                        Tuple<bool, Exception> result = SaveFileAs(editor, filePath);
                         return (result);
                     }
                     else return new Tuple<bool, Exception>(false, null);
                 }
                 else
                 {
-                    Tuple<bool, Exception> result = IOSaveFile(context);
+                    Tuple<bool, Exception> result = IOSaveFile(editor);
                     if (!result.Item1)
                     {
-                        string filePath = context.FilePath;
+                        string filePath = editor.FilePath;
                         Exception e = result.Item2;
                         Dictionary<string, string> values = new Dictionary<string, string>() { { "filepath", filePath } };
                         ErrorMessageModel msg = e.ToErrorMessage("Save file", values);
@@ -776,25 +776,25 @@ namespace TSP.DoxygenEditor.Views
         private void MenuActionFileRefresh(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            if (context.IsChanged)
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            if (editor.IsChanged)
             {
-                string caption = $"Revert file '{context.Name}'";
-                string text = $"The file '{context.Name}' has changes, do you want to reload and revert it?";
+                string caption = $"Revert file '{editor.Name}'";
+                string text = $"The file '{editor.Name}' has changes, do you want to reload and revert it?";
                 DialogResult dlgResult = MessageBox.Show(this, text, caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
                 if (dlgResult != DialogResult.Yes)
                     return;
             }
-            IOOpenFile(context, context.FilePath);
+            IOOpenFile(editor, editor.FilePath);
         }
         private void MenuActionFileNew(object sender, EventArgs e)
         {
             string name = GetNextTabName("File");
-            EditorContext newContext = AddFileTab(name, EditorFileType.Cpp);
-            TabPage tab = (TabPage)newContext.Tab;
+            IEditor editor = AddFileTab(name, EditorFileType.Cpp);
+            TabPage tab = (TabPage)editor.Tab;
             tcFiles.SelectedIndex = tcFiles.TabPages.IndexOf(tab);
-            newContext.SetFocus();
-            UpdateContext(newContext);
+            editor.SetFocus();
+            UpdateEditor(editor);
         }
         private void MenuActionFileOpen(object sender, EventArgs e)
         {
@@ -807,11 +807,11 @@ namespace TSP.DoxygenEditor.Views
         private void MenuActionFileSave(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            Tuple<bool, Exception> r = SaveWithConfirmation(context, true);
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            Tuple<bool, Exception> r = SaveWithConfirmation(editor, true);
             if (r.Item1)
             {
-                _workspace.History.PushRecentFiles(context.FilePath);
+                _workspace.History.PushRecentFiles(editor.FilePath);
                 RefreshRecentFiles();
             }
         }
@@ -821,8 +821,8 @@ namespace TSP.DoxygenEditor.Views
             if (dlgSaveFile.ShowDialog() == DialogResult.OK)
             {
                 string filePath = dlgSaveFile.FileName;
-                EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-                Tuple<bool, Exception> r = SaveFileAs(context, filePath);
+                IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+                Tuple<bool, Exception> r = SaveFileAs(editor, filePath);
                 if (!r.Item1)
                 {
                     Exception ex = r.Item2;
@@ -842,10 +842,10 @@ namespace TSP.DoxygenEditor.Views
         {
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                if (context.IsChanged)
+                IEditor editor = (IEditor)tab.Tag;
+                if (editor.IsChanged)
                 {
-                    Tuple<bool, Exception> saveRes = SaveWithConfirmation(context, true);
+                    Tuple<bool, Exception> saveRes = SaveWithConfirmation(editor, true);
                     if (!saveRes.Item1)
                         return;
                 }
@@ -854,25 +854,25 @@ namespace TSP.DoxygenEditor.Views
         private void MenuActionFileClose(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            List<EditorContext> tabsToClose = new List<EditorContext>();
-            tabsToClose.Add(context);
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            List<IEditor> tabsToClose = new List<IEditor>();
+            tabsToClose.Add(editor);
             CloseTabs(tabsToClose);
         }
         private void MenuActionFileCloseAll(object sender, EventArgs e)
         {
-            List<EditorContext> tabsToClose = new List<EditorContext>();
+            List<IEditor> tabsToClose = new List<IEditor>();
             foreach (TabPage tab in tcFiles.TabPages)
-                tabsToClose.Add((EditorContext)tab.Tag);
+                tabsToClose.Add((IEditor)tab.Tag);
             CloseTabs(tabsToClose);
         }
         private void MenuActionFileCloseAllButThis(object sender, EventArgs e)
         {
-            List<EditorContext> tabsToClose = new List<EditorContext>();
+            List<IEditor> tabsToClose = new List<IEditor>();
             foreach (TabPage tab in tcFiles.TabPages)
             {
                 if (tab != tcFiles.SelectedTab)
-                    tabsToClose.Add((EditorContext)tab.Tag);
+                    tabsToClose.Add((IEditor)tab.Tag);
             }
             CloseTabs(tabsToClose);
         }
@@ -891,61 +891,61 @@ namespace TSP.DoxygenEditor.Views
         private void MenuActionEditSearchAndReplaceQuickSearch(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.ShowSearch();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.ShowSearch();
         }
         private void MenuActionEditSearchAndReplaceQuickReplace(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.ShowReplace();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.ShowReplace();
         }
         private void MenuActionEditUndo(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.Undo();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.Undo();
         }
         private void MenuActionEditRedo(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.Redo();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.Redo();
         }
         private void MenuActionEditCut(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.Cut();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.Cut();
         }
         private void MenuActionEditCopy(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.Copy();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.Copy();
         }
         private void MenuActionEditPaste(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.Paste();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.Paste();
         }
         private void MenuActionEditSelectAll(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
-            context.SelectAll();
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+            editor.SelectAll();
         }
 
         private void MenuActionEditGoToSymbol(object sender, EventArgs e)
         {
             Debug.Assert(tcFiles.SelectedTab != null);
-            EditorContext context = (EditorContext)tcFiles.SelectedTab.Tag;
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
 
             // @SPEED(final): Cache conversion to SymbolItemModel and types as well
             List<SymbolItemModel> symbols = new List<SymbolItemModel>();
             HashSet<string> types = new HashSet<string>();
-            IEnumerable<SourceSymbol> allSources = GlobalSymbolCache.GetSources(context);
+            IEnumerable<SourceSymbol> allSources = GlobalSymbolCache.GetSources(editor);
             foreach (SourceSymbol source in allSources)
             {
                 if (source.Node == null) continue;
@@ -962,7 +962,7 @@ namespace TSP.DoxygenEditor.Views
             if (form.ShowDialog(this) == DialogResult.OK)
             {
                 SymbolItemModel selectedItem = form.SelectedItem;
-                context.GoToPosition(selectedItem.Position.Index);
+                editor.GoToPosition(selectedItem.Position.Index);
             }
         }
 
@@ -972,8 +972,8 @@ namespace TSP.DoxygenEditor.Views
             bool enabled = !item.Checked;
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                context.IsShowWhitespace = enabled;
+                IEditor editor = (IEditor)tab.Tag;
+                editor.IsShowWhitespace = enabled;
             }
             item.Checked = enabled;
             _workspace.View.IsWhitespaceVisible = enabled;
@@ -985,17 +985,17 @@ namespace TSP.DoxygenEditor.Views
             form.ShowDialog(this);
         }
 
-        private void UpdateMenuSelection(EditorContext context)
+        private void UpdateMenuSelection(IEditor editor)
         {
-            miEditCut.Enabled = context != null && context.CanCut();
-            miEditCopy.Enabled = context != null && context.CanCopy();
+            miEditCut.Enabled = editor != null && editor.CanCut();
+            miEditCopy.Enabled = editor != null && editor.CanCopy();
         }
 
-        private void UpdateMenuEditChange(EditorContext context)
+        private void UpdateMenuEditChange(IEditor editor)
         {
-            miEditUndo.Enabled = tbtnEditUndo.Enabled = context != null && context.CanUndo();
-            miEditRedo.Enabled = tbtnEditRedo.Enabled = context != null && context.CanRedo();
-            miEditPaste.Enabled = context != null && context.CanPaste();
+            miEditUndo.Enabled = tbtnEditUndo.Enabled = editor != null && editor.CanUndo();
+            miEditRedo.Enabled = tbtnEditRedo.Enabled = editor != null && editor.CanRedo();
+            miEditPaste.Enabled = editor != null && editor.CanPaste();
         }
         private void RefreshRecentFiles()
         {
@@ -1019,12 +1019,12 @@ namespace TSP.DoxygenEditor.Views
         }
         class IssueTag
         {
-            public EditorContext Context { get; }
+            public IEditor Editor { get; }
             public TextPosition Pos { get; }
             public IssueType Type { get; }
-            public IssueTag(EditorContext context, TextPosition pos, IssueType type)
+            public IssueTag(IEditor editor, TextPosition pos, IssueType type)
             {
-                Context = context;
+                Editor = editor;
                 Pos = pos;
                 Type = type;
             }
@@ -1042,7 +1042,7 @@ namespace TSP.DoxygenEditor.Views
             listView.AddItem(newItem);
         }
         private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
-        private void AddIssuesFromNode(IEnumerable<EditorContext> contexts, EditorContext mainContext, IBaseNode rootNode, string fileName, string groupName)
+        private void AddIssuesFromNode(IEnumerable<IEditor> editors, IEditor mainEditor, IBaseNode rootNode, string fileName, string groupName)
         {
             if (typeof(CppNode).Equals(rootNode.GetType()))
             {
@@ -1067,14 +1067,14 @@ namespace TSP.DoxygenEditor.Views
 
                         if (!hasDocumented)
                         {
-                            AddIssue(lvDoxygenIssues, new IssueTag(mainContext, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
+                            AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
                         }
                     }
                 }
             }
             foreach (IBaseNode child in rootNode.Children)
             {
-                AddIssuesFromNode(contexts, mainContext, child, fileName, "Child");
+                AddIssuesFromNode(editors, mainEditor, child, fileName, "Child");
             }
         }
 
@@ -1088,7 +1088,7 @@ namespace TSP.DoxygenEditor.Views
             public TimeSpan TotalDuration { get; set; }
         }
 
-        private IssuesTimings RefreshIssues(IEnumerable<EditorContext> contexts)
+        private IssuesTimings RefreshIssues(IEnumerable<IEditor> editors)
         {
             Stopwatch total = Stopwatch.StartNew();
             Stopwatch w = new Stopwatch();
@@ -1130,30 +1130,30 @@ namespace TSP.DoxygenEditor.Views
             foreach (KeyValuePair<ISymbolTableId, TextError> errorPair in symbolErrors)
             {
                 TextError error = errorPair.Value;
-                EditorContext context = (EditorContext)errorPair.Key;
+                IEditor editor = (IEditor)errorPair.Key;
                 ReferenceSymbol symbol = (ReferenceSymbol)error.Tag;
                 Type nodeType = symbol.Node.GetType();
                 if (typeof(CppNode).Equals(nodeType))
-                    AddIssue(lvCppIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, context.Name);
+                    AddIssue(lvCppIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, editor.Name);
                 else if (typeof(DoxygenBlockNode).Equals(nodeType))
-                    AddIssue(lvDoxygenIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, context.Name);
+                    AddIssue(lvDoxygenIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, editor.Name);
             }
 
-            foreach (EditorContext context in contexts)
+            foreach (IEditor editor in editors)
             {
-                IParseInfo parseInfo = context.ParseInfo;
+                IParseInfo parseInfo = editor.ParseInfo;
                 foreach (TextError error in parseInfo.Errors)
                 {
                     Type errorType = error.Tag.GetType();
                     if (typeof(CppLexer).Equals(errorType) || typeof(CppParser).Equals(errorType))
-                        AddIssue(lvCppIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, context.Name);
+                        AddIssue(lvCppIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, editor.Name);
                     else if (typeof(DoxygenBlockLexer).Equals(errorType) || typeof(DoxygenConfigLexer).Equals(errorType) || typeof(DoxygenBlockParser).Equals(errorType))
-                        AddIssue(lvDoxygenIssues, new IssueTag(context, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, context.Name);
+                        AddIssue(lvDoxygenIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, editor.Name);
                 }
 
                 if (parseInfo.CppTree != null)
                 {
-                    AddIssuesFromNode(contexts, context, parseInfo.CppTree, context.Name, "Root");
+                    AddIssuesFromNode(editors, editor, parseInfo.CppTree, editor.Name, "Root");
                 }
             }
             result.CollectDuration = w.StopAndReturn();
@@ -1191,10 +1191,10 @@ namespace TSP.DoxygenEditor.Views
             {
                 IssueTag tag = (IssueTag)item.Tag;
                 TextPosition pos = tag.Pos;
-                EditorContext context = tag.Context;
-                TabPage tab = (TabPage)context.Tab;
+                IEditor editor = tag.Editor;
+                TabPage tab = (TabPage)editor.Tab;
                 tcFiles.SelectedTab = tab;
-                context.GoToPosition(pos.Index);
+                editor.GoToPosition(pos.Index);
             }
         }
         #endregion
@@ -1213,12 +1213,10 @@ namespace TSP.DoxygenEditor.Views
             lvPerformance.Items.Add(newItem);
         }
 
-
-
-        private void AddPerformanceItemsFor(EditorContext context)
+        private void AddPerformanceItemsFor(IEditor editor)
         {
-            IParseInfo parseInfo = context.ParseInfo;
-            ClearPerformanceItemsFrom(context);
+            IParseInfo parseInfo = editor.ParseInfo;
+            ClearPerformanceItemsFrom(editor);
             lvPerformance.BeginUpdate();
             Dictionary<string, ListViewGroup> groupNames = new Dictionary<string, ListViewGroup>();
             foreach (PerformanceItemModel item in parseInfo.PerformanceItems)
@@ -1286,10 +1284,10 @@ namespace TSP.DoxygenEditor.Views
             if (r == DialogResult.OK)
             {
                 _workspace.Assign(dlg.Workspace);
-                IEnumerable<EditorContext> contexts = GetAllEditorContexts();
-                foreach (EditorContext context in contexts)
+                IEnumerable<IEditor> editors = GetAllEditors();
+                foreach (IEditor editor in editors)
                 {
-                    context.Reparse();
+                    editor.Reparse();
                 }
             }
         }
@@ -1340,22 +1338,22 @@ namespace TSP.DoxygenEditor.Views
             string pathToDoxygen = _workspace.Build.PathToDoxygen;
             bool openInBrowser = _workspace.Build.OpenInBrowser;
 
-            EditorContext configContext = null;
+            IEditor foundEditor = null;
             IBaseNode configTree = null;
             foreach (TabPage tab in tcFiles.TabPages)
             {
-                EditorContext context = (EditorContext)tab.Tag;
-                if (context.FileType == EditorFileType.DoxyConfig)
+                IEditor editor = (IEditor)tab.Tag;
+                if (editor.FileType == EditorFileType.DoxyConfig)
                 {
-                    configContext = context;
+                    foundEditor = editor;
                     break;
                 }
             }
 
-            if (configContext != null)
+            if (foundEditor != null)
             {
-                configFilePath = configContext.FilePath;
-                configTree = configContext.ParseInfo.DoxyConfigTree;
+                configFilePath = foundEditor.FilePath;
+                configTree = foundEditor.ParseInfo.DoxyConfigTree;
                 baseDir = Path.GetDirectoryName(configFilePath);
             }
 

@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.Editor
         public delegate void ParseEventHandler(object sender);
         public event ParseEventHandler ParseCompleted;
         public event ParseEventHandler ParseStarting;
-        private readonly IEditorId _id;
+        private readonly IEditor _editor;
         private readonly IStylerData _stylerRefresh;
 
         public bool IsParsing()
@@ -42,13 +42,13 @@ namespace TSP.DoxygenEditor.Editor
 
         private readonly WorkspaceModel _workspace;
 
-        public ParseContext(IEditorId id, IStylerData dataStyler, WorkspaceModel workspace)
+        public ParseContext(IEditor editor, IStylerData dataStyler, WorkspaceModel workspace)
         {
-            _id = id;
+            _editor = editor;
             _stylerRefresh = dataStyler;
             _workspace = workspace;
 
-            LocalSymbolTable = new SymbolTable(id);
+            LocalSymbolTable = new SymbolTable(editor);
             _parseWorker = new BackgroundWorker();
             _parseWorker.WorkerSupportsCancellation = true;
             _parseWorker.DoWork += (s, e) =>
@@ -382,7 +382,7 @@ namespace TSP.DoxygenEditor.Editor
 
             TokenizerTimingStats totalStats = new TokenizerTimingStats();
 
-            if (_id.FileType == EditorFileType.Cpp || _id.FileType == EditorFileType.DoxyDocs)
+            if (_editor.FileType == EditorFileType.Cpp || _editor.FileType == EditorFileType.DoxyDocs)
             {
                 // C++ lexing -> Doxygen (Code -> Cpp) -> (Text -> Html)
                 using (TokenizeResult cppRes = TokenizeCpp(text, new TextPosition(0), text.Length, LanguageKind.Cpp))
@@ -394,11 +394,11 @@ namespace TSP.DoxygenEditor.Editor
                 int countCppTokens = _tokens.Count(t => typeof(CppToken).Equals(t.GetType()));
                 int countHtmlTokens = _tokens.Count(t => typeof(HtmlToken).Equals(t.GetType()));
                 int countDoxyTokens = _tokens.Count(t => typeof(DoxygenToken).Equals(t.GetType()));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen block lexer", totalStats.DoxyDuration));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{text.Length} chars", $"{countCppTokens} tokens", "C++ lexer", totalStats.CppDuration));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen block lexer", totalStats.DoxyDuration));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{text.Length} chars", $"{countHtmlTokens} tokens", "Html lexer", totalStats.HtmlDuration));
             }
-            else if (_id.FileType == EditorFileType.DoxyConfig)
+            else if (_editor.FileType == EditorFileType.DoxyConfig)
             {
                 using (DoxygenConfigLexer doxyConfigLexer = new DoxygenConfigLexer(text, new TextPosition(0), text.Length))
                 {
@@ -410,7 +410,7 @@ namespace TSP.DoxygenEditor.Editor
                     totalStats.DoxyDuration += timer.Elapsed;
                 }
                 int countDoxyTokens = _tokens.Count(t => typeof(DoxygenToken).Equals(t.GetType()));
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen config lexer", totalStats.DoxyDuration));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{text.Length} chars", $"{countDoxyTokens} tokens", "Doxygen config lexer", totalStats.DoxyDuration));
             }
         }
 
@@ -445,11 +445,11 @@ namespace TSP.DoxygenEditor.Editor
             Stopwatch timer = new Stopwatch();
             int doxyNodeCount = 0;
 
-            if (_id.FileType == EditorFileType.Cpp || _id.FileType == EditorFileType.DoxyDocs)
+            if (_editor.FileType == EditorFileType.Cpp || _editor.FileType == EditorFileType.DoxyDocs)
             {
                 // Doxygen parsing
                 timer.Restart();
-                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_id, text))
+                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_editor, text))
                 {
                     doxyParser.ParseTokens(_tokens);
                     _errors.InsertRange(0, doxyParser.ParseErrors);
@@ -458,7 +458,7 @@ namespace TSP.DoxygenEditor.Editor
                     LocalSymbolTable.AddTable(doxyParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen block parser", timer.Elapsed));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen block parser", timer.Elapsed));
 
                 // C++ parsing
                 timer.Restart();
@@ -469,7 +469,7 @@ namespace TSP.DoxygenEditor.Editor
                     ExcludeFunctionBodySymbols = _workspace.ParserCpp.ExcludeFunctionBodySymbols,
                     ExcludeFunctionCallSymbols = _workspace.ParserCpp.ExcludeFunctionCallSymbols,
                 };
-                using (CppParser cppParser = new CppParser(_id, cppParserConfiguration))
+                using (CppParser cppParser = new CppParser(_editor, cppParserConfiguration))
                 {
                     cppParser.GetDocumentationNode += (token) =>
                     {
@@ -483,12 +483,12 @@ namespace TSP.DoxygenEditor.Editor
                     LocalSymbolTable.AddTable(cppParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
             }
-            else if (_id.FileType == EditorFileType.DoxyConfig)
+            else if (_editor.FileType == EditorFileType.DoxyConfig)
             {
                 timer.Restart();
-                using (DoxygenConfigParser configParser = new DoxygenConfigParser(_id))
+                using (DoxygenConfigParser configParser = new DoxygenConfigParser(_editor))
                 {
                     configParser.ParseTokens(_tokens);
                     _errors.InsertRange(0, configParser.ParseErrors);
@@ -497,14 +497,14 @@ namespace TSP.DoxygenEditor.Editor
                     LocalSymbolTable.AddTable(configParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen config parser", timer.Elapsed));
+                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen config parser", timer.Elapsed));
             }
 
             // Refresh data for styler
             timer.Restart();
             stylerData.RefreshData(_tokens);
             timer.Stop();
-            _performanceItems.Add(new PerformanceItemModel(_id, _id.Name, _id.TabIndex, $"{_tokens.Count} tokens", $"{stylerData.Count} styles", "Styler", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{stylerData.Count} styles", "Styler", timer.Elapsed));
         }
     }
 }

@@ -15,18 +15,15 @@ using ScintillaNET;
 
 namespace TSP.DoxygenEditor.Editor
 {
-    class EditorContext : IEditorId, IDisposable
+    class ScintillaEditor : IEditor, IDisposable
     {
-        #region Id
         public TabPage Tab { get; }
         public int TabIndex { get; }
         public string FilePath { get; set; }
         public string Name { get; set; }
         public object SymbolTableId => FilePath;
         public EditorFileType FileType { get; set; }
-        #endregion
 
-        #region For mainform only
         public bool IsChanged { get; set; }
         public Encoding FileEncoding { get; set; }
 
@@ -35,16 +32,12 @@ namespace TSP.DoxygenEditor.Editor
             get { return _editor.ViewWhitespace != WhitespaceMode.Invisible; }
             set { _editor.ViewWhitespace = value ? WhitespaceMode.VisibleAlways : WhitespaceMode.Invisible; }
         }
-
-        public delegate void ParseEventHandler(IParseInfo parseInfo);
-        public delegate void FocusChangedEventHandler(EditorContext sender, bool focused);
-        public delegate void JumpToEditorEventHandler(ISymbolTableId id, int position);
+        
         public event EventHandler TabUpdating;
         public event FocusChangedEventHandler FocusChanged;
         public event ParseEventHandler ParseCompleted;
         public event ParseEventHandler ParseStarting;
         public event JumpToEditorEventHandler JumpToEditor;
-        #endregion
 
         #region Parsing
         private ParseContext _parseState;
@@ -52,7 +45,6 @@ namespace TSP.DoxygenEditor.Editor
         private IParseControl ParseControl => _parseState;
         #endregion
 
-        #region Editor
         private readonly IWin32Window _window;
         public Panel ContainerPanel { get; private set; }
 
@@ -83,9 +75,8 @@ namespace TSP.DoxygenEditor.Editor
         private StyleNeededState _styleNeededState;
         private readonly EditorStyler _editorStyler;
         private readonly IVisualStyler _visualStyler;
-        #endregion
 
-        public EditorContext(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
+        public ScintillaEditor(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
         {
             // Mainform
             FilePath = null;
@@ -492,25 +483,25 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private void SetupEditor(Scintilla editor)
+        private void SetupEditor(Scintilla target)
         {
-            editor.Dock = DockStyle.Fill;
+            target.Dock = DockStyle.Fill;
 
-            editor.WrapMode = ScintillaNET.WrapMode.None;
-            editor.IndentationGuides = ScintillaNET.IndentView.LookBoth;
-            editor.CaretLineVisible = true;
-            editor.CaretLineBackColorAlpha = 50;
-            editor.CaretLineBackColor = Color.CornflowerBlue;
-            editor.TabWidth = editor.IndentWidth = 4;
-            editor.Margins[0].Width = 16;
-            editor.ViewWhitespace = ScintillaNET.WhitespaceMode.Invisible;
-            editor.SetWhitespaceForeColor(true, Color.LightGray);
-            editor.UseTabs = true;
+            target.WrapMode = ScintillaNET.WrapMode.None;
+            target.IndentationGuides = ScintillaNET.IndentView.LookBoth;
+            target.CaretLineVisible = true;
+            target.CaretLineBackColorAlpha = 50;
+            target.CaretLineBackColor = Color.CornflowerBlue;
+            target.TabWidth = target.IndentWidth = 4;
+            target.Margins[0].Width = 16;
+            target.ViewWhitespace = ScintillaNET.WhitespaceMode.Invisible;
+            target.SetWhitespaceForeColor(true, Color.LightGray);
+            target.UseTabs = true;
 
-            editor.MouseSelectionRectangularSwitch = false;
-            editor.MultipleSelection = false;
+            target.MouseSelectionRectangularSwitch = false;
+            target.MultipleSelection = false;
 
-            editor.MouseUp += (s, e) =>
+            target.MouseUp += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left && isShownIndicators)
                 {
@@ -521,15 +512,15 @@ namespace TSP.DoxygenEditor.Editor
             };
 
             Font editorFont = new Font(FontFamily.GenericMonospace, 14.0f, FontStyle.Regular);
-            editor.StyleResetDefault();
-            editor.Styles[Style.Default].Font = editorFont.Name;
-            editor.Styles[Style.Default].Size = (int)editorFont.SizeInPoints;
-            editor.StyleClearAll();
-            editor.Lexer = Lexer.Container;
+            target.StyleResetDefault();
+            target.Styles[Style.Default].Font = editorFont.Name;
+            target.Styles[Style.Default].Size = (int)editorFont.SizeInPoints;
+            target.StyleClearAll();
+            target.Lexer = Lexer.Container;
 
-            VisualStyler.ApplyStyles(editor);
+            VisualStyler.ApplyStyles(target);
 
-            editor.TextChanged += (s, e) =>
+            target.TextChanged += (s, e) =>
             {
                 Scintilla thisEditor = (Scintilla)s;
 
@@ -548,10 +539,10 @@ namespace TSP.DoxygenEditor.Editor
                 _textChangedTimer.Start();
             };
 
-            editor.StyleNeeded += (s, e) =>
+            target.StyleNeeded += (s, e) =>
             {
                 Scintilla thisEditor = (Scintilla)s;
-                EditorContext context = (EditorContext)thisEditor.Parent.Tag;
+                IEditor editor = (IEditor)thisEditor.Parent.Tag;
                 int startPos = thisEditor.GetEndStyled();
                 int endPos = Math.Min(e.Position, thisEditor.TextLength - 1);
                 int startLine = thisEditor.LineFromPosition(startPos);
@@ -568,7 +559,7 @@ namespace TSP.DoxygenEditor.Editor
                     _styleNeededState.Set(startPos, endPos);
             };
 
-            editor.KeyDown += (s, e) =>
+            target.KeyDown += (s, e) =>
             {
                 if (e.Control && (!e.Alt && !e.Shift))
                 {
@@ -598,9 +589,9 @@ namespace TSP.DoxygenEditor.Editor
                 }
             };
 
-            editor.KeyUp += (s, e) => HideIndicators();
+            target.KeyUp += (s, e) => HideIndicators();
 
-            editor.InsertCheck += (s, e) =>
+            target.InsertCheck += (s, e) =>
             {
                 if ((e.Text == "\n") || (e.Text == "\r") || (e.Text == "\r\n"))
                 {
@@ -642,7 +633,7 @@ namespace TSP.DoxygenEditor.Editor
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-        ~EditorContext()
+        ~ScintillaEditor()
         {
             Dispose(false);
         }
