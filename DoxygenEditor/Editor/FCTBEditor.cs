@@ -141,7 +141,7 @@ namespace TSP.DoxygenEditor.Editor
 
         public int StyleTokens(IEnumerable<IBaseToken> tokens)
         {
-            throw new NotImplementedException();
+            return 0;
         }
     }
 }
