@@ -33,7 +33,6 @@ namespace TSP.DoxygenEditor.Editor
         public event ParseEventHandler ParseCompleted;
         public event ParseEventHandler ParseStarting;
         private readonly IEditor _editor;
-        private readonly IStylerData _stylerRefresh;
 
         public bool IsParsing()
         {
@@ -42,10 +41,9 @@ namespace TSP.DoxygenEditor.Editor
 
         private readonly WorkspaceModel _workspace;
 
-        public ParseContext(IEditor editor, IStylerData dataStyler, WorkspaceModel workspace)
+        public ParseContext(IEditor editor, WorkspaceModel workspace)
         {
             _editor = editor;
-            _stylerRefresh = dataStyler;
             _workspace = workspace;
 
             LocalSymbolTable = new SymbolTable(editor);
@@ -56,7 +54,7 @@ namespace TSP.DoxygenEditor.Editor
                 // @TODO(final): Support for incremental parsing, so only changes are applied
                 string text = (string)e.Argument;
                 Tokenize(text);
-                Parse(text, _stylerRefresh);
+                Parse(text);
             };
             _parseWorker.RunWorkerCompleted += (s, e) =>
             {
@@ -414,7 +412,7 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private void Parse(string text, IStylerData stylerData)
+        private void Parse(string text)
         {
             // Clear stream from all invalid tokens
             _tokens.RemoveAll(d => d.IsEOF || (!d.IsMarker && d.Length == 0));
@@ -502,9 +500,9 @@ namespace TSP.DoxygenEditor.Editor
 
             // Refresh data for styler
             timer.Restart();
-            stylerData.RefreshData(_tokens);
+            int styleCount = _editor.StyleTokens(_tokens);
             timer.Stop();
-            _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{stylerData.Count} styles", "Styler", timer.Elapsed));
+            _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{styleCount} styles", "Styler", timer.Elapsed));
         }
     }
 }

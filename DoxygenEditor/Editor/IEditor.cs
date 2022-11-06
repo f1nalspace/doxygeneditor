@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
+using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Symbols;
 
 namespace TSP.DoxygenEditor.Editor
@@ -58,5 +60,7 @@ namespace TSP.DoxygenEditor.Editor
 
         void GoToPosition(int position);
         void GoToLine(int lineIndex);
+
+        int StyleTokens(IEnumerable<IBaseToken> tokens);
     }
 }

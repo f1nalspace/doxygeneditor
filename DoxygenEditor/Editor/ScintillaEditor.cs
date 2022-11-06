@@ -12,6 +12,13 @@ using TSP.DoxygenEditor.Models;
 using TSP.DoxygenEditor.Styles;
 using System.Linq;
 using ScintillaNET;
+using System.Collections.Generic;
+using TSP.DoxygenEditor.Languages;
+using TSP.DoxygenEditor.Extensions;
+using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.Languages.Doxygen;
+using TSP.DoxygenEditor.Languages.Html;
+using TSP.DoxygenEditor.Lexers;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -48,8 +55,6 @@ namespace TSP.DoxygenEditor.Editor
         private readonly IWin32Window _window;
         public Panel ContainerPanel { get; private set; }
 
-        internal IVisualStyler VisualStyler => _visualStyler;
-
         private SearchReplaceControl _searchControl;
         private readonly Scintilla _editor;
         private int _maxLineNumberCharLength;
@@ -73,8 +78,167 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
         private StyleNeededState _styleNeededState;
-        private readonly EditorStyler _editorStyler;
-        private readonly IVisualStyler _visualStyler;
+
+        #region Styler
+        static int styleIndex = 100;
+
+        static readonly int cppMultiLineCommentStyle = styleIndex++;
+        static readonly int cppMultiLineCommentDocStyle = styleIndex++;
+        static readonly int cppMultiLineCommentDocTextStyle = styleIndex++;
+        static readonly int cppSingleLineCommentStyle = styleIndex++;
+        static readonly int cppSingleLineCommentDocStyle = styleIndex++;
+        static readonly int cppSingleLineCommentDocTextStyle = styleIndex++;
+
+        static readonly int cppPreprocessorBasicStyle = styleIndex++;
+        static readonly int cppPreprocessorKeywordStyle = styleIndex++;
+        static readonly int cppPreprocessorDefineStyle = styleIndex++;
+        static readonly int cppPreprocessorDefineArgumentStyle = styleIndex++;
+        static readonly int cppPreprocessorIncludeStyle = styleIndex++;
+
+        static readonly int cppReservedKeywordStyle = styleIndex++;
+        static readonly int cppGlobalTypeKeywordStyle = styleIndex++;
+        static readonly int cppUserTypeIdentStyle = styleIndex++;
+        static readonly int cppMemberIdentStyle = styleIndex++;
+        static readonly int cppFunctionIdentStyle = styleIndex++;
+
+        static readonly int cppCharLiteralStyle = styleIndex++;
+        static readonly int cppStringLiteralStyle = styleIndex++;
+        static readonly int cppNumberLiteralStyle = styleIndex++;
+
+        static readonly Dictionary<CppTokenKind, int> cppTokenTypeToStyleDict = new Dictionary<CppTokenKind, int>() {
+            { CppTokenKind.MultiLineComment, cppMultiLineCommentStyle },
+            { CppTokenKind.MultiLineCommentDoc, cppMultiLineCommentDocTextStyle },
+            { CppTokenKind.SingleLineComment, cppSingleLineCommentStyle },
+            { CppTokenKind.SingleLineCommentDoc, cppSingleLineCommentDocTextStyle },
+
+            { CppTokenKind.PreprocessorStart, cppPreprocessorBasicStyle },
+            { CppTokenKind.PreprocessorOperator, cppPreprocessorBasicStyle },
+            { CppTokenKind.PreprocessorKeyword, cppPreprocessorKeywordStyle },
+            { CppTokenKind.PreprocessorDefineSource, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorFunctionSource, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorDefineUsage, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorDefineMatch, cppPreprocessorDefineStyle },
+            { CppTokenKind.PreprocessorDefineArgument, cppPreprocessorDefineArgumentStyle },
+            { CppTokenKind.PreprocessorInclude, cppPreprocessorIncludeStyle },
+
+            { CppTokenKind.ReservedKeyword, cppReservedKeywordStyle },
+            { CppTokenKind.GlobalTypeKeyword, cppGlobalTypeKeywordStyle },
+            { CppTokenKind.FunctionIdent, cppFunctionIdentStyle },
+            { CppTokenKind.UserTypeIdent, cppUserTypeIdentStyle },
+            { CppTokenKind.MemberIdent, cppMemberIdentStyle },
+
+            { CppTokenKind.StringLiteral, cppStringLiteralStyle },
+            { CppTokenKind.CharLiteral, cppCharLiteralStyle },
+
+            { CppTokenKind.IntegerLiteral, cppNumberLiteralStyle },
+            { CppTokenKind.OctalLiteral, cppNumberLiteralStyle },
+            { CppTokenKind.HexLiteral, cppNumberLiteralStyle },
+            { CppTokenKind.IntegerFloatLiteral, cppNumberLiteralStyle },
+            { CppTokenKind.HexadecimalFloatLiteral, cppNumberLiteralStyle },
+        };
+
+        static int doxygenBlockStyle = styleIndex++;
+        static int doxygenCommandStyle = styleIndex++;
+        static int doxygenInvalidCommandStyle = styleIndex++;
+        static int doxygenIdentStyle = styleIndex++;
+        static int doxygenQuoteStringStyle = styleIndex++;
+        static int doxygenArgumentStyle = styleIndex++;
+
+        static int doxygenConfigCommentStyle = styleIndex++;
+        static int doxygenConfigKeyStyle = styleIndex++;
+        static int doxygenConfigOpStyle = styleIndex++;
+        static int doxygenConfigValueStyle = styleIndex++;
+
+        static Dictionary<DoxygenTokenKind, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenKind, int>() {
+            { DoxygenTokenKind.DoxyBlockStartSingle, doxygenBlockStyle },
+            { DoxygenTokenKind.DoxyBlockStartMulti, doxygenBlockStyle },
+            { DoxygenTokenKind.DoxyBlockEnd, doxygenBlockStyle },
+            { DoxygenTokenKind.DoxyBlockChars, doxygenBlockStyle },
+            { DoxygenTokenKind.Command, doxygenCommandStyle },
+            { DoxygenTokenKind.InvalidCommand, doxygenInvalidCommandStyle },
+            { DoxygenTokenKind.GroupStart, doxygenCommandStyle },
+            { DoxygenTokenKind.GroupEnd, doxygenCommandStyle },
+            { DoxygenTokenKind.ArgumentIdent, doxygenIdentStyle },
+            { DoxygenTokenKind.ArgumentText, doxygenQuoteStringStyle },
+            { DoxygenTokenKind.ArgumentCaption, doxygenArgumentStyle },
+            { DoxygenTokenKind.ArgumentFile, doxygenArgumentStyle },
+            { DoxygenTokenKind.CommandStart, doxygenCommandStyle },
+            { DoxygenTokenKind.CommandEnd, doxygenCommandStyle },
+            { DoxygenTokenKind.Code, Style.Default },
+
+            { DoxygenTokenKind.ConfigComment, doxygenConfigCommentStyle },
+            { DoxygenTokenKind.ConfigKey, doxygenConfigKeyStyle },
+            { DoxygenTokenKind.ConfigOpAddAssign, doxygenConfigOpStyle },
+            { DoxygenTokenKind.ConfigOpAssign, doxygenConfigOpStyle },
+            { DoxygenTokenKind.ConfigOpAddLine, doxygenConfigOpStyle },
+            { DoxygenTokenKind.ConfigValue, doxygenConfigValueStyle },
+        };
+
+        static int htmlTagCharsStyle = styleIndex++;
+        static int htmlTagNameStyle = styleIndex++;
+        static int htmlAttrNameStyle = styleIndex++;
+        static int htmlAttrValueStyle = styleIndex++;
+
+        static Dictionary<HtmlTokenKind, int> htmlTokenTypeToStyleDict = new Dictionary<HtmlTokenKind, int>() {
+            { HtmlTokenKind.TagChars, htmlTagCharsStyle },
+            { HtmlTokenKind.TagName, htmlTagNameStyle },
+            { HtmlTokenKind.AttrName, htmlAttrNameStyle },
+            { HtmlTokenKind.AttrValue, htmlAttrValueStyle },
+        };
+
+        private readonly static HashSet<int> allowedMatchStyles = new HashSet<int> {
+            cppPreprocessorDefineStyle,
+            cppUserTypeIdentStyle,
+            cppMemberIdentStyle,
+            cppFunctionIdentStyle,
+            doxygenIdentStyle,
+            doxygenArgumentStyle,
+        };
+
+        public struct StyleEntry
+        {
+            public LanguageKind Lang { get; }
+            public int Index { get; }
+            public int Length { get; }
+            public int Style { get; }
+            public string Value { get; }
+
+            public int End
+            {
+                get
+                {
+                    int result = Index + Math.Max(0, Length - 1);
+                    return (result);
+                }
+            }
+
+            public StyleEntry(LanguageKind lang, int index, int length, int style, string value)
+            {
+                Lang = lang;
+                Index = index;
+                Length = length;
+                Style = style;
+                Value = value;
+            }
+
+            public StyleEntry(LanguageKind lang, IBaseToken token, int style, string value) : this(lang, token.Index, token.Length, style, value)
+            {
+            }
+
+            public bool InterectsWith(StyleEntry other)
+            {
+                bool result = (Index <= other.End) && (End >= other.Index);
+                return (result);
+            }
+
+            public override string ToString()
+            {
+                return $"{Index} => {Length} as {Lang} with style {Style} = {Value}";
+            }
+        }
+
+        private readonly List<StyleEntry> _entries = new List<StyleEntry>();
+        #endregion
 
         public ScintillaEditor(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
         {
@@ -86,11 +250,8 @@ namespace TSP.DoxygenEditor.Editor
             FileEncoding = Encoding.UTF8;
             _window = window;
 
-            // Editor and Parsing
-            _editorStyler = new EditorStyler(workspace);
-
             // Parsing
-            _parseState = new ParseContext(this, _editorStyler, workspace);
+            _parseState = new ParseContext(this, workspace);
             _parseState.ParseCompleted += (s) =>
             {
                 ParseCompleted?.Invoke(ParseInfo);
@@ -101,7 +262,6 @@ namespace TSP.DoxygenEditor.Editor
             };
 
             // Editor
-            _visualStyler = _editorStyler;
             _styleNeededState = new StyleNeededState();
             _editor = new Scintilla();
             SetupEditor(_editor);
@@ -376,15 +536,15 @@ namespace TSP.DoxygenEditor.Editor
 
 
 
-        private Tuple<string, EditorStyler.StyleEntry> FindTextStyleFromPosition(int position)
+        private Tuple<string, StyleEntry> FindTextStyleFromPosition(int position)
         {
-            EditorStyler.StyleEntry style = VisualStyler.FindStyleFromPosition(position);
+            StyleEntry style = FindStyleFromPosition(position);
             if (style.Style != 0)
             {
                 string text = _editor.GetTextRange(style.Index, style.Length);
                 if (text.Contains("(") && text.Contains(")"))
                     text = text.Substring(0, text.IndexOf("("));
-                return new Tuple<string, EditorStyler.StyleEntry>(text, style);
+                return new Tuple<string, StyleEntry>(text, style);
             }
             return (null);
         }
@@ -397,11 +557,11 @@ namespace TSP.DoxygenEditor.Editor
             _editor.IndicatorClearRange(0, _editor.TextLength);
             Point p = _editor.PointToClient(mouse);
             int c = _editor.CharPositionFromPoint(p.X, p.Y);
-            Tuple<string, EditorStyler.StyleEntry> textStyle = FindTextStyleFromPosition(c);
+            Tuple<string, StyleEntry> textStyle = FindTextStyleFromPosition(c);
             if (textStyle != null)
             {
                 string symbolName = textStyle.Item1;
-                EditorStyler.StyleEntry style = textStyle.Item2;
+                StyleEntry style = textStyle.Item2;
                 SymbolTable innerTable = GlobalSymbolCache.GetTable(this);
                 SourceSymbol source = innerTable?.GetSource(symbolName);
                 if (source == null)
@@ -431,7 +591,7 @@ namespace TSP.DoxygenEditor.Editor
         private void JumpToIndicator(int position)
         {
             // Find text & style
-            Tuple<string, EditorStyler.StyleEntry> textStyle = FindTextStyleFromPosition(position);
+            Tuple<string, StyleEntry> textStyle = FindTextStyleFromPosition(position);
             if (textStyle == null) return;
 
             string symbolName = textStyle.Item1;
@@ -518,7 +678,7 @@ namespace TSP.DoxygenEditor.Editor
             target.StyleClearAll();
             target.Lexer = Lexer.Container;
 
-            VisualStyler.ApplyStyles(target);
+            ApplyStyles();
 
             target.TextChanged += (s, e) =>
             {
@@ -552,7 +712,7 @@ namespace TSP.DoxygenEditor.Editor
                 if (!ParseControl.IsParsing())
                 {
                     if (startPos < endPos)
-                        VisualStyler.Highlight(thisEditor, startPos, endPos);
+                        Highlight(startPos, endPos);
                     _styleNeededState.Reset();
                 }
                 else
@@ -609,6 +769,140 @@ namespace TSP.DoxygenEditor.Editor
                     e.Text += addon.ToString();
                 }
             };
+        }
+        #endregion
+
+        #region Styler impl
+        public StyleEntry FindStyleFromPosition(int position)
+        {
+            StyleEntry result = _entries.FirstOrDefault((e) => allowedMatchStyles.Contains(e.Style) && position >= e.Index && position <= e.End);
+            return (result);
+        }
+
+        public int StyleTokens(IEnumerable<IBaseToken> tokens)
+        {
+            _entries.Clear();
+            foreach (IBaseToken token in tokens)
+            {
+                if (token.Length == 0) continue;
+                if (typeof(CppToken).Equals(token.GetType()))
+                {
+                    CppToken cppToken = (CppToken)token;
+                    int style;
+                    if (cppTokenTypeToStyleDict.TryGetValue(cppToken.Kind, out style))
+                        _entries.Add(new StyleEntry(LanguageKind.Cpp, token, style, token.Value));
+                }
+                else if (typeof(DoxygenToken).Equals(token.GetType()))
+                {
+                    DoxygenToken doxygenToken = (DoxygenToken)token;
+                    int style;
+                    if (doxygenTokenTypeToStyleDict.TryGetValue(doxygenToken.Kind, out style))
+                    {
+                        LanguageKind styleKind = LanguageKind.Doxygen;
+                        if (doxygenToken.Kind == DoxygenTokenKind.Code)
+                            styleKind = LanguageKind.DoxygenCode;
+                        _entries.Add(new StyleEntry(styleKind, token, style, doxygenToken.Value));
+                    }
+                }
+                else if (typeof(HtmlToken).Equals(token.GetType()))
+                {
+                    HtmlToken htmlToken = (HtmlToken)token;
+                    int style;
+                    if (htmlTokenTypeToStyleDict.TryGetValue(htmlToken.Kind, out style))
+                        _entries.Add(new StyleEntry(LanguageKind.Html, token, style, htmlToken.Value));
+                }
+            }
+            return _entries.Count;
+        }
+
+        private void ApplyCppStyle(ColorTheme theme)
+        {
+            CppColorTheme cppTheme = theme.Cpp;
+
+            _editor.Styles[cppMultiLineCommentStyle].Set(cppTheme[CppStyleKind.MultiLineComment]);
+            _editor.Styles[cppMultiLineCommentDocStyle].Set(cppTheme[CppStyleKind.MultiLineCommentDoc]);
+            _editor.Styles[cppMultiLineCommentDocTextStyle].Set(cppTheme[CppStyleKind.MultiLineCommentDocText]);
+            _editor.Styles[cppSingleLineCommentStyle].Set(cppTheme[CppStyleKind.SingleLineComment]);
+            _editor.Styles[cppSingleLineCommentDocStyle].Set(cppTheme[CppStyleKind.SingleLineCommentDoc]);
+            _editor.Styles[cppSingleLineCommentDocTextStyle].Set(cppTheme[CppStyleKind.SingleLineCommentDocText]);
+
+            _editor.Styles[cppPreprocessorBasicStyle].Set(cppTheme[CppStyleKind.PreprocessorBasic]);
+            _editor.Styles[cppPreprocessorKeywordStyle].Set(cppTheme[CppStyleKind.PreprocessorKeyword]);
+            _editor.Styles[cppPreprocessorDefineStyle].Set(cppTheme[CppStyleKind.PreprocessorDefine]);
+            _editor.Styles[cppPreprocessorDefineArgumentStyle].Set(cppTheme[CppStyleKind.PreprocessorDefineArgument]);
+            _editor.Styles[cppPreprocessorIncludeStyle].Set(cppTheme[CppStyleKind.PreprocessorInclude]);
+
+            _editor.Styles[cppReservedKeywordStyle].Set(cppTheme[CppStyleKind.ReservedKeyword]);
+            _editor.Styles[cppGlobalTypeKeywordStyle].Set(cppTheme[CppStyleKind.GlobalTypeKeyword]);
+            _editor.Styles[cppUserTypeIdentStyle].Set(cppTheme[CppStyleKind.UserTypeKeyword]);
+            _editor.Styles[cppMemberIdentStyle].Set(cppTheme[CppStyleKind.MemberKeyword]);
+            _editor.Styles[cppFunctionIdentStyle].Set(cppTheme[CppStyleKind.FunctionKeyword]);
+
+            _editor.Styles[cppStringLiteralStyle].Set(cppTheme[CppStyleKind.StringLiteral]);
+            _editor.Styles[cppCharLiteralStyle].Set(cppTheme[CppStyleKind.CharLiteral]);
+            _editor.Styles[cppNumberLiteralStyle].Set(cppTheme[CppStyleKind.NumberLiteral]);
+        }
+
+        private void ApplyDoxygenStyle()
+        {
+            // Block styles
+            _editor.Styles[doxygenBlockStyle].ForeColor = Color.DarkViolet;
+            _editor.Styles[doxygenCommandStyle].ForeColor = Color.Red;
+            _editor.Styles[doxygenInvalidCommandStyle].ForeColor = Color.Red;
+            _editor.Styles[doxygenInvalidCommandStyle].Underline = true;
+            _editor.Styles[doxygenIdentStyle].ForeColor = Color.Blue;
+            _editor.Styles[doxygenQuoteStringStyle].ForeColor = Color.Green;
+            _editor.Styles[doxygenArgumentStyle].ForeColor = Color.Red;
+
+            // Config styles
+            _editor.Styles[doxygenConfigCommentStyle].ForeColor = Color.Gray;
+            _editor.Styles[doxygenConfigKeyStyle].ForeColor = Color.Blue;
+            _editor.Styles[doxygenConfigKeyStyle].Bold = false;
+            _editor.Styles[doxygenConfigValueStyle].ForeColor = Color.Green;
+            _editor.Styles[doxygenConfigOpStyle].ForeColor = Color.Black;
+            _editor.Styles[doxygenConfigOpStyle].Bold = true;
+        }
+
+        private void ApplyHtmlStyle()
+        {
+            _editor.Styles[htmlTagCharsStyle].ForeColor = Color.DarkRed;
+            _editor.Styles[htmlTagNameStyle].ForeColor = Color.DarkRed;
+            _editor.Styles[htmlAttrNameStyle].ForeColor = Color.OrangeRed;
+            _editor.Styles[htmlAttrValueStyle].ForeColor = Color.CornflowerBlue;
+        }
+
+        public void ApplyStyles()
+        {
+            ColorTheme theme = ColorThemeManager.Current;
+
+            ApplyCppStyle(theme);
+            ApplyDoxygenStyle();
+            ApplyHtmlStyle();
+
+            _editor.Indicators[0].Style = IndicatorStyle.FullBox;
+            _editor.Indicators[0].ForeColor = Color.Red;
+        }
+
+        public void Highlight(int startPos, int endPos)
+        {
+            Debug.Assert(startPos < endPos);
+
+            int length = (endPos - startPos) + 1;
+
+            _editor.StartStyling(startPos);
+            _editor.SetStyling(length, 0);
+
+            StyleEntry rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0, null);
+            IEnumerable<StyleEntry> intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
+
+            foreach (StyleEntry entry in intersectingEntries)
+            {
+                int s = Math.Max(startPos, entry.Index);
+                int e = Math.Min(entry.Index + (entry.Length - 1), endPos);
+                int l = (e - s) + 1;
+                _editor.StartStyling(s);
+                _editor.SetStyling(l, entry.Style);
+            }
         }
         #endregion
 

@@ -1,10 +1,11 @@
 ﻿using FastColoredTextBoxNS;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Models;
-using TSP.DoxygenEditor.Styles;
 
 namespace TSP.DoxygenEditor.Editor
 {
@@ -16,7 +17,6 @@ namespace TSP.DoxygenEditor.Editor
         private readonly FastColoredTextBox _editor;
 
         private readonly ParseContext _parseState;
-        private readonly EditorStyler _styler;
 
         public Panel ContainerPanel => _containerPanel;
 
@@ -66,9 +66,7 @@ namespace TSP.DoxygenEditor.Editor
             };
             _containerPanel.Controls.Add(_editor);
 
-            _styler = new EditorStyler(workspace);
-
-            _parseState = new ParseContext(this, _styler, workspace);
+            _parseState = new ParseContext(this, workspace);
             _parseState.ParseCompleted += (s) =>
             {
                 // @TODO(final): Style text!
@@ -140,5 +138,10 @@ namespace TSP.DoxygenEditor.Editor
         }
 
         public void GoToLine(int lineIndex) => _editor.SetSelectedLine(lineIndex);
+
+        public int StyleTokens(IEnumerable<IBaseToken> tokens)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

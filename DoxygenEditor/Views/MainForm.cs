@@ -320,7 +320,7 @@ namespace TSP.DoxygenEditor.Views
         {
             int tabIndex = _newTabCounter++;
             TabPage newTab = new TabPage() { Text = name };
-            IEditor editor = new FCTBEditor(this, _workspace, name, newTab, tabIndex);
+            IEditor editor = new ScintillaEditor(this, _workspace, name, newTab, tabIndex);
             editor.FileType = fileType;
             editor.IsShowWhitespace = miViewShowWhitespaces.Checked;
             editor.TabUpdating += (s, e) => UpdateEditor((IEditor)s);
