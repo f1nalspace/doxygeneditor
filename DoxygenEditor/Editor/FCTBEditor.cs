@@ -55,7 +55,6 @@ namespace TSP.DoxygenEditor.Editor
                 Dock = DockStyle.Fill,
                 ShowLineNumbers = true,
                 TabLength = 4,
-                SyntaxHighlighter = null,
                 VirtualSpace = true,
                 Font = new Font(FontFamily.GenericMonospace, 14.0f, FontStyle.Regular),
                 DelayedTextChangedInterval = 250,
