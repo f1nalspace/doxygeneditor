@@ -40,6 +40,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\DoxygenParsers\DoxygenParsers.csproj" />
+		<ProjectReference Include="..\FastColoredTextBox\FastColoredTextBox.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="jacobslusser.ScintillaNET" Version="3.6.3" />
