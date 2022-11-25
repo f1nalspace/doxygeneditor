@@ -72,5 +72,17 @@ namespace TSP.DoxygenEditor
         {
             Lex($"//!@bri{Environment.NewLine}//!");
         }
+
+        [TestMethod]
+        public void ParseFPLDocs()
+        {
+            string docs = TSP.DoxygenEditor.Properties.Resources.final_platform_layer_docs;
+            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(docs, new TextPosition(), docs.Length))
+            {
+                IEnumerable<DoxygenToken> tokens = lexer.Tokenize();
+                Assert.IsNotNull(tokens);
+                Assert.IsTrue(tokens.Any());
+            }
+        }
     }
 }

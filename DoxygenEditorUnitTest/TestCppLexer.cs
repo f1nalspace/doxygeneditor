@@ -1,11 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor
 {
@@ -13,8 +11,15 @@ namespace TSP.DoxygenEditor
     public class TestCppLexer
     {
         [TestMethod]
-        public void TestFSM()
+        public void ParseFPLHeaderFile()
         {
+            string headerFile = TSP.DoxygenEditor.Properties.Resources.final_platform_layer_h;
+            using (CppLexer lexer = new CppLexer(headerFile, new TextPosition(), headerFile.Length, LanguageKind.Cpp))
+            {
+                IEnumerable<CppToken> tokens = lexer.Tokenize();
+                Assert.IsNotNull(tokens);
+                Assert.IsTrue(tokens.Any());
+            }
         }
     }
 }
