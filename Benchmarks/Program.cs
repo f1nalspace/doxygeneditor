@@ -33,9 +33,14 @@ namespace Benchmarks
             config = config.AddColumnProvider(DefaultColumnProviders.Instance);
             config = config.WithArtifactsPath(entryPath);
 
-            BenchmarkRunner.Run<CppBenchmarks>(config);
+            BenchmarkRunner.Run<TextStreamBenchmarks>(config);
+            //BenchmarkRunner.Run<CppBenchmarks>(config);
             //BenchmarkRunner.Run<DoxygenBenchmarks>();
             //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+
+            //var b = new TextStreamBenchmarks();
+            //b.GlobalSetup();
+            //b.AdvancedCompareText();
 
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();

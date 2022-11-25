@@ -1,4 +1,6 @@
-﻿namespace TSP.DoxygenEditor.TextAnalysis
+﻿using System;
+
+namespace TSP.DoxygenEditor.TextAnalysis
 {
     public interface ITextStream
     {
@@ -8,5 +10,6 @@
         char Peek();
         char Peek(int delta);
         string GetSourceText(int index, int length);
+        ReadOnlySpan<char> GetSourceSpan(int index, int length);
     }
 }
