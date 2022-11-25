@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
 #endif
 
-        public TextStream(TextPosition pos, int length)
+        public TextStream(int length, TextPosition pos)
         {
             StreamBase = pos.Index;
             StreamLength = length;

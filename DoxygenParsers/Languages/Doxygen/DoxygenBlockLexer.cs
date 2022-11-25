@@ -44,7 +44,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return new DoxygenState();
         }
 
-        public DoxygenBlockLexer(string source, TextPosition pos, int length) : base(source, pos, length)
+        public DoxygenBlockLexer(string source, int length, TextPosition pos) : base(source, length, pos)
         {
 
         }
