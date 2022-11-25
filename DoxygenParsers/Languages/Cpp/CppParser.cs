@@ -736,7 +736,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (result);
         }
 
-        protected override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
+        protected override ParseTokenResult ParseToken(string source,LinkedListStream<IBaseToken> stream)
         {
             CppToken token = stream.Peek<CppToken>();
             if (token == null) return (ParseTokenResult.ReadNext);

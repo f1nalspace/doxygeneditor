@@ -1370,7 +1370,7 @@ namespace TSP.DoxygenEditor.Views
                     }
                     using (DoxygenConfigParser parser = new DoxygenConfigParser(null))
                     {
-                        parser.ParseTokens(tokens);
+                        parser.ParseTokens(configContents, tokens);
                         configTree = parser.Root;
                     }
                 }

@@ -449,9 +449,9 @@ namespace TSP.DoxygenEditor.Editor
             {
                 // Doxygen parsing
                 timer.Restart();
-                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_editor, text))
+                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_editor))
                 {
-                    doxyParser.ParseTokens(_tokens);
+                    doxyParser.ParseTokens(text, _tokens);
                     _errors.InsertRange(0, doxyParser.ParseErrors);
                     DoxyBlockTree = doxyParser.Root;
                     doxyNodeCount = doxyParser.TotalNodeCount;
@@ -476,7 +476,7 @@ namespace TSP.DoxygenEditor.Editor
                         IBaseNode result = DoxyBlockTree.FindNodeByRange(token.Range);
                         return (result);
                     };
-                    cppParser.ParseTokens(_tokens);
+                    cppParser.ParseTokens(text, _tokens);
                     _errors.InsertRange(0, cppParser.ParseErrors);
                     CppTree = cppParser.Root;
                     cppNodeCount = cppParser.TotalNodeCount;
@@ -490,7 +490,7 @@ namespace TSP.DoxygenEditor.Editor
                 timer.Restart();
                 using (DoxygenConfigParser configParser = new DoxygenConfigParser(_editor))
                 {
-                    configParser.ParseTokens(_tokens);
+                    configParser.ParseTokens(text, _tokens);
                     _errors.InsertRange(0, configParser.ParseErrors);
                     doxyNodeCount = configParser.TotalNodeCount;
                     DoxyConfigTree = configParser.Root;

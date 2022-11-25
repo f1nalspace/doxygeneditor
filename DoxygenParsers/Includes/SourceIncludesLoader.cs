@@ -108,7 +108,7 @@ namespace TSP.DoxygenEditor.Includes
                                 }
                                 using (CppParser parser = new CppParser(table.Id, new CppParser.CppConfiguration()))
                                 {
-                                    parser.ParseTokens(_tokens);
+                                    parser.ParseTokens(source, _tokens);
                                     foreach (TextError err in parser.ParseErrors)
                                         Debug.WriteLine($"Parse error[{filePath}]: {err.Message}");
                                     table.AddTable(parser.LocalSymbolTable);
