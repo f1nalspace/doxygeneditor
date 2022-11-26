@@ -181,7 +181,7 @@ namespace TSP.DoxygenEditor.Editor
                 if ((lang == LanguageKind.Cpp) && (token.Kind == CppTokenKind.MultiLineCommentDoc || token.Kind == CppTokenKind.SingleLineCommentDoc))
                 {
                     result.AddToken(token);
-                    using (TokenizeResult doxyRes = TokenizeDoxy(text, token.Length, token.Position))
+                    using (TokenizeResult doxyRes = TokenizeDoxy(token.Value, token.Length, token.Position))
                     {
                         result.Stats.DoxyDuration += doxyRes.Stats.DoxyDuration;
                         result.Stats.HtmlDuration += doxyRes.Stats.HtmlDuration;
