@@ -1,12 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace TSP.DoxygenEditor.Styles
 {
-    public struct ColorThemeStyle
+    public struct ColorThemeStyle : IEquatable<ColorThemeStyle>
     {
         public Color Color { get; internal set; }
         public bool IsBold { get; internal set; }
+
+        public bool Equals(ColorThemeStyle other) => Color.Equals(other.Color) && IsBold == other.IsBold;
+
+        public override bool Equals(object obj) => obj is ColorThemeStyle other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int result = 17;
+                result *= 31 + Color.GetHashCode();
+                result *= 31 + IsBold.GetHashCode();
+                return result;
+            }
+        }
     }
 
     public abstract class ColorThemeStyles<TKey>
