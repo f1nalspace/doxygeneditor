@@ -163,13 +163,13 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private TokenizeResult TokenizeCpp(string text, TextPosition pos, int length, LanguageKind lang)
+        private TokenizeResult TokenizeCpp(string text, int length, TextPosition pos, LanguageKind lang)
         {
             TokenizeResult result = new TokenizeResult();
             Stopwatch timer = new Stopwatch();
             timer.Restart();
             List<CppToken> cppTokens = new List<CppToken>();
-            using (CppLexer cppLexer = new CppLexer(text, pos, length, lang))
+            using (CppLexer cppLexer = new CppLexer(text, length, pos, lang))
             {
                 cppTokens.AddRange(cppLexer.Tokenize());
                 result.AddErrors(cppLexer.LexErrors);
@@ -181,7 +181,7 @@ namespace TSP.DoxygenEditor.Editor
                 if ((lang == LanguageKind.Cpp) && (token.Kind == CppTokenKind.MultiLineCommentDoc || token.Kind == CppTokenKind.SingleLineCommentDoc))
                 {
                     result.AddToken(token);
-                    using (TokenizeResult doxyRes = TokenizeDoxy(text, token.Position, token.Length))
+                    using (TokenizeResult doxyRes = TokenizeDoxy(text, token.Length, token.Position))
                     {
                         result.Stats.DoxyDuration += doxyRes.Stats.DoxyDuration;
                         result.Stats.HtmlDuration += doxyRes.Stats.HtmlDuration;
@@ -194,11 +194,11 @@ namespace TSP.DoxygenEditor.Editor
             return (result);
         }
 
-        private TokenizeResult TokenizeHtml(string text, TextPosition pos, int length)
+        private TokenizeResult TokenizeHtml(string text, int length, TextPosition pos)
         {
             TokenizeResult result = new TokenizeResult();
             Stopwatch timer = Stopwatch.StartNew();
-            using (HtmlLexer htmlLexer = new HtmlLexer(text, pos, length))
+            using (HtmlLexer htmlLexer = new HtmlLexer(text, length, pos))
             {
                 IEnumerable<HtmlToken> htmlTokens = htmlLexer.Tokenize();
                 if (htmlTokens.FirstOrDefault(d => !d.IsEOF) != null)
@@ -226,14 +226,14 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private TokenizeResult TokenizeDoxy(string text, TextPosition pos, int length)
+        private TokenizeResult TokenizeDoxy(string text, int length, TextPosition pos)
         {
             TokenizeResult result = new TokenizeResult();
 
             Stopwatch timer = new Stopwatch();
             timer.Restart();
             List<DoxygenToken> doxyTokens = new List<DoxygenToken>();
-            using (DoxygenBlockLexer doxyLexer = new DoxygenBlockLexer(text, pos, length))
+            using (DoxygenBlockLexer doxyLexer = new DoxygenBlockLexer(text, length, pos))
             {
                 doxyTokens.AddRange(doxyLexer.Tokenize());
                 result.AddErrors(doxyLexer.LexErrors);
@@ -316,7 +316,7 @@ namespace TSP.DoxygenEditor.Editor
                                 {
                                     DoxygenToken codeRangedToken = DoxygenTokenPool.Make(DoxygenTokenKind.Code, new TextRange(commandContentStart, commandContentLength), true);
                                     result.AddToken(codeRangedToken);
-                                    using (TokenizeResult cppRes = TokenizeCpp(text, commandContentStart, commandContentLength, LanguageKind.DoxygenCode))
+                                    using (TokenizeResult cppRes = TokenizeCpp(text, commandContentLength, commandContentStart, LanguageKind.DoxygenCode))
                                     {
                                         result.AddTokens(cppRes.Tokens);
                                         result.AddErrors(cppRes.Errors);
@@ -344,7 +344,7 @@ namespace TSP.DoxygenEditor.Editor
                         DoxygenToken textStartToken = textStartTokens.Pop();
                         Debug.Assert(doxyToken.Index >= textStartToken.Index);
                         int textContentLen = doxyToken.Index - textStartToken.Index;
-                        using (TokenizeResult htmlRes = TokenizeHtml(text, textStartToken.Position, textContentLen))
+                        using (TokenizeResult htmlRes = TokenizeHtml(text, textContentLen, textStartToken.Position))
                         {
                             result.AddTokens(htmlRes.Tokens);
                             result.AddErrors(htmlRes.Errors);
@@ -383,7 +383,7 @@ namespace TSP.DoxygenEditor.Editor
             if (_editor.FileType == EditorFileType.Cpp || _editor.FileType == EditorFileType.DoxyDocs)
             {
                 // C++ lexing -> Doxygen (Code -> Cpp) -> (Text -> Html)
-                using (TokenizeResult cppRes = TokenizeCpp(text, new TextPosition(0), text.Length, LanguageKind.Cpp))
+                using (TokenizeResult cppRes = TokenizeCpp(text, text.Length, new TextPosition(0), LanguageKind.Cpp))
                 {
                     totalStats += cppRes.Stats;
                     _tokens.AddRange(cppRes.Tokens);
@@ -398,7 +398,7 @@ namespace TSP.DoxygenEditor.Editor
             }
             else if (_editor.FileType == EditorFileType.DoxyConfig)
             {
-                using (DoxygenConfigLexer doxyConfigLexer = new DoxygenConfigLexer(text, new TextPosition(0), text.Length))
+                using (DoxygenConfigLexer doxyConfigLexer = new DoxygenConfigLexer(text, text.Length, new TextPosition(0)))
                 {
                     Stopwatch timer = Stopwatch.StartNew();
                     IEnumerable<DoxygenToken> doxyTokens = doxyConfigLexer.Tokenize();
@@ -447,9 +447,9 @@ namespace TSP.DoxygenEditor.Editor
             {
                 // Doxygen parsing
                 timer.Restart();
-                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_editor, text))
+                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_editor))
                 {
-                    doxyParser.ParseTokens(_tokens);
+                    doxyParser.ParseTokens(text, _tokens);
                     _errors.InsertRange(0, doxyParser.ParseErrors);
                     DoxyBlockTree = doxyParser.Root;
                     doxyNodeCount = doxyParser.TotalNodeCount;
@@ -474,7 +474,7 @@ namespace TSP.DoxygenEditor.Editor
                         IBaseNode result = DoxyBlockTree.FindNodeByRange(token.Range);
                         return (result);
                     };
-                    cppParser.ParseTokens(_tokens);
+                    cppParser.ParseTokens(text, _tokens);
                     _errors.InsertRange(0, cppParser.ParseErrors);
                     CppTree = cppParser.Root;
                     cppNodeCount = cppParser.TotalNodeCount;
@@ -488,7 +488,7 @@ namespace TSP.DoxygenEditor.Editor
                 timer.Restart();
                 using (DoxygenConfigParser configParser = new DoxygenConfigParser(_editor))
                 {
-                    configParser.ParseTokens(_tokens);
+                    configParser.ParseTokens(text, _tokens);
                     _errors.InsertRange(0, configParser.ParseErrors);
                     doxyNodeCount = configParser.TotalNodeCount;
                     DoxyConfigTree = configParser.Root;

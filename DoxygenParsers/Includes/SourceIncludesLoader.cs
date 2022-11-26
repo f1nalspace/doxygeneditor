@@ -100,7 +100,7 @@ namespace TSP.DoxygenEditor.Includes
                             {
                                 string source = File.ReadAllText(filePath);
                                 List<CppToken> _tokens = new List<CppToken>();
-                                using (CppLexer lexer = new CppLexer(source, new TextPosition(), source.Length, Languages.LanguageKind.Cpp))
+                                using (CppLexer lexer = new CppLexer(source, source.Length, new TextPosition(), Languages.LanguageKind.Cpp))
                                 {
                                     foreach (TextError err in lexer.LexErrors)
                                         Debug.WriteLine($"Lex error[{filePath}]: {err.Message}");
@@ -108,7 +108,7 @@ namespace TSP.DoxygenEditor.Includes
                                 }
                                 using (CppParser parser = new CppParser(table.Id, new CppParser.CppConfiguration()))
                                 {
-                                    parser.ParseTokens(_tokens);
+                                    parser.ParseTokens(source, _tokens);
                                     foreach (TextError err in parser.ParseErrors)
                                         Debug.WriteLine($"Parse error[{filePath}]: {err.Message}");
                                     table.AddTable(parser.LocalSymbolTable);

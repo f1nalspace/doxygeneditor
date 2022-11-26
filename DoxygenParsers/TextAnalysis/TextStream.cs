@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
 #endif
 
-        public TextStream(TextPosition pos, int length)
+        public TextStream(int length, TextPosition pos)
         {
             StreamBase = pos.Index;
             StreamLength = length;
@@ -43,10 +43,12 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public abstract string GetSourceText(int index, int length);
         public string GetSourceText(TextRange range)
-        {
-            string result = GetSourceText(range.Index, range.Length);
-            return (result);
-        }
+            => GetSourceText(range.Index, range.Length);
+
+        public abstract ReadOnlySpan<char> GetSourceSpan(int index, int length);
+        public ReadOnlySpan<char> GetSourceSpan(TextRange range)
+            => GetSourceSpan(range.Index, range.Length);
+
         public abstract char Peek();
         public abstract char Peek(int delta);
         public abstract int CompareText(int delta, string match, bool ignoreCase = false);

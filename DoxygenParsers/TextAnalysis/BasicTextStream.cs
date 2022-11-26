@@ -6,15 +6,24 @@ namespace TSP.DoxygenEditor.TextAnalysis
     {
         private string _source;
 
-        public BasicTextStream(string source, TextPosition pos, int length) : base(pos, length)
+        public BasicTextStream(string source, int length, TextPosition pos) : base(length, pos)
         {
             _source = source;
         }
 
         public override string GetSourceText(int index, int length)
         {
+            if (index < 0 || index + length > StreamLength)
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
             string result = _source.Substring(index, length);
             return (result);
+        }
+
+        public override ReadOnlySpan<char> GetSourceSpan(int index, int length)
+        {
+            if (index < 0 || index + length > StreamLength)
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
+            return _source.AsSpan(index, length);
         }
 
         public override int CompareText(int delta, string match, bool ignoreCase = false)

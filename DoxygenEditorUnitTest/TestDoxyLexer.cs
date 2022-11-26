@@ -33,7 +33,7 @@ namespace TSP.DoxygenEditor
 
         private void Lex(string source, params ExpectToken[] expectedTokens)
         {
-            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(source, new TextPosition(0), source.Length))
+            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(source, source.Length, new TextPosition(0)))
             {
                 IEnumerable<DoxygenToken> tokens = lexer.Tokenize();
                 if (expectedTokens.Length > 0)
@@ -71,6 +71,18 @@ namespace TSP.DoxygenEditor
         public void TestBlocks()
         {
             Lex($"//!@bri{Environment.NewLine}//!");
+        }
+
+        [TestMethod]
+        public void ParseFPLDocs()
+        {
+            string docs = TSP.DoxygenEditor.Properties.Resources.final_platform_layer_docs;
+            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(docs, docs.Length, new TextPosition()))
+            {
+                IEnumerable<DoxygenToken> tokens = lexer.Tokenize();
+                Assert.IsNotNull(tokens);
+                Assert.IsTrue(tokens.Any());
+            }
         }
     }
 }

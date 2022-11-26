@@ -1364,13 +1364,13 @@ namespace TSP.DoxygenEditor.Views
                 if (!string.IsNullOrWhiteSpace(configFilePath))
                 {
                     List<DoxygenToken> tokens = new List<DoxygenToken>();
-                    using (DoxygenConfigLexer lexer = new DoxygenConfigLexer(configContents, new TextPosition(), configContents.Length))
+                    using (DoxygenConfigLexer lexer = new DoxygenConfigLexer(configContents, configContents.Length, new TextPosition()))
                     {
                         tokens.AddRange(lexer.Tokenize());
                     }
                     using (DoxygenConfigParser parser = new DoxygenConfigParser(null))
                     {
-                        parser.ParseTokens(tokens);
+                        parser.ParseTokens(configContents, tokens);
                         configTree = parser.Root;
                     }
                 }

@@ -20,11 +20,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenBlockEntityKind.SubSubSection,
         };
 
-        public string Source { get; }
-
-        public DoxygenBlockParser(ISymbolTableId id, string source) : base(id)
+        public DoxygenBlockParser(ISymbolTableId id) : base(id)
         {
-            Source = source;
         }
 
         private DoxygenBlockNode PushEntity(DoxygenBlockEntity newEntity)
@@ -43,7 +40,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return (itemNode);
         }
 
-        private void ParseText(LinkedListStream<IBaseToken> stream, IBaseNode contentNode)
+        private void ParseText(string source, LinkedListStream<IBaseToken> stream, IBaseNode contentNode)
         {
             DoxygenToken nextToken = stream.Peek<DoxygenToken>();
             Debug.Assert(nextToken.Kind == DoxygenTokenKind.TextStart);
@@ -66,7 +63,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             if (contentNode != null)
             {
                 int textLen = textEnd.Index - textStart.Index;
-                string text = Source.Substring(textStart.Index, textLen).Trim();
+                string text = source.Substring(textStart.Index, textLen).Trim();
                 if (text.Length > 0)
                 {
                     DoxygenBlockNode textNode = new DoxygenBlockNode(contentNode, new DoxygenBlockEntity(DoxygenBlockEntityKind.Text, new TextRange(textStart, textLen)));
@@ -77,7 +74,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
         }
 
-        private bool ParseCommand(LinkedListStream<IBaseToken> stream, IBaseNode contentRoot)
+        private bool ParseCommand(string source, LinkedListStream<IBaseToken> stream, IBaseNode contentRoot)
         {
             // @NOTE(final): This must always return true, due to the fact that the stream is advanced at least once
             DoxygenToken commandToken = stream.Peek<DoxygenToken>();
@@ -190,7 +187,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         {
                             string referenceValue = nameParam.Value;
                             TextPosition startPos = new TextPosition(0, nameParam.Token.Position.Line, nameParam.Token.Position.Column);
-                            using (TextStream referenceTextStream = new BasicTextStream(referenceValue, startPos, referenceValue.Length))
+                            using (TextStream referenceTextStream = new BasicTextStream(referenceValue, referenceValue.Length, startPos))
                             {
                                 ReferenceSymbolKind referenceTarget = ReferenceSymbolKind.Any;
                                 while (!referenceTextStream.IsEOF)
@@ -241,7 +238,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             LocalSymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
                     }
                 }
-                ParseBlockContent(stream, commandNode);
+                ParseBlockContent(source, stream, commandNode);
             }
             else
             {
@@ -250,7 +247,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             return (true);
         }
 
-        private ParseTokenResult ParseSingleBlock(LinkedListStream<IBaseToken> stream)
+        private ParseTokenResult ParseSingleBlock(string source, LinkedListStream<IBaseToken> stream)
         {
             // @NOTE(final) Single block = auto-brief
 
@@ -275,7 +272,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     stream.Next();
                     break;
                 }
-                if (!ParseBlockContent(stream, briefNode))
+                if (!ParseBlockContent(source, stream, briefNode))
                     break;
                 Debug.Assert(stream.CurrentValue != token);
             }
@@ -309,7 +306,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             }
         }
 
-        private bool ParseBlockContent(LinkedListStream<IBaseToken> stream, IBaseNode contentRoot)
+        private bool ParseBlockContent(string source, LinkedListStream<IBaseToken> stream, IBaseNode contentRoot)
         {
             IBaseToken token = stream.Peek();
             if (typeof(DoxygenToken).Equals(token.GetType()))
@@ -322,7 +319,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         return (true);
 
                     case DoxygenTokenKind.Command:
-                        return ParseCommand(stream, contentRoot);
+                        return ParseCommand(source, stream, contentRoot);
 
                     case DoxygenTokenKind.InvalidCommand:
                         string commandName = doxyToken.Value.Substring(1);
@@ -331,7 +328,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                         return (true);
 
                     case DoxygenTokenKind.TextStart:
-                        ParseText(stream, contentRoot);
+                        ParseText(source, stream, contentRoot);
                         return (true);
 
                     default:
@@ -343,7 +340,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 return (false);
         }       
 
-        protected override ParseTokenResult ParseToken(LinkedListStream<IBaseToken> stream)
+        protected override ParseTokenResult ParseToken(string source, LinkedListStream<IBaseToken> stream)
         {
             IBaseToken token = stream.Peek();
             if (typeof(DoxygenToken).Equals(token.GetType()))
@@ -352,7 +349,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 switch (doxyToken.Kind)
                 {
                     case DoxygenTokenKind.DoxyBlockStartSingle:
-                        return ParseSingleBlock(stream);
+                        return ParseSingleBlock(source, stream);
 
                     case DoxygenTokenKind.DoxyBlockStartMulti:
                         {
@@ -376,7 +373,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
                     default:
                         {
-                            ParseBlockContent(stream, Top);
+                            ParseBlockContent(source, stream, Top);
                             return (ParseTokenResult.AlreadyAdvanced);
                         }
                 }

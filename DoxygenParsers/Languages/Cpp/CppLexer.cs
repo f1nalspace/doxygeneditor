@@ -200,7 +200,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         private readonly LanguageKind _lang;
 
-        public CppLexer(string source, TextPosition pos, int length, LanguageKind lang) : base(source, pos, length)
+        public CppLexer(string source, int length, TextPosition pos, LanguageKind lang) : base(source, length, pos)
         {
             _lang = lang;
         }

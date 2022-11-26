@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSMLexing", "FSMLexing\FSML
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastColoredTextBox", "FastColoredTextBox\FastColoredTextBox.csproj", "{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{DCFB2720-C2DF-4A74-9B83-E4582009DB08}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -39,6 +41,10 @@ Global
 		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Debug|x64.Build.0 = Debug|x64
 		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Release|x64.ActiveCfg = Release|x64
 		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Release|x64.Build.0 = Release|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Debug|x64.ActiveCfg = Debug|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Debug|x64.Build.0 = Debug|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Release|x64.ActiveCfg = Release|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
