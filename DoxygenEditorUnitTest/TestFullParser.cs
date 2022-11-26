@@ -28,7 +28,7 @@ namespace TSP.DoxygenEditor
 
             List<CppToken> documentationBlocks = new List<CppToken>();
 
-            using (CppLexer cppLexer = new CppLexer(source, source.Length, new TextPosition(), LanguageKind.Cpp))
+            using (CppLexer cppLexer = new CppLexer(source, source.Length, 0, new TextPosition(), LanguageKind.Cpp))
             {
                 IEnumerable<CppToken> tokens = cppLexer.Tokenize();
 
@@ -49,7 +49,7 @@ namespace TSP.DoxygenEditor
             {
                 string blockSource = documentationBlock.Value;
 
-                using (DoxygenBlockLexer cppLexer = new DoxygenBlockLexer(blockSource, blockSource.Length, new TextPosition()))
+                using (DoxygenBlockLexer cppLexer = new DoxygenBlockLexer(blockSource, 0, blockSource.Length, new TextPosition()))
                 {
                     IEnumerable<DoxygenToken> tokens = cppLexer.Tokenize();
 
@@ -58,7 +58,7 @@ namespace TSP.DoxygenEditor
                         if (token.Kind == DoxygenTokenKind.Code)
                         {
                             string code = token.Value;
-                            using (CppLexer codeLexer = new CppLexer(code, code.Length, new TextPosition(), LanguageKind.Cpp))
+                            using (CppLexer codeLexer = new CppLexer(code, 0, code.Length, new TextPosition(), LanguageKind.Cpp))
                             {
                                 IEnumerable<CppToken> codeTokens = codeLexer.Tokenize();
                                 Assert.IsNotNull(codeTokens);

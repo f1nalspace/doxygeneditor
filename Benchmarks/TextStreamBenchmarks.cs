@@ -19,7 +19,7 @@ namespace Benchmarks
         public int LinearPeek()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 char c = stream.Peek();
@@ -33,7 +33,7 @@ namespace Benchmarks
         public int RandomPeek()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -50,7 +50,7 @@ namespace Benchmarks
         public int LinearGetSourceSpan()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 int pos = stream.StreamPosition;
@@ -67,7 +67,7 @@ namespace Benchmarks
         public int LinearGetSourceText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 int pos = stream.StreamPosition;
@@ -84,7 +84,7 @@ namespace Benchmarks
         public int RandomGetSourceSpan()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -106,7 +106,7 @@ namespace Benchmarks
         public int RandomGetSourceText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -128,7 +128,7 @@ namespace Benchmarks
         public int CompareText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             string comparend = "void";
             while (!stream.IsEOF)
             {
@@ -146,7 +146,7 @@ namespace Benchmarks
         public int MatchCharactersText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, HeaderSource.Length, new TextPosition());
+            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 if (stream.MatchCharacters(0, 4, char.IsWhiteSpace))

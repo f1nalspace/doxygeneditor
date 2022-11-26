@@ -15,7 +15,7 @@ namespace Benchmarks
     {
         private readonly ReadOnlyMemory<char> _source;
 
-        public AdvancedTextStream(ReadOnlyMemory<char> source, TextPosition pos) : base(source.Length, pos)
+        public AdvancedTextStream(ReadOnlyMemory<char> source, TextPosition pos) : base(0, source.Length, pos)
         {
             _source = source;
         }

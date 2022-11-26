@@ -23,7 +23,7 @@ namespace Benchmarks
 
             var blocks = new List<string>();
 
-            using (CppLexer lexer = new CppLexer(BlockSource, BlockSource.Length, new TextPosition(), LanguageKind.Cpp))
+            using (CppLexer lexer = new CppLexer(BlockSource, 0, BlockSource.Length, new TextPosition(), LanguageKind.Cpp))
             {
                 IEnumerable<CppToken> tokens = lexer.Tokenize();
                 IEnumerable<CppToken> docTokens = tokens.Where(t => t.Kind == CppTokenKind.MultiLineCommentDoc);
@@ -37,7 +37,7 @@ namespace Benchmarks
         [Benchmark]
         public int LexDoxygen()
         {
-            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(BlockSource, BlockSource.Length, new TextPosition()))
+            using (DoxygenBlockLexer lexer = new DoxygenBlockLexer(BlockSource, 0, BlockSource.Length, new TextPosition()))
             {
                 IEnumerable<DoxygenToken> tokens = lexer.Tokenize();
                 return tokens.Count();

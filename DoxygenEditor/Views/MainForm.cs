@@ -1364,7 +1364,7 @@ namespace TSP.DoxygenEditor.Views
                 if (!string.IsNullOrWhiteSpace(configFilePath))
                 {
                     List<DoxygenToken> tokens = new List<DoxygenToken>();
-                    using (DoxygenConfigLexer lexer = new DoxygenConfigLexer(configContents, configContents.Length, new TextPosition()))
+                    using (DoxygenConfigLexer lexer = new DoxygenConfigLexer(configContents, 0, configContents.Length, new TextPosition()))
                     {
                         tokens.AddRange(lexer.Tokenize());
                     }

@@ -25,7 +25,7 @@ namespace Benchmarks
 
             HeaderSource = global::Benchmarks.Properties.Resources.final_platform_layer_h;
 
-            using (CppLexer lexer = new CppLexer(HeaderSource, HeaderSource.Length, new TextPosition(), LanguageKind.Cpp))
+            using (CppLexer lexer = new CppLexer(HeaderSource, 0, HeaderSource.Length, new TextPosition(), LanguageKind.Cpp))
             {
                 IEnumerable<CppToken> tokens = lexer.Tokenize();
                 HeaderTokens = tokens.ToImmutableArray();
@@ -35,7 +35,7 @@ namespace Benchmarks
         [Benchmark]
         public int LexCpp()
         {
-            using (CppLexer lexer = new CppLexer(HeaderSource, HeaderSource.Length, new TextPosition(), LanguageKind.Cpp))
+            using (CppLexer lexer = new CppLexer(HeaderSource, 0, HeaderSource.Length, new TextPosition(), LanguageKind.Cpp))
             {
                 IEnumerable<CppToken> tokens = lexer.Tokenize();
                 return tokens.Count();
@@ -59,7 +59,7 @@ namespace Benchmarks
         {
             int totalErrorCount = 0;
 
-            using (CppLexer lexer = new CppLexer(HeaderSource, HeaderSource.Length, new TextPosition(), LanguageKind.Cpp))
+            using (CppLexer lexer = new CppLexer(HeaderSource, 0, HeaderSource.Length, new TextPosition(), LanguageKind.Cpp))
             {
                 IEnumerable<CppToken> tokens = lexer.Tokenize();
 

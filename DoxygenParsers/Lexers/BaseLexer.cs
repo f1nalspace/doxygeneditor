@@ -28,9 +28,9 @@ namespace TSP.DoxygenEditor.Lexers
         }
         protected abstract State CreateState();
 
-        public BaseLexer(string source, int length, TextPosition pos)
+        public BaseLexer(string source, int index, int length, TextPosition pos)
         {
-            Buffer = new BasicTextStream(source, length, pos);
+            Buffer = new BasicTextStream(source, index, length, pos);
         }
 
         protected void AddError(TextPosition pos, string message, string what, string symbol = null)
