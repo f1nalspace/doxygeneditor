@@ -131,48 +131,6 @@ namespace TSP.DoxygenEditor.Styles
             doxygenArgumentStyle,
         };
 
-        public struct StyleEntry
-        {
-            public LanguageKind Lang { get; }
-            public int Index { get; }
-            public int Length { get; }
-            public int Style { get; }
-            public string Value { get; }
-
-            public int End
-            {
-                get
-                {
-                    int result = Index + Math.Max(0, Length - 1);
-                    return (result);
-                }
-            }
-
-            public StyleEntry(LanguageKind lang, int index, int length, int style, string value)
-            {
-                Lang = lang;
-                Index = index;
-                Length = length;
-                Style = style;
-                Value = value;
-            }
-
-            public StyleEntry(LanguageKind lang, IBaseToken token, int style, string value) : this(lang, token.Index, token.Length, style, value)
-            {
-            }
-
-            public bool InterectsWith(StyleEntry other)
-            {
-                bool result = (Index <= other.End) && (End >= other.Index);
-                return (result);
-            }
-
-            public override string ToString()
-            {
-                return $"{Index} => {Length} as {Lang} with style {Style} = {Value}";
-            }
-        }
-
         private readonly List<StyleEntry> _entries = new List<StyleEntry>();
         public int Count => _entries.Count;
 

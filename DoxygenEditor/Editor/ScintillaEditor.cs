@@ -376,15 +376,15 @@ namespace TSP.DoxygenEditor.Editor
 
 
 
-        private Tuple<string, EditorStyler.StyleEntry> FindTextStyleFromPosition(int position)
+        private Tuple<string, StyleEntry> FindTextStyleFromPosition(int position)
         {
-            EditorStyler.StyleEntry style = VisualStyler.FindStyleFromPosition(position);
+            StyleEntry style = VisualStyler.FindStyleFromPosition(position);
             if (style.Style != 0)
             {
                 string text = _editor.GetTextRange(style.Index, style.Length);
                 if (text.Contains("(") && text.Contains(")"))
                     text = text.Substring(0, text.IndexOf("("));
-                return new Tuple<string, EditorStyler.StyleEntry>(text, style);
+                return new Tuple<string, StyleEntry>(text, style);
             }
             return (null);
         }
@@ -397,11 +397,11 @@ namespace TSP.DoxygenEditor.Editor
             _editor.IndicatorClearRange(0, _editor.TextLength);
             Point p = _editor.PointToClient(mouse);
             int c = _editor.CharPositionFromPoint(p.X, p.Y);
-            Tuple<string, EditorStyler.StyleEntry> textStyle = FindTextStyleFromPosition(c);
+            Tuple<string, StyleEntry> textStyle = FindTextStyleFromPosition(c);
             if (textStyle != null)
             {
                 string symbolName = textStyle.Item1;
-                EditorStyler.StyleEntry style = textStyle.Item2;
+                StyleEntry style = textStyle.Item2;
                 SymbolTable innerTable = GlobalSymbolCache.GetTable(this);
                 SourceSymbol source = innerTable?.GetSource(symbolName);
                 if (source == null)
@@ -431,7 +431,7 @@ namespace TSP.DoxygenEditor.Editor
         private void JumpToIndicator(int position)
         {
             // Find text & style
-            Tuple<string, EditorStyler.StyleEntry> textStyle = FindTextStyleFromPosition(position);
+            Tuple<string, StyleEntry> textStyle = FindTextStyleFromPosition(position);
             if (textStyle == null) return;
 
             string symbolName = textStyle.Item1;
