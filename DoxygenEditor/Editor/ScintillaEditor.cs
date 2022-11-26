@@ -195,49 +195,7 @@ namespace TSP.DoxygenEditor.Editor
             doxygenArgumentStyle,
         };
 
-        public struct StyleEntry
-        {
-            public LanguageKind Lang { get; }
-            public int Index { get; }
-            public int Length { get; }
-            public int Style { get; }
-            public string Value { get; }
-
-            public int End
-            {
-                get
-                {
-                    int result = Index + Math.Max(0, Length - 1);
-                    return (result);
-                }
-            }
-
-            public StyleEntry(LanguageKind lang, int index, int length, int style, string value)
-            {
-                Lang = lang;
-                Index = index;
-                Length = length;
-                Style = style;
-                Value = value;
-            }
-
-            public StyleEntry(LanguageKind lang, IBaseToken token, int style, string value) : this(lang, token.Index, token.Length, style, value)
-            {
-            }
-
-            public bool InterectsWith(StyleEntry other)
-            {
-                bool result = (Index <= other.End) && (End >= other.Index);
-                return (result);
-            }
-
-            public override string ToString()
-            {
-                return $"{Index} => {Length} as {Lang} with style {Style} = {Value}";
-            }
-        }
-
-        private readonly List<StyleEntry> _entries = new List<StyleEntry>();
+        private readonly StyleEntries _entries = new StyleEntries();
         #endregion
 
         public ScintillaEditor(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
@@ -773,15 +731,12 @@ namespace TSP.DoxygenEditor.Editor
         #endregion
 
         #region Styler impl
-        public StyleEntry FindStyleFromPosition(int position)
-        {
-            StyleEntry result = _entries.FirstOrDefault((e) => allowedMatchStyles.Contains(e.Style) && position >= e.Index && position <= e.End);
-            return (result);
-        }
+        public StyleEntry FindStyleFromPosition(int position) => _entries.Find(position);
 
         public int StyleTokens(IEnumerable<IBaseToken> tokens)
         {
             _entries.Clear();
+
             foreach (IBaseToken token in tokens)
             {
                 if (token.Length == 0) continue;
@@ -790,7 +745,13 @@ namespace TSP.DoxygenEditor.Editor
                     CppToken cppToken = (CppToken)token;
                     int style;
                     if (cppTokenTypeToStyleDict.TryGetValue(cppToken.Kind, out style))
-                        _entries.Add(new StyleEntry(LanguageKind.Cpp, token, style, token.Value));
+                    {
+#if DEBUG
+                        _entries.Add(LanguageKind.Cpp, token, style, token.Value);
+#else
+                        _entries.Add(LanguageKind.Cpp, token, style);
+#endif
+                    }
                 }
                 else if (typeof(DoxygenToken).Equals(token.GetType()))
                 {
@@ -801,7 +762,12 @@ namespace TSP.DoxygenEditor.Editor
                         LanguageKind styleKind = LanguageKind.Doxygen;
                         if (doxygenToken.Kind == DoxygenTokenKind.Code)
                             styleKind = LanguageKind.DoxygenCode;
-                        _entries.Add(new StyleEntry(styleKind, token, style, doxygenToken.Value));
+
+#if DEBUG
+                        _entries.Add(styleKind, token, style, doxygenToken.Value);
+#else
+                        _entries.Add(styleKind, token, style);
+#endif
                     }
                 }
                 else if (typeof(HtmlToken).Equals(token.GetType()))
@@ -809,7 +775,13 @@ namespace TSP.DoxygenEditor.Editor
                     HtmlToken htmlToken = (HtmlToken)token;
                     int style;
                     if (htmlTokenTypeToStyleDict.TryGetValue(htmlToken.Kind, out style))
-                        _entries.Add(new StyleEntry(LanguageKind.Html, token, style, htmlToken.Value));
+                    {
+#if DEBUG
+                        _entries.Add(LanguageKind.Html, token, style, htmlToken.Value);
+#else
+                        _entries.Add(LanguageKind.Html, token, style);
+#endif
+                    }
                 }
             }
             return _entries.Count;
@@ -904,9 +876,9 @@ namespace TSP.DoxygenEditor.Editor
                 _editor.SetStyling(l, entry.Style);
             }
         }
-        #endregion
+#endregion
 
-        #region IDisposable Support
+#region IDisposable Support
         protected virtual void DisposeManaged()
         {
             _parseState.Dispose();
@@ -931,6 +903,6 @@ namespace TSP.DoxygenEditor.Editor
         {
             Dispose(false);
         }
-        #endregion
+#endregion
     }
 }
