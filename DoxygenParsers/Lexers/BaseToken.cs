@@ -26,7 +26,7 @@ namespace TSP.DoxygenEditor.Lexers
         public BaseToken(TextRange range, bool isComplete)
         {
             Lang = LanguageKind.None;
-            Range = Range;
+            Range = range;
             IsComplete = isComplete;
             Value = null;
         }
