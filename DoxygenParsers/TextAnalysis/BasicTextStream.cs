@@ -6,23 +6,23 @@ namespace TSP.DoxygenEditor.TextAnalysis
     {
         private string _source;
 
-        public BasicTextStream(string source, int length, TextPosition pos) : base(length, pos)
+        public BasicTextStream(string source, int index, int length, TextPosition pos) : base(index, length, pos)
         {
             _source = source;
         }
 
         public override string GetSourceText(int index, int length)
         {
-            if (index < 0 || index + length > StreamLength)
-                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
+            if ((index < StreamBase) || ((index + length) > StreamOnePastEnd))
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {StreamBase} to {StreamOnePastEnd - 1}");
             string result = _source.Substring(index, length);
             return (result);
         }
 
         public override ReadOnlySpan<char> GetSourceSpan(int index, int length)
         {
-            if (index < 0 || index + length > StreamLength)
-                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
+            if ((index < StreamBase) || ((index + length) > StreamOnePastEnd))
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {StreamBase} to {StreamOnePastEnd - 1}");
             return _source.AsSpan(index, length);
         }
 
@@ -36,7 +36,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         {
             if (index < StreamBase)
                 return (false);
-            if (index + (length - 1) >= StreamOnePastEnd)
+            if (index + length > StreamOnePastEnd)
                 return (false);
             if (length == 0)
                 return (false);

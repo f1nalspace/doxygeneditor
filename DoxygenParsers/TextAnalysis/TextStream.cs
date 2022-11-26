@@ -12,6 +12,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public int StreamBase { get; }
         public int StreamLength { get; }
         public int StreamOnePastEnd { get; }
+        public int StreamEnd { get; }
         public int StreamPosition => TextPosition.Index;
 
         public bool IsEOF => TextPosition.Index >= StreamOnePastEnd;
@@ -32,11 +33,12 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
 #endif
 
-        public TextStream(int length, TextPosition pos)
+        public TextStream(int index, int length, TextPosition pos)
         {
-            StreamBase = pos.Index;
+            StreamBase = index;
             StreamLength = length;
             StreamOnePastEnd = StreamBase + StreamLength;
+            StreamEnd = StreamBase + Math.Max(0, StreamLength - 1);
             TextPosition = pos;
             _lexemeStart = new TextPosition(-1);
         }

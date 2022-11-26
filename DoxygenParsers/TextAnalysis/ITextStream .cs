@@ -5,6 +5,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
     public interface ITextStream
     {
         int StreamBase { get; }
+        int StreamEnd { get; }
         int StreamLength { get; }
         int StreamPosition { get; }
         char Peek();

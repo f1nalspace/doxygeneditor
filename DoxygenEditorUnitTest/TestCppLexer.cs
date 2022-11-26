@@ -14,7 +14,7 @@ namespace TSP.DoxygenEditor
         public void ParseFPLHeaderFile()
         {
             string headerFile = TSP.DoxygenEditor.Properties.Resources.final_platform_layer_h;
-            using (CppLexer lexer = new CppLexer(headerFile, headerFile.Length, new TextPosition(), LanguageKind.Cpp))
+            using (CppLexer lexer = new CppLexer(headerFile, 0, headerFile.Length, new TextPosition(), LanguageKind.Cpp))
             {
                 IEnumerable<CppToken> tokens = lexer.Tokenize();
                 Assert.IsNotNull(tokens);
