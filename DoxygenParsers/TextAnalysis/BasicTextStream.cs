@@ -30,8 +30,11 @@ namespace TSP.DoxygenEditor.TextAnalysis
 
         public override bool MatchText(int index, string match)
         {
-            if ((StreamPosition + index + match.Length) < StreamLength)
-                return string.CompareOrdinal(_source, StreamPosition + index, match, 0, match.Length) == 0;
+            if ((StreamPosition + index + match.Length) < StreamOnePastEnd)
+            {
+                int r = string.CompareOrdinal(_source, StreamPosition + index, match, 0, match.Length);
+                return r == 0;
+            }
             return false;
         }
 
