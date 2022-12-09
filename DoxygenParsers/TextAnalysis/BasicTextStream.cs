@@ -4,10 +4,12 @@ namespace TSP.DoxygenEditor.TextAnalysis
 {
     public class BasicTextStream : TextStream
     {
-        private string _source;
+        private readonly string _source;
 
         public BasicTextStream(string source, int index, int length, TextPosition pos) : base(index, length, pos)
         {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
             _source = source;
         }
 
@@ -26,10 +28,22 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return _source.AsSpan(index, length);
         }
 
-        public override int CompareText(int delta, string match, bool ignoreCase = false)
+        public override bool MatchText(int index, string match)
         {
-            int result = string.Compare(_source, StreamPosition + delta, match, 0, match.Length, ignoreCase);
-            return (result);
+            if ((StreamPosition + index + match.Length) < StreamLength)
+                return string.CompareOrdinal(_source, StreamPosition + index, match, 0, match.Length) == 0;
+            return false;
+        }
+
+        public override bool MatchSpan(int index, ReadOnlySpan<char> match)
+        {
+            if ((StreamPosition + index + match.Length) < StreamLength)
+            {
+                var span = _source.AsSpan(index, match.Length);
+                bool result = match.SequenceEqual(span);
+                return result;
+            }
+            return false;
         }
 
         public override bool MatchCharacters(int index, int length, Func<char, bool> predicate)

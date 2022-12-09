@@ -10,7 +10,7 @@ namespace TSP.DoxygenEditor.Languages.Html
     {
         class HtmlLexerState : State
         {
-            public override void StartLex(TextStream stream)
+            public override void StartLex(ITextStream stream)
             {
             }
         }
