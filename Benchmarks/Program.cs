@@ -26,7 +26,7 @@ namespace Benchmarks
             string entryPath = Path.Combine(exportsPath, entryName);
 
             var config = new ManualConfig();
-            config = config.AddJob(Job.Default.WithLaunchCount(1).WithWarmupCount(7).WithIterationCount(20));
+            config = config.AddJob(Job.Default.WithLaunchCount(1).WithWarmupCount(5).WithIterationCount(10));
             config = config.AddLogger(ConsoleLogger.Default);
             config = config.AddDiagnoser(MemoryDiagnoser.Default);
             config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
