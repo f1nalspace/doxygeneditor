@@ -28,7 +28,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return _source.AsSpan(index, length);
         }
 
-        public override bool MatchText(int index, string match)
+        public override bool MatchRelative(int index, string match)
         {
             if ((StreamPosition + index + match.Length) < StreamOnePastEnd)
             {
@@ -38,7 +38,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return false;
         }
 
-        public override bool MatchSpan(int index, ReadOnlySpan<char> match)
+        public override bool MatchRelative(int index, ReadOnlySpan<char> match)
         {
             if ((StreamPosition + index + match.Length) < StreamLength)
             {
@@ -49,7 +49,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return false;
         }
 
-        public override bool MatchCharacters(int index, int length, Func<char, bool> predicate)
+        public override bool MatchAbsolute(int index, int length, Func<char, bool> predicate)
         {
             if (index < StreamBase)
                 return (false);
