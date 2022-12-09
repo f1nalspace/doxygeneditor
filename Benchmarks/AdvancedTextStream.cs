@@ -13,9 +13,9 @@ namespace Benchmarks
 {
     class AdvancedTextStream : TextStream
     {
-        private readonly ReadOnlyMemory<char> _source;
+        private readonly string _source;
 
-        public AdvancedTextStream(ReadOnlyMemory<char> source, TextPosition pos) : base(0, source.Length, pos)
+        public AdvancedTextStream(string source, TextPosition pos) : base(0, source.Length, pos)
         {
             _source = source;
         }
@@ -24,7 +24,7 @@ namespace Benchmarks
         {
             if (index < 0 || index + length > StreamLength)
                 throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
-            ReadOnlySpan<char> span = _source.Span.Slice(index, length);
+            ReadOnlySpan<char> span = _source.AsSpan(index, length);
             return span.ToString();
         }
 
@@ -32,7 +32,7 @@ namespace Benchmarks
         {
             if (index < 0 || index + length > StreamLength)
                 throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
-            return _source.Span.Slice(index, length);
+            return _source.AsSpan(index, length);
         }
 
         public override int CompareText(int delta, string match, bool ignoreCase = false)
@@ -40,7 +40,7 @@ namespace Benchmarks
             if ((StreamPosition + delta + match.Length) < StreamLength)
             {
                 ReadOnlySpan<char> matchSpan = match.AsSpan();
-                ReadOnlySpan<char> sourceSpan = _source.Span.Slice(StreamPosition + delta, match.Length);
+                ReadOnlySpan<char> sourceSpan = _source.AsSpan(StreamPosition + delta, match.Length);
                 int result = MemoryExtensions.SequenceCompareTo(sourceSpan, matchSpan);
                 return result;
             }
@@ -51,7 +51,7 @@ namespace Benchmarks
         {
             if ((StreamPosition + index + length) < StreamLength)
             {
-                ReadOnlySpan<char> span = _source.Span.Slice(index, length);
+                ReadOnlySpan<char> span = _source.AsSpan(index, length);
                 ref char p = ref MemoryMarshal.GetReference(span);
                 for (int i = 0; i < length; ++i)
                 {
@@ -68,7 +68,7 @@ namespace Benchmarks
         {
             if (StreamPosition < StreamLength)
             {
-                ReadOnlySpan<char> span = _source.Span.Slice(StreamPosition);
+                ReadOnlySpan<char> span = _source.AsSpan(StreamPosition, 1);
                 return span[0];
                 //ReadOnlySpan<char> span = _source.Span.Slice(StreamPosition);
                 //ref char p = ref MemoryMarshal.GetReference(span);
@@ -82,12 +82,8 @@ namespace Benchmarks
         {
             if (StreamPosition + delta < StreamLength)
             {
-                ReadOnlySpan<char> span = _source.Span.Slice(StreamPosition);
-                return span[delta];
-                //ReadOnlySpan<char> span = _source.Span.Slice(StreamPosition);
-                //ref char p = ref MemoryMarshal.GetReference(span);
-                //char result = Unsafe.Add(ref p, delta);
-                //return result;
+                ReadOnlySpan<char> span = _source.AsSpan(StreamPosition, 1);
+                return span[0];
             }
             return char.MaxValue;
         }
