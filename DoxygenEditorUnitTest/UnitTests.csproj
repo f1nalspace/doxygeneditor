@@ -4,10 +4,16 @@
 		<Platforms>x64</Platforms>
 		<RootNamespace>TSP.DoxygenEditor</RootNamespace>
 		<AssemblyName>DoxygenEditorUnitTest</AssemblyName>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<OutputPath>..\build\UnitTests\$(Platform)-$(Configuration)\</OutputPath>
 		<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Title>Unit Tests for Doxygen Editor</Title>
+		<Product>DoxygenUnitTests</Product>
+		<Description>Contains unit tests</Description>
+		<Company>TSPSoftware</Company>
+		<Copyright>Copyright (c) 2017-2022 Torsten Spaete</Copyright>
+		<Version>1.0.0.0</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\DoxygenParsers\DoxygenParsers.csproj" />

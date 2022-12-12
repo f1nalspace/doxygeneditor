@@ -4,10 +4,16 @@
 		<Platforms>x64</Platforms>
 		<OutputType>Library</OutputType>
 		<RootNamespace>TSP.DoxygenEditor</RootNamespace>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<OutputPath>..\build\DoxygenParsers\$(Platform)-$(Configuration)\</OutputPath>
 		<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Title>Parsers for Doxygen Editor</Title>
+		<Product>DoxygenParsers</Product>
+		<Description>Contains cpp, html and doxygen lexers and parsers</Description>
+		<Company>TSPSoftware</Company>
+		<Copyright>Copyright (c) 2017-2022 Torsten Spaete</Copyright>
+		<Version>1.0.0.0</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
