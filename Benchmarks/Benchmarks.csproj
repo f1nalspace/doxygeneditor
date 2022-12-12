@@ -1,9 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFramework>net48</TargetFramework>
+	<TargetFramework>net60</TargetFramework>
 	<OutputType>Exe</OutputType>
 	<Platforms>x64</Platforms>
+	<OutputPath>..\build\Benchmarks\$(Platform)-$(Configuration)\</OutputPath>
+	<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

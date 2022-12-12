@@ -1,21 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<Platform>x64</Platform>
-		<Platforms>$(Platform)</Platforms>
-		<PlatformName>$(Platform)</PlatformName>
-		<PlatformTarget>$(Platform)</PlatformTarget>
+		<TargetFramework>net60</TargetFramework>
+		<Platforms>x64</Platforms>
 		<OutputType>Library</OutputType>
 		<RootNamespace>TSP.DoxygenEditor</RootNamespace>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<OutputPath>..\build\DoxygenParsers\$(PlatformName)-$(Configuration)\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>..\build\DoxygenParsers\$(Platform)-$(Configuration)\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-		<PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="Languages\Doxygen\DoxygenEntity.cs" />
