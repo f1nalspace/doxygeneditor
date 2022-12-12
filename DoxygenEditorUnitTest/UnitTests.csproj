@@ -1,15 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<Platform>x64</Platform>
-		<Platforms>$(Platform)</Platforms>
-		<PlatformName>$(Platform)</PlatformName>
-		<PlatformTarget>$(Platform)</PlatformTarget>
+		<TargetFramework>net60-windows</TargetFramework>
+		<Platforms>x64</Platforms>
 		<RootNamespace>TSP.DoxygenEditor</RootNamespace>
 		<AssemblyName>DoxygenEditorUnitTest</AssemblyName>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<OutputPath>..\build\UnitTests\$(PlatformName)-$(Configuration)\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>..\build\UnitTests\$(Platform)-$(Configuration)\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
