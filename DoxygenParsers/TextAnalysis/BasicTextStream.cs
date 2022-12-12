@@ -28,14 +28,17 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return _source.AsSpan(index, length);
         }
 
-        public override bool MatchText(int index, string match)
+        public override bool MatchRelative(int index, string match)
         {
-            if ((StreamPosition + index + match.Length) < StreamLength)
-                return string.CompareOrdinal(_source, StreamPosition + index, match, 0, match.Length) == 0;
+            if ((StreamPosition + index + match.Length) < StreamOnePastEnd)
+            {
+                int r = string.CompareOrdinal(_source, StreamPosition + index, match, 0, match.Length);
+                return r == 0;
+            }
             return false;
         }
 
-        public override bool MatchSpan(int index, ReadOnlySpan<char> match)
+        public override bool MatchRelative(int index, ReadOnlySpan<char> match)
         {
             if ((StreamPosition + index + match.Length) < StreamLength)
             {
@@ -46,7 +49,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return false;
         }
 
-        public override bool MatchCharacters(int index, int length, Func<char, bool> predicate)
+        public override bool MatchAbsolute(int index, int length, Func<char, bool> predicate)
         {
             if (index < StreamBase)
                 return (false);

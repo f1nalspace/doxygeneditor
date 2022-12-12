@@ -152,7 +152,7 @@ namespace Benchmarks
             string comparend = "void";
             while (!stream.IsEOF)
             {
-                bool r = stream.MatchText(0, comparend);
+                bool r = stream.MatchRelative(0, comparend);
                 if (r)
                 {
                     result += 1;
@@ -173,7 +173,7 @@ namespace Benchmarks
             ReadOnlySpan<char> span = comparend.AsSpan();
             while (!stream.IsEOF)
             {
-                bool r = stream.MatchSpan(0, span);
+                bool r = stream.MatchRelative(0, span);
                 if (r)
                 {
                     result += 1;
@@ -192,7 +192,7 @@ namespace Benchmarks
             ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
-                if (stream.MatchCharacters(0, 4, char.IsWhiteSpace))
+                if (stream.MatchAbsolute(stream.StreamPosition, 4, char.IsWhiteSpace))
                 {
                     result += 4 * stream.StreamPosition;
                     stream.AdvanceAuto(4);

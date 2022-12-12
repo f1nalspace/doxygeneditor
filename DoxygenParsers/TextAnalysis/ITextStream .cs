@@ -22,9 +22,9 @@ namespace TSP.DoxygenEditor.TextAnalysis
         string GetSourceText(TextRange range);
         ReadOnlySpan<char> GetSourceSpan(int index, int length);
 
-        bool MatchText(int index, string match);
-        bool MatchSpan(int index, ReadOnlySpan<char> match);
-        bool MatchCharacters(int index, int length, Func<char, bool> predicate);
+        bool MatchRelative(int index, string match);
+        bool MatchRelative(int index, ReadOnlySpan<char> match);
+        bool MatchAbsolute(int index, int length, Func<char, bool> predicate);
 
         void AdvanceColumn();
         void AdvanceColumns(int numChars);
