@@ -157,7 +157,13 @@ namespace TSP.DoxygenEditor.Styles
                     CppToken cppToken = (CppToken)token;
                     int style;
                     if (cppTokenTypeToStyleDict.TryGetValue(cppToken.Kind, out style))
+                    {
+#if DEBUG
                         _entries.Add(new StyleEntry(LanguageKind.Cpp, token, style, token.Value));
+#else
+                        _entries.Add(new StyleEntry(LanguageKind.Cpp, token, style));
+#endif
+                    }
                 }
                 else if (typeof(DoxygenToken).Equals(token.GetType()))
                 {
@@ -168,7 +174,11 @@ namespace TSP.DoxygenEditor.Styles
                         LanguageKind styleKind = LanguageKind.Doxygen;
                         if (doxygenToken.Kind == DoxygenTokenKind.Code)
                             styleKind = LanguageKind.DoxygenCode;
+#if DEBUG
                         _entries.Add(new StyleEntry(styleKind, token, style, doxygenToken.Value));
+#else
+                        _entries.Add(new StyleEntry(styleKind, token, style));
+#endif
                     }
                 }
                 else if (typeof(HtmlToken).Equals(token.GetType()))
@@ -176,7 +186,13 @@ namespace TSP.DoxygenEditor.Styles
                     HtmlToken htmlToken = (HtmlToken)token;
                     int style;
                     if (htmlTokenTypeToStyleDict.TryGetValue(htmlToken.Kind, out style))
+                    {
+#if DEBUG
                         _entries.Add(new StyleEntry(LanguageKind.Html, token, style, htmlToken.Value));
+#else
+                        _entries.Add(new StyleEntry(LanguageKind.Html, token, style));
+#endif
+                    }
                 }
             }
         }
@@ -259,7 +275,7 @@ namespace TSP.DoxygenEditor.Styles
             editor.StartStyling(startPos);
             editor.SetStyling(length, 0);
 
-            StyleEntry rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0, null);
+            StyleEntry rangeEntry = new StyleEntry(LanguageKind.None, startPos, length, 0);
             IEnumerable<StyleEntry> intersectingEntries = _entries.Where(r => r.InterectsWith(rangeEntry));
 
             foreach (StyleEntry entry in intersectingEntries)
