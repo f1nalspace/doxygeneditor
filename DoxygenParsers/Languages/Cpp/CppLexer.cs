@@ -188,7 +188,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         {
 
             public readonly PreprocessorState Preprocessor = new PreprocessorState();
-            public override void StartLex(TextStream stream)
+            public override void StartLex(ITextStream stream)
             {
             }
         }
@@ -226,7 +226,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             }
         }
 
-        public static LexResult LexSingleLineComment(TextStream stream, bool init)
+        public static LexResult LexSingleLineComment(ITextStream stream, bool init)
         {
             CppTokenKind kind = CppTokenKind.SingleLineComment;
             if (init)
@@ -257,7 +257,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return new LexResult(kind, isComplete);
         }
 
-        public static LexResult LexMultiLineComment(TextStream stream, bool init)
+        public static LexResult LexMultiLineComment(ITextStream stream, bool init)
         {
             CppTokenKind kind = CppTokenKind.MultiLineComment;
             if (init)
@@ -665,7 +665,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
             do
             {
-                Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                Buffer.SkipSpaces(RepeatKind.All);
                 Buffer.StartLexeme();
                 char first = Buffer.Peek();
                 char second = Buffer.Peek(1);
@@ -729,7 +729,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     CppToken identToken = CppTokenPool.Make(_lang, identResult.Kind, Buffer.LexemeRange, identResult.IsComplete);
                     PushToken(identToken);
 
-                    Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                    Buffer.SkipSpaces(RepeatKind.All);
                     Buffer.StartLexeme();
 
                     if (identToken.Kind == CppTokenKind.PreprocessorKeyword)
@@ -765,7 +765,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                         if (SyntaxUtils.IsSpacing(Buffer.Peek()) || Buffer.Peek() == '\t')
                                         {
                                             hadSpaces = true;
-                                            Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                                            Buffer.SkipSpaces(RepeatKind.All);
                                         }
 
                                         if (!state.Preprocessor.HasDefine)
@@ -783,7 +783,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                                 bool requireIdent = false;
                                                 while (!Buffer.IsEOF)
                                                 {
-                                                    Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                                                    Buffer.SkipSpaces(RepeatKind.All);
                                                     Buffer.StartLexeme();
 
                                                     char c0 = Buffer.Peek();
@@ -879,7 +879,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                         LexResult definedValueResult = LexIdent(false);
                                         CppToken definedValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineMatch, Buffer.LexemeRange, definedValueResult.IsComplete);
                                         PushToken(definedValueToken);
-                                        Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                                        Buffer.SkipSpaces(RepeatKind.All);
                                         if (Buffer.Peek() != ')')
                                         {
                                             AddError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
@@ -924,7 +924,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                             case "pragma":
                                 {
                                     // @TODO(final): Proper pragma lexing
-                                    Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                                    Buffer.SkipSpaces(RepeatKind.All);
                                     if (Buffer.Peek() == '(')
                                     {
                                         Buffer.AdvanceColumn();

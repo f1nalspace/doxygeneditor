@@ -9,7 +9,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
     {
         class DoxygenState : State
         {
-            public override void StartLex(TextStream stream)
+            public override void StartLex(ITextStream stream)
             {
             }
         }
@@ -43,7 +43,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 Buffer.AdvanceColumn();
             }
             PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.ConfigKey, Buffer.LexemeRange, true));
-            Buffer.SkipSpaces(TextStream.RepeatKind.All);
+            Buffer.SkipSpaces(RepeatKind.All);
 
             char first = Buffer.Peek();
             char second = Buffer.Peek(1);
@@ -66,7 +66,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 return;
             }
             PushToken(DoxygenTokenPool.Make(opKind, Buffer.LexemeRange, true));
-            Buffer.SkipSpaces(TextStream.RepeatKind.All);
+            Buffer.SkipSpaces(RepeatKind.All);
 
             while (!Buffer.IsEOF)
             {
@@ -104,7 +104,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 if (SyntaxUtils.IsSpacing(Buffer.Peek()))
                     allowNext = true;
 
-                Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                Buffer.SkipSpaces(RepeatKind.All);
 
                 if (Buffer.Peek() == '\\')
                 {
@@ -125,7 +125,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 if (!allowNext)
                     break;
 
-                Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                Buffer.SkipSpaces(RepeatKind.All);
             }
         }
 
@@ -141,12 +141,12 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '\v':
                     case '\f':
                     case '\t':
-                        Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                        Buffer.SkipSpaces(RepeatKind.All);
                         break;
 
                     case '\r':
                     case '\n':
-                        Buffer.SkipLineBreaks(TextStream.RepeatKind.Single);
+                        Buffer.SkipLineBreaks(RepeatKind.Single);
                         break;
 
                     case '#':
