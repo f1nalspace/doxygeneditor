@@ -53,9 +53,9 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public abstract char Peek();
         public abstract char Peek(int delta);
 
-        public abstract bool MatchText(int index, string match);
-        public abstract bool MatchSpan(int index, ReadOnlySpan<char> match);
-        public abstract bool MatchCharacters(int index, int length, Func<char, bool> predicate);
+        public abstract bool MatchRelative(int index, string match);
+        public abstract bool MatchRelative(int index, ReadOnlySpan<char> match);
+        public abstract bool MatchAbsolute(int index, int length, Func<char, bool> predicate);
 
         public void AdvanceColumns(int numChars)
         {
