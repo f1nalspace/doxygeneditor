@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using TSP.DoxygenEditor.TextAnalysis;
 using System;
+using System.Collections.Generic;
 
 namespace Benchmarks
 {
@@ -9,6 +10,15 @@ namespace Benchmarks
     {
         public string HeaderSource { get; set; }
 
+        private static readonly ITextStreamFactory BasicFactory = new TextStreamFactory();
+        private static readonly ITextStreamFactory AdvancedFactory = new AdvancedTextStreamFactory();
+
+        public IEnumerable<ITextStreamFactory> Factories => _factories;
+        private readonly List<ITextStreamFactory> _factories = new List<ITextStreamFactory>() { BasicFactory, AdvancedFactory };
+
+        [ParamsSource(nameof(Factories))]
+        public ITextStreamFactory Factory { get; set; }
+
         [GlobalSetup]
         public void GlobalSetup()
         {
@@ -16,10 +26,20 @@ namespace Benchmarks
         }
 
         [Benchmark]
+        public int FullRead()
+        {
+            int result = 0;
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            while (!stream.IsEOF)
+                result += stream.AdvanceAuto();
+            return result;
+        }
+
+        [Benchmark]
         public int LinearPeek()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 char c = stream.Peek();
@@ -33,7 +53,7 @@ namespace Benchmarks
         public int RandomPeek()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -50,7 +70,7 @@ namespace Benchmarks
         public int LinearGetSourceSpan()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 int pos = stream.StreamPosition;
@@ -67,7 +87,7 @@ namespace Benchmarks
         public int LinearGetSourceText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 int pos = stream.StreamPosition;
@@ -84,7 +104,7 @@ namespace Benchmarks
         public int RandomGetSourceSpan()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -106,7 +126,7 @@ namespace Benchmarks
         public int RandomGetSourceText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -125,17 +145,19 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public int CompareText()
+        public int MatchText()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             string comparend = "void";
             while (!stream.IsEOF)
             {
-                int r = stream.CompareText(0, comparend);
-                result += r;
-                if (r == 0)
+                bool r = stream.MatchText(0, comparend);
+                if (r)
+                {
+                    result += 1;
                     stream.AdvanceAuto(comparend.Length);
+                }
                 else
                     stream.AdvanceAuto(1);
             }
@@ -143,10 +165,31 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public int MatchCharactersText()
+        public int MatchSpan()
         {
             int result = 0;
-            BasicTextStream stream = new BasicTextStream(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
+            string comparend = "void";
+            ReadOnlySpan<char> span = comparend.AsSpan();
+            while (!stream.IsEOF)
+            {
+                bool r = stream.MatchSpan(0, span);
+                if (r)
+                {
+                    result += 1;
+                    stream.AdvanceAuto(comparend.Length);
+                }
+                else
+                    stream.AdvanceAuto(1);
+            }
+            return result;
+        }
+
+        [Benchmark]
+        public int MatchCharacters()
+        {
+            int result = 0;
+            ITextStream stream = Factory.Create(HeaderSource, 0, HeaderSource.Length, new TextPosition());
             while (!stream.IsEOF)
             {
                 if (stream.MatchCharacters(0, 4, char.IsWhiteSpace))
@@ -160,12 +203,22 @@ namespace Benchmarks
             return result;
         }
 
+#if false
+        [Benchmark]
+        public int AdvancedFullRead()
+        {
+            int result = 0;
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
+            while (!stream.IsEOF)
+                result += stream.AdvanceAuto();
+            return result;
+        }
+
         [Benchmark]
         public int AdvancedLinearPeek()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             while (!stream.IsEOF)
             {
                 char c = stream.Peek();
@@ -179,8 +232,7 @@ namespace Benchmarks
         public int AdvancedRandomPeek()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -197,8 +249,7 @@ namespace Benchmarks
         public int AdvancedLinearGetSourceSpan()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             while (!stream.IsEOF)
             {
                 int pos = stream.StreamPosition;
@@ -215,8 +266,7 @@ namespace Benchmarks
         public int AdvancedLinearGetSourceText()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             while (!stream.IsEOF)
             {
                 int pos = stream.StreamPosition;
@@ -233,8 +283,7 @@ namespace Benchmarks
         public int AdvancedRandomGetSourceSpan()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -256,8 +305,7 @@ namespace Benchmarks
         public int AdvancedRandomGetSourceText()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             Random rnd = new Random(42);
             while (!stream.IsEOF)
             {
@@ -276,18 +324,19 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public int AdvancedCompareText()
+        public int AdvancedMatchText()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             string comparend = "void";
             while (!stream.IsEOF)
             {
-                int r = stream.CompareText(0, comparend);
-                result += r;
-                if (r == 0)
+                bool r = stream.MatchText(0, comparend);
+                if (r)
+                {
+                    result += 1;
                     stream.AdvanceAuto(comparend.Length);
+                }
                 else
                     stream.AdvanceAuto(1);
             }
@@ -295,11 +344,31 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public int AdvancedMatchCharactersText()
+        public int AdvancedMatchSpan()
         {
             int result = 0;
-            ReadOnlyMemory<char> memory = MemoryExtensions.AsMemory(HeaderSource);
-            AdvancedTextStream stream = new AdvancedTextStream(memory, new TextPosition());
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
+            string comparend = "void";
+            ReadOnlySpan<char> span = comparend.AsSpan();
+            while (!stream.IsEOF)
+            {
+                bool r = stream.MatchSpan(0, span);
+                if (r)
+                {
+                    result += 1;
+                    stream.AdvanceAuto(comparend.Length);
+                }
+                else
+                    stream.AdvanceAuto(1);
+            }
+            return result;
+        }
+
+        [Benchmark]
+        public int AdvancedMatchCharacters()
+        {
+            int result = 0;
+            AdvancedTextStream stream = new AdvancedTextStream(HeaderSource, new TextPosition());
             while (!stream.IsEOF)
             {
                 if (stream.MatchCharacters(0, 4, char.IsWhiteSpace))
@@ -311,5 +380,6 @@ namespace Benchmarks
             }
             return result;
         }
+#endif
     }
 }

@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                 CurrentLineStartIndex = -1;
             }
 
-            public override void StartLex(TextStream stream)
+            public override void StartLex(ITextStream stream)
             {
                 Flags = StateFlags.None;
                 CurrentLineStartIndex = stream.StreamPosition;
@@ -163,7 +163,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     if (!arg.Flags.HasFlag(DoxygenSyntax.ArgumentFlags.DirectlyAfterCommand))
                     {
                         if (SyntaxUtils.IsSpacing(first) || first == '\t')
-                            Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                            Buffer.SkipSpaces(RepeatKind.All);
                         else
                         {
                             // No more arguments are following
@@ -181,7 +181,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     {
                         if (!string.IsNullOrEmpty(prefix))
                         {
-                            if (Buffer.CompareText(0, prefix) == 0)
+                            if (Buffer.MatchText(0, prefix))
                             {
                                 Buffer.AdvanceColumns(prefix.Length);
                                 hadPrefix = true;
@@ -201,7 +201,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                     bool foundPrefixToPostfix = false;
                                     while (!Buffer.IsEOF)
                                     {
-                                        if (Buffer.CompareText(0, postfix) == 0)
+                                        if (Buffer.MatchText(0, postfix))
                                         {
                                             Buffer.AdvanceColumns(postfix.Length);
                                             foundPrefixToPostfix = true;
@@ -569,7 +569,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     // Postfix
                     if (!noMoreArgs && (hadPrefix && !string.IsNullOrWhiteSpace(postfix) && arg.Kind != DoxygenSyntax.ArgumentKind.PrefixToPostfix))
                     {
-                        if (Buffer.CompareText(0, postfix) == 0)
+                        if (Buffer.MatchText(0, postfix))
                         {
                             Buffer.AdvanceColumns(prefix.Length);
                         }
@@ -675,7 +675,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     case '\v':
                     case '\f':
                     case '\t':
-                        Buffer.SkipSpaces(TextStream.RepeatKind.All);
+                        Buffer.SkipSpaces(RepeatKind.All);
                         break;
 
                     case '\r':
@@ -693,7 +693,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             bool wasEmptyLine = Buffer.MatchCharacters(state.CurrentLineStartIndex, len, char.IsWhiteSpace) || (len == 0);
 
                             Buffer.StartLexeme();
-                            Buffer.SkipLineBreaks(TextStream.RepeatKind.Single);
+                            Buffer.SkipLineBreaks(RepeatKind.Single);
                             state.CurrentLineStartIndex = Buffer.StreamPosition;
                             PushToken(DoxygenTokenPool.Make(wasEmptyLine ? DoxygenTokenKind.EmptyLine : DoxygenTokenKind.EndOfLine, Buffer.LexemeRange, true));
                         }

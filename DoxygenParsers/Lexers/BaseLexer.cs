@@ -9,7 +9,7 @@ namespace TSP.DoxygenEditor.Lexers
 {
     public abstract class BaseLexer<T> : IDisposable where T : IBaseToken
     {
-        internal readonly TextStream Buffer;
+        internal readonly ITextStream Buffer;
         private readonly List<T> _tokens = new List<T>();
         private readonly List<TextError> _lexErrors = new List<TextError>();
         protected IEnumerable<T> Tokens => _tokens;
@@ -24,13 +24,13 @@ namespace TSP.DoxygenEditor.Lexers
 
         public abstract class State
         {
-            public abstract void StartLex(TextStream stream);
+            public abstract void StartLex(ITextStream stream);
         }
         protected abstract State CreateState();
 
         public BaseLexer(string source, int index, int length, TextPosition pos)
         {
-            Buffer = new BasicTextStream(source, index, length, pos);
+            Buffer = TextStreamFactory.Create(source, index, length, pos);
         }
 
         protected void AddError(TextPosition pos, string message, string what, string symbol = null)

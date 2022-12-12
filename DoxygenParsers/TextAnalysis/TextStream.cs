@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using TSP.DoxygenEditor.Languages.Utils;
+using static TSP.DoxygenEditor.TextAnalysis.ITextStream;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
@@ -44,16 +45,16 @@ namespace TSP.DoxygenEditor.TextAnalysis
         }
 
         public abstract string GetSourceText(int index, int length);
-        public string GetSourceText(TextRange range)
-            => GetSourceText(range.Index, range.Length);
+        public virtual string GetSourceText(TextRange range) => GetSourceText(range.Index, range.Length);
 
         public abstract ReadOnlySpan<char> GetSourceSpan(int index, int length);
-        public ReadOnlySpan<char> GetSourceSpan(TextRange range)
-            => GetSourceSpan(range.Index, range.Length);
+        public virtual ReadOnlySpan<char> GetSourceSpan(TextRange range) => GetSourceSpan(range.Index, range.Length);
 
         public abstract char Peek();
         public abstract char Peek(int delta);
-        public abstract int CompareText(int delta, string match, bool ignoreCase = false);
+
+        public abstract bool MatchText(int index, string match);
+        public abstract bool MatchSpan(int index, ReadOnlySpan<char> match);
         public abstract bool MatchCharacters(int index, int length, Func<char, bool> predicate);
 
         public void AdvanceColumns(int numChars)
@@ -71,12 +72,9 @@ namespace TSP.DoxygenEditor.TextAnalysis
             TextPosition = p;
         }
 
-        public void AdvanceColumn()
-        {
-            AdvanceColumns(1);
-        }
+        public void AdvanceColumn() => AdvanceColumns(1);
 
-        public void AdvanceColumnsWhile(Func<char, bool> func, int maxCols = -1)
+        public virtual void AdvanceColumnsWhile(Func<char, bool> func, int maxCols = -1)
         {
             int colCount = 0;
             while (!IsEOF)
@@ -105,7 +103,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
             TextPosition = p;
         }
 
-        public void AdvanceLineAuto()
+        public virtual void AdvanceLineAuto()
         {
             char c0 = Peek();
             char c1 = Peek(1);
@@ -126,7 +124,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                 AdvanceColumn();
         }
 
-        public int AdvanceAuto(int numChars = 1)
+        public virtual int AdvanceAuto(int numChars = 1)
         {
             Debug.Assert(numChars >= 1);
             TextPosition p = TextPosition;
@@ -158,12 +156,6 @@ namespace TSP.DoxygenEditor.TextAnalysis
             }
             TextPosition = p;
             return (result);
-        }
-
-        public enum RepeatKind
-        {
-            Single,
-            All
         }
 
         public void SkipWhitespaces()
