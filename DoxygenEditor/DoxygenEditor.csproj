@@ -12,6 +12,10 @@
 		<OutputPath>..\build\DoxygenEditor\$(Platform)-$(Configuration)\</OutputPath>
 		<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<PublishSingleFile>false</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<PublishReadyToRun>true</PublishReadyToRun>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Title>Doxygen Editor</Title>
 		<Product>Doxygen Editor</Product>
