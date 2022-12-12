@@ -23,5 +23,13 @@
         TextStart,
         TextEnd,
         Text,
+        Code,
+
+        ConfigComment,
+        ConfigKey,
+        ConfigOpAssign,
+        ConfigOpAddAssign,
+        ConfigOpAddLine,
+        ConfigValue,
     }
 }

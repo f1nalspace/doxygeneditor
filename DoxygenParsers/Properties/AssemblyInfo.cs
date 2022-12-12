@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Parsers for Doxygen Editor")]
 [assembly: AssemblyDescription("Contains cpp, html and doxygen lexers and parsers")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("TSPSoftware")]
 [assembly: AssemblyProduct("DoxygenParsers")]
-[assembly: AssemblyCopyright("Copyright © 2019 Torsten Spaete")]
+[assembly: AssemblyCopyright("Copyright (c) 2017-2021 Torsten Spaete")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.8.1.0")]
-[assembly: AssemblyFileVersion("0.8.1.0")]
+[assembly: AssemblyVersion("0.9.2.0")]
+[assembly: AssemblyFileVersion("0.9.2.0")]

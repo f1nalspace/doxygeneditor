@@ -5,10 +5,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
     public enum CppTokenKind
     {
         // Unknown token
-        Unknown = -1,
+        Unknown = 0,
 
         // End of stream/file
-        Eof = 0,
+        Eof,
         // Spacings (Tabs, Empty space, Vertical space, etc.)
         Spacings,
         // End of line
@@ -22,14 +22,20 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         PreprocessorStart,
         PreprocessorOperator,
         PreprocessorKeyword,
+        PreprocessorFunctionSource,
         PreprocessorDefineSource,
-        PreprocessorDefineTarget,
+        PreprocessorDefineUsage,
+        PreprocessorDefineMatch,
+        PreprocessorDefineArgument,
         PreprocessorInclude,
         PreprocessorEnd,
 
         IdentLiteral,
         ReservedKeyword,
-        TypeKeyword,
+        GlobalTypeKeyword,
+        FunctionIdent,
+        UserTypeIdent,
+        MemberIdent,
 
         StringLiteral,
         CharLiteral,
@@ -137,5 +143,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         Comma,
         [TokenKind(Text = ":")]
         Colon,
+
+        COUNT,
     }
 }

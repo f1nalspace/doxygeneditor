@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using TSP.DoxygenEditor.Languages.Utils;
+using static TSP.DoxygenEditor.TextAnalysis.ITextStream;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
@@ -12,6 +13,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public int StreamBase { get; }
         public int StreamLength { get; }
         public int StreamOnePastEnd { get; }
+        public int StreamEnd { get; }
         public int StreamPosition => TextPosition.Index;
 
         public bool IsEOF => TextPosition.Index >= StreamOnePastEnd;
@@ -20,6 +22,8 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public TextRange LexemeRange => new TextRange(LexemeStart, LexemeWidth);
         public TextPosition TextPosition { get; set; }
         public int ColumnsPerTab { get; } = 4;
+
+#if DEBUG
         public string Remaining
         {
             get
@@ -28,42 +32,49 @@ namespace TSP.DoxygenEditor.TextAnalysis
                 return GetSourceText(StreamPosition, l);
             }
         }
+#endif
 
-        public TextStream(TextPosition pos, int length)
+        public TextStream(int index, int length, TextPosition pos)
         {
-            StreamBase = pos.Index;
+            StreamBase = index;
             StreamLength = length;
             StreamOnePastEnd = StreamBase + StreamLength;
+            StreamEnd = StreamBase + Math.Max(0, StreamLength - 1);
             TextPosition = pos;
             _lexemeStart = new TextPosition(-1);
         }
 
         public abstract string GetSourceText(int index, int length);
+        public virtual string GetSourceText(TextRange range) => GetSourceText(range.Index, range.Length);
+
+        public abstract ReadOnlySpan<char> GetSourceSpan(int index, int length);
+        public virtual ReadOnlySpan<char> GetSourceSpan(TextRange range) => GetSourceSpan(range.Index, range.Length);
+
         public abstract char Peek();
         public abstract char Peek(int delta);
-        public abstract int CompareText(int delta, string match, bool ignoreCase = false);
+
+        public abstract bool MatchText(int index, string match);
+        public abstract bool MatchSpan(int index, ReadOnlySpan<char> match);
         public abstract bool MatchCharacters(int index, int length, Func<char, bool> predicate);
-        public abstract void Dispose();
 
         public void AdvanceColumns(int numChars)
         {
             TextPosition p = TextPosition;
+#if DEBUG
             for (int i = 0; i < numChars; ++i)
             {
                 char c = Peek(i);
-                Debug.Assert(c != '\t' && c != '\n' && c != '\r');
+                Debug.Assert(c != '\t' && !SyntaxUtils.IsLineBreak(c));
             }
+#endif
             p.Column += numChars;
             p.Index += numChars;
             TextPosition = p;
         }
 
-        public void AdvanceColumn()
-        {
-            AdvanceColumns(1);
-        }
+        public void AdvanceColumn() => AdvanceColumns(1);
 
-        public void AdvanceColumnsWhile(Func<char, bool> func, int maxCols = -1)
+        public virtual void AdvanceColumnsWhile(Func<char, bool> func, int maxCols = -1)
         {
             int colCount = 0;
             while (!IsEOF)
@@ -92,22 +103,29 @@ namespace TSP.DoxygenEditor.TextAnalysis
             TextPosition = p;
         }
 
+        public virtual void AdvanceLineAuto()
+        {
+            char c0 = Peek();
+            char c1 = Peek(1);
+            int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
+            AdvanceLine(lb);
+        }
+
         public void AdvanceManual(char first, char second)
         {
             if (first == '\t')
                 AdvanceTab();
             else if (SyntaxUtils.IsLineBreak(first))
             {
-                int nb = SyntaxUtils.GetLineBreakChars(first, second);
-                AdvanceLine(nb);
+                int lb = SyntaxUtils.GetLineBreakChars(first, second);
+                AdvanceLine(lb);
             }
             else
                 AdvanceColumn();
         }
 
-        public int AdvanceAuto(int numChars = 1)
+        public virtual int AdvanceAuto(int numChars = 1)
         {
-            // @NOTE(final): This is super slow, so only use it when needed
             Debug.Assert(numChars >= 1);
             TextPosition p = TextPosition;
             int result = 0;
@@ -119,7 +137,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                 {
                     int lb = SyntaxUtils.GetLineBreakChars(c0, c1);
                     p.Line++;
-                    p.Column = 1;
+                    p.Column = 0;
                     p.Index += lb;
                     result += lb;
                 }
@@ -140,35 +158,25 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return (result);
         }
 
-        public enum SkipType
-        {
-            Single,
-            All
-        }
-
-        public void SkipAllWhitespaces()
+        public void SkipWhitespaces()
         {
             do
             {
-                char c0 = Peek();
-                char c1 = Peek(1);
-                if (c0 == InvalidCharacter)
+                char c = Peek();
+                if (c == InvalidCharacter)
                     break;
-                else if (c0 == '\t')
+                else if (c == '\t')
                     AdvanceTab();
-                else if (SyntaxUtils.IsLineBreak(c0))
-                {
-                    int nb = SyntaxUtils.GetLineBreakChars(c0, c1);
-                    AdvanceLine(nb);
-                }
-                else if (char.IsWhiteSpace(c0))
+                else if (SyntaxUtils.IsLineBreak(c))
+                    AdvanceLineAuto();
+                else if (char.IsWhiteSpace(c))
                     AdvanceColumn();
                 else
                     break;
             } while (!IsEOF);
         }
 
-        public void SkipSpacings(SkipType type)
+        public void SkipSpaces(RepeatKind repeat)
         {
             do
             {
@@ -181,10 +189,10 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     AdvanceColumn();
                 else
                     break;
-            } while (!IsEOF && type == SkipType.All);
+            } while (!IsEOF && repeat == RepeatKind.All);
         }
 
-        public void SkipLineBreaks(SkipType type)
+        public void SkipLineBreaks(RepeatKind repeat)
         {
             do
             {
@@ -198,7 +206,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     AdvanceLine(lb);
                 }
                 else break;
-            } while (!IsEOF && type == SkipType.All);
+            } while (!IsEOF && repeat == RepeatKind.All);
         }
 
         public void SkipUntil(char c)
@@ -221,5 +229,28 @@ namespace TSP.DoxygenEditor.TextAnalysis
             _lexemeStart = TextPosition;
         }
 
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
+        {
+        }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~TextStream()
+        {
+            Dispose(false);
+        }
+        #endregion
     }
 }

@@ -5,7 +5,7 @@
         public int Index { get; set; }
         public int Line { get; set; }
         public int Column { get; set; }
-        public string LineInfo { get { return $"Line: {Line}, Col: {Column}"; } }
+        public string LineInfo { get { return $"Line: {Line + 1}, Col: {Column + 1}"; } }
 
         public TextPosition(int index, int line, int column)
         {

@@ -10,7 +10,7 @@ namespace TSP.DoxygenEditor.Languages.Html
     {
         class HtmlLexerState : State
         {
-            public override void StartLex(TextStream stream)
+            public override void StartLex(ITextStream stream)
             {
             }
         }
@@ -20,7 +20,7 @@ namespace TSP.DoxygenEditor.Languages.Html
             return new HtmlLexerState();
         }
 
-        public HtmlLexer(string source, TextPosition pos, int length) : base(source, pos, length)
+        public HtmlLexer(string source, int index, int length, TextPosition pos) : base(source, index, length, pos)
         {
         }
 
@@ -59,7 +59,7 @@ namespace TSP.DoxygenEditor.Languages.Html
             {
                 while (!Buffer.IsEOF)
                 {
-                    Buffer.SkipAllWhitespaces();
+                    Buffer.SkipWhitespaces();
                     char c = Buffer.Peek();
                     if (!SyntaxUtils.IsIdentStart(c))
                         break;
@@ -74,13 +74,13 @@ namespace TSP.DoxygenEditor.Languages.Html
                                 break;
                         }
                         PushToken(HtmlTokenPool.Make(HtmlTokenKind.AttrName, Buffer.LexemeRange, true));
-                        Buffer.SkipAllWhitespaces(); // Allow whitespaces before =
+                        Buffer.SkipWhitespaces(); // Allow whitespaces before =
                         if (Buffer.Peek() == '=')
                         {
                             Buffer.StartLexeme();
                             Buffer.AdvanceColumn();
                             PushToken(HtmlTokenPool.Make(HtmlTokenKind.AttrChars, Buffer.LexemeRange, true));
-                            Buffer.SkipAllWhitespaces(); // Allow whitespaces after =
+                            Buffer.SkipWhitespaces(); // Allow whitespaces after =
                             if (Buffer.Peek() == '"' || Buffer.Peek() == '\'')
                             {
                                 char quote = Buffer.Peek();
@@ -89,10 +89,14 @@ namespace TSP.DoxygenEditor.Languages.Html
                                 while (!Buffer.IsEOF)
                                 {
                                     char attrC = Buffer.Peek();
-                                    if (attrC != quote && attrC != '\n')
-                                        Buffer.AdvanceColumn();
-                                    else
+                                    if (attrC == quote)
                                         break;
+                                    else if (SyntaxUtils.IsLineBreak(attrC))
+                                        Buffer.AdvanceLineAuto();
+                                    else if (attrC == '\t')
+                                        Buffer.AdvanceTab();
+                                    else
+                                        Buffer.AdvanceColumn();
                                 }
                                 if (Buffer.Peek() == quote)
                                     Buffer.AdvanceColumn();
@@ -105,12 +109,12 @@ namespace TSP.DoxygenEditor.Languages.Html
                 }
             }
 
-            Buffer.SkipAllWhitespaces(); // Allow whitespaces before /
+            Buffer.SkipWhitespaces(); // Allow whitespaces before /
             if (Buffer.Peek() == '/')
             {
                 startTagToken.ChangeKind(HtmlTokenKind.MetaTagStartAndClose);
                 Buffer.AdvanceColumn();
-                Buffer.SkipAllWhitespaces(); // Allow whitespaces after /
+                Buffer.SkipWhitespaces(); // Allow whitespaces after /
             }
 
             Buffer.SkipUntil('>');
@@ -130,7 +134,7 @@ namespace TSP.DoxygenEditor.Languages.Html
         {
             do
             {
-                Buffer.SkipAllWhitespaces();
+                Buffer.SkipWhitespaces();
                 switch (Buffer.Peek())
                 {
                     case TextStream.InvalidCharacter:

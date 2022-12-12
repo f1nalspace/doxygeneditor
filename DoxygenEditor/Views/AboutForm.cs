@@ -17,6 +17,11 @@ namespace TSP.DoxygenEditor.Views
             string appVersion = versionInfo.FileVersion;
             string appCopyright = versionInfo.LegalCopyright;
             string appDescription = versionInfo.Comments;
+#if DEBUG
+            appVersion += " (Debug-Build)";
+#else
+            appVersion += " (Release-Build)";
+#endif
             labelAppName.Text = appName;
             labelAppVersion.Text = $"Version {appVersion}";
             labelDescription.Text = appDescription;

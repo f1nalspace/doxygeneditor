@@ -1,23 +1,19 @@
-﻿using TSP.DoxygenEditor.Lexers;
+﻿using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.Parsers;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Symbols
 {
-    public class ReferenceSymbol
+    public class ReferenceSymbol : BaseSymbol
     {
-        public ReferenceSymbolKind Kind { get; }
-        public TextRange Range { get; }
-        public IBaseNode Node { get; }
-        public ReferenceSymbol(ReferenceSymbolKind kind, TextRange range, IBaseNode node)
+        public ReferenceSymbolKind Kind { get; internal set; }
+        public ReferenceSymbol(LanguageKind lang, ReferenceSymbolKind kind, string name, TextRange range, IBaseNode node) : base(lang, name, range, node)
         {
             Kind = kind;
-            Range = range;
-            Node = node;
         }
         public override string ToString()
         {
-            return $"{Range} as {Kind} => {Node}";
+            return $"{Kind} => {base.ToString()}";
         }
     }
 }

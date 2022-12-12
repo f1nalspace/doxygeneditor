@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Lexers;
+using TSP.DoxygenEditor.Symbols;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Parsers
@@ -17,6 +18,8 @@ namespace TSP.DoxygenEditor.Parsers
         public IBaseNode Root { get; }
         public int TotalNodeCount { get; private set; }
 
+        public SymbolTable LocalSymbolTable { get; }
+
         class RootNode : BaseNode<TEntity>
         {
             public RootNode() : base(null, null)
@@ -24,14 +27,12 @@ namespace TSP.DoxygenEditor.Parsers
             }
         }
 
-        public object Tag { get; }
-
         protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
 
-        public BaseParser(object tag)
+        public BaseParser(ISymbolTableId id)
         {
-            Tag = tag;
             Root = new RootNode();
+            LocalSymbolTable = new SymbolTable(id);
         }
         protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {
@@ -62,7 +63,7 @@ namespace TSP.DoxygenEditor.Parsers
         protected SearchResult<TToken> Search(LinkedListNode<IBaseToken> inNode, SearchMode mode, Func<TToken, bool> matchFunc)
         {
             bool canTravel = (mode == SearchMode.Forward || mode == SearchMode.Backward);
-            var n = inNode;
+            LinkedListNode<IBaseToken> n = inNode;
             do
             {
                 if (n == null)
@@ -101,11 +102,18 @@ namespace TSP.DoxygenEditor.Parsers
             return (null);
         }
 
-        public abstract bool ParseToken(LinkedListStream<IBaseToken> stream);
-
-        public void ParseTokens(IEnumerable<IBaseToken> tokens)
+        public enum ParseTokenResult
         {
-            LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(tokens);
+            ReadNext,
+            AlreadyAdvanced,
+        }
+
+        protected abstract ParseTokenResult ParseToken(string source, LinkedListStream<IBaseToken> stream);
+
+        public void ParseTokens(string source, IEnumerable<IBaseToken> tokens)
+        {
+            IEnumerable<IBaseToken> filteredTokens = FilterTokens(tokens);
+            LinkedListStream<IBaseToken> tokenStream = new LinkedListStream<IBaseToken>(filteredTokens);
             while (!tokenStream.IsEOF)
             {
                 IBaseToken old = tokenStream.CurrentValue;
@@ -114,11 +122,17 @@ namespace TSP.DoxygenEditor.Parsers
                     tokenStream.Next();
                     continue;
                 }
-                if (!ParseToken(tokenStream))
+                ParseTokenResult tokResult = ParseToken(source, tokenStream);
+                if (tokResult == ParseTokenResult.ReadNext)
                     tokenStream.Next();
-                Debug.Assert(old != tokenStream.CurrentValue);
+                else
+                    Debug.Assert(old != tokenStream.CurrentValue);
             }
+            Finished(filteredTokens);
         }
+
+        public virtual IEnumerable<IBaseToken> FilterTokens(IEnumerable<IBaseToken> tokens) { return tokens; }
+        public virtual void Finished(IEnumerable<IBaseToken> tokens) { }
 
         protected void Add(IBaseNode node)
         {
@@ -141,8 +155,28 @@ namespace TSP.DoxygenEditor.Parsers
             return (result);
         }
 
-        public virtual void Dispose()
+        #region IDisposable Support
+        protected virtual void DisposeManaged()
         {
         }
+        protected virtual void DisposeUnmanaged()
+        {
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                DisposeManaged();
+            DisposeUnmanaged();
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        ~BaseParser()
+        {
+            Dispose(false);
+        }
+        #endregion
     }
 }

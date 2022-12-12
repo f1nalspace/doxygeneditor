@@ -1,112 +1,29 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TSP.DoxygenEditor</RootNamespace>
-    <AssemblyName>DoxygenParsers</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\build\x64-Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\build\x64-Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Collections\LinkedListStream.cs" />
-    <Compile Include="Languages\Cpp\CppEntity.cs" />
-    <Compile Include="Languages\Cpp\CppEntityKind.cs" />
-    <Compile Include="Languages\Cpp\CppLexer.cs" />
-    <Compile Include="Languages\Cpp\CppNode.cs" />
-    <Compile Include="Languages\Cpp\CppSyntax.cs" />
-    <Compile Include="Languages\Cpp\CppToken.cs" />
-    <Compile Include="Languages\Cpp\CppTokenKind.cs" />
-    <Compile Include="Languages\Cpp\CppTokenPool.cs" />
-    <Compile Include="Languages\Cpp\CppParser.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenEntity.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenEntityKind.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenLexer.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenNode.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenSyntax.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenToken.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenTokenKind.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenTokenPool.cs" />
-    <Compile Include="Languages\Doxygen\DoxygenParser.cs" />
-    <Compile Include="Languages\Utils\SyntaxUtils.cs" />
-    <Compile Include="Languages\Html\HtmlLexer.cs" />
-    <Compile Include="Languages\Html\HtmlToken.cs" />
-    <Compile Include="Languages\Html\HtmlTokenKind.cs" />
-    <Compile Include="Languages\Html\HtmlTokenPool.cs" />
-    <Compile Include="Lexers\BaseLexer.cs" />
-    <Compile Include="Lexers\BaseToken.cs" />
-    <Compile Include="Lexers\IBaseToken.cs" />
-    <Compile Include="Symbols\ReferenceSymbolKind.cs" />
-    <Compile Include="Symbols\SourceSymbolKind.cs" />
-    <Compile Include="Lexers\TokenKindAttribute.cs" />
-    <Compile Include="Parsers\BaseEntity.cs" />
-    <Compile Include="Parsers\BaseNode.cs" />
-    <Compile Include="Parsers\BaseParser.cs" />
-    <Compile Include="Symbols\ReferenceSymbol.cs" />
-    <Compile Include="Symbols\SourceSymbol.cs" />
-    <Compile Include="Parsers\IBaseProperty.cs" />
-    <Compile Include="Parsers\IBaseNode.cs" />
-    <Compile Include="Parsers\IEntityBaseNode.cs" />
-    <Compile Include="Symbols\SymbolCache.cs" />
-    <Compile Include="Pools\ObjectPool.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TextAnalysis\BasicTextStream.cs" />
-    <Compile Include="TextAnalysis\ITextStream .cs" />
-    <Compile Include="TextAnalysis\TextError.cs" />
-    <Compile Include="TextAnalysis\TextPosition.cs" />
-    <Compile Include="TextAnalysis\TextRange.cs" />
-    <Compile Include="TextAnalysis\TextStream.cs" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<Platform>x64</Platform>
+		<Platforms>$(Platform)</Platforms>
+		<PlatformName>$(Platform)</PlatformName>
+		<PlatformTarget>$(Platform)</PlatformTarget>
+		<OutputType>Library</OutputType>
+		<RootNamespace>TSP.DoxygenEditor</RootNamespace>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<OutputPath>..\build\DoxygenParsers\$(PlatformName)-$(Configuration)\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Languages\Doxygen\DoxygenEntity.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenEntityKind.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenLexer.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenNode.cs" />
+		<Compile Remove="Languages\Doxygen\DoxygenParser.cs" />
+		<Compile Remove="Multithreading\SourceIncludesLoader.cs" />
+		<Compile Remove="Parsers\RefrenceSymbol.cs" />
+	</ItemGroup>
 </Project>

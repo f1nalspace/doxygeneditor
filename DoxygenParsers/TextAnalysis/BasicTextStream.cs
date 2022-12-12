@@ -4,30 +4,53 @@ namespace TSP.DoxygenEditor.TextAnalysis
 {
     public class BasicTextStream : TextStream
     {
-        private String _source;
+        private readonly string _source;
 
-        public BasicTextStream(string source, TextPosition pos, int length) : base(pos, length)
+        public BasicTextStream(string source, int index, int length, TextPosition pos) : base(index, length, pos)
         {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
             _source = source;
         }
 
         public override string GetSourceText(int index, int length)
         {
+            if ((index < StreamBase) || ((index + length) > StreamOnePastEnd))
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {StreamBase} to {StreamOnePastEnd - 1}");
             string result = _source.Substring(index, length);
             return (result);
         }
 
-        public override int CompareText(int delta, string match, bool ignoreCase = false)
+        public override ReadOnlySpan<char> GetSourceSpan(int index, int length)
         {
-            int result = string.Compare(_source, StreamPosition + delta, match, 0, match.Length, ignoreCase);
-            return (result);
+            if ((index < StreamBase) || ((index + length) > StreamOnePastEnd))
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {StreamBase} to {StreamOnePastEnd - 1}");
+            return _source.AsSpan(index, length);
+        }
+
+        public override bool MatchText(int index, string match)
+        {
+            if ((StreamPosition + index + match.Length) < StreamLength)
+                return string.CompareOrdinal(_source, StreamPosition + index, match, 0, match.Length) == 0;
+            return false;
+        }
+
+        public override bool MatchSpan(int index, ReadOnlySpan<char> match)
+        {
+            if ((StreamPosition + index + match.Length) < StreamLength)
+            {
+                var span = _source.AsSpan(index, match.Length);
+                bool result = match.SequenceEqual(span);
+                return result;
+            }
+            return false;
         }
 
         public override bool MatchCharacters(int index, int length, Func<char, bool> predicate)
         {
             if (index < StreamBase)
                 return (false);
-            if (index + (length - 1) >= StreamOnePastEnd)
+            if (index + length > StreamOnePastEnd)
                 return (false);
             if (length == 0)
                 return (false);
@@ -37,10 +60,6 @@ namespace TSP.DoxygenEditor.TextAnalysis
                     return (false);
             }
             return (true);
-        }
-
-        public override void Dispose()
-        {
         }
 
         public override char Peek()

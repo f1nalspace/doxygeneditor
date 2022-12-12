@@ -20,7 +20,7 @@ namespace TSP.DoxygenEditor.Languages.Html
         }
         public void Set(HtmlTokenKind kind, TextRange range, bool isComplete)
         {
-            Set(range, isComplete);
+            Set(LanguageKind.Html, range, isComplete);
             Kind = kind;
         }
         public void ChangeKind(HtmlTokenKind kind)

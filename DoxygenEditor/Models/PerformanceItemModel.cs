@@ -6,14 +6,16 @@ namespace TSP.DoxygenEditor.Models
     public class PerformanceItemModel : IComparer
     {
         public object Tag { get; }
+        public string Name { get; }
         public int SortIndex { get; }
         public string Input { get; }
         public string Output { get; }
         public string What { get; }
         public TimeSpan Duration { get; }
-        public PerformanceItemModel(object tag, int sortIndex, string input, string output, string what, TimeSpan duration)
+        public PerformanceItemModel(object tag, string name, int sortIndex, string input, string output, string what, TimeSpan duration)
         {
             Tag = tag;
+            Name = name;
             SortIndex = sortIndex;
             Input = input;
             Output = output;

@@ -6,11 +6,12 @@ namespace TSP.DoxygenEditor.Languages.Cpp
     public class CppToken : BaseToken
     {
         public CppTokenKind Kind { get; internal set; }
-
         public override bool IsEOF => Kind == CppTokenKind.Eof;
         public override bool IsValid => Kind != CppTokenKind.Unknown;
         public override bool IsEndOfLine => false;
-        public override bool IsMarker => false;
+        public override bool IsMarker =>
+            (Kind == CppTokenKind.PreprocessorStart) ||
+            (Kind == CppTokenKind.PreprocessorEnd);
 
         private CppToken(CppTokenKind kind, TextRange range, bool isComplete) : base(range, isComplete)
         {
@@ -19,9 +20,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         public CppToken() : this(CppTokenKind.Unknown, TextRange.Invalid, false)
         {
         }
-        public void Set(CppTokenKind kind, TextRange range, bool isComplete)
+        public void Set(LanguageKind lang, CppTokenKind kind, TextRange range, bool isComplete)
         {
-            Set(range, isComplete);
+            Set(lang, range, isComplete);
             Kind = kind;
         }
         public override string ToString()

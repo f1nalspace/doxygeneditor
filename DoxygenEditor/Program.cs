@@ -15,7 +15,7 @@ Doxygen-Editor is released under the following license:
 
 MIT License
 
-Copyright (c) 2018 Torsten Spaete
+Copyright (c) 2017-2021 Torsten Spaete
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,38 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 	Version History
 -------------------------------------------------------------------------------
+    ## v0.9.2.0:
+    - Bugfix: Fixed htmlonly doxygen block was parsed as doxygen
+
+    ## v0.9.1.0:
+    - New: Grouping for issues and performance listview
+    - New: Build dialog filter from the global configuration
+    - New: Introduced editor file type to only parse/highlight supported files
+    - New: Introduced cpp/doxygen symbol resolver
+    - New: Caption for source symbol
+    - New: Doxygen config lexing and parsing
+    - New: Compile & open documentation dialog
+    - New: Auto sort and column size for issues and performance listview
+    - Change: Jump to documentation start instead of the entity start for issues
+    - Change: Replaced all "var" with proper type in sources
+    - Change: New version history style
+    - Bugfix: Fixed several minor/major issues
+    - Bugfix: Fixed captions in symbol search was not shown
+    - Bugfix: Fixed wrong auto indent after linebreak hopefully
+    - Bugfix: Fixed wrong colorization for doxygen code blocks
+
+    ## v0.9.0.0:
+    - Proper #define argument parsing & highlighting
+    - Lex multi & single line comments inside preprocessor
+    - Internal refactoring for editor state vs parse state (Context)
+    - Highlight and jump to a symbol in the editor
+    - Improved function detections
+    - Support for symbol jumping between tabs
+    - Fixed missing highlighting for visible lines
+    - Introduced workspaces
+
+    ## v0.8.1.0:
+    - Bugfixes
 
     ## v0.8.0.0:
     - Finished doxygen lexer
@@ -56,6 +88,35 @@ SOFTWARE.
 
     ## v0.7.0.0:
     - Initial version
+
+-------------------------------------------------------------------------------
+	TODO
+-------------------------------------------------------------------------------
+
+Cpp:
+    - Types parsing (C99)
+    - Types parsing (C++ templates)
+    - C++ namespace symbol parsing
+    - Struct member parsing
+    - Function argument parsing (@param validation)
+    - Function return parsing (@return validation -> void or not void)
+    - Code completion
+
+Doxygen:
+    - Group parsing
+    - Code completion
+
+Lexers:
+    - Incremental lexing for very fast syntax highlighting
+
+Editor:
+    - Spellchecking (I am still looking for a existing library for that)
+
+UI:
+    - Button for generating & viewing doxygen documentation
+
+Workspace:
+    - Custom symbol tables
 
 ***/
 
@@ -96,7 +157,6 @@ namespace TSP.DoxygenEditor
             {
                 ShowUnhandledException(e.Exception);
             };
-            IOCContainer.Register(new XMLConfigurationService());
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

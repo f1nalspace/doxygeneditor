@@ -1,17 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoxygenEditor", "DoxygenEditor\DoxygenEditor.csproj", "{70A53966-525E-4F6D-AA1C-229B428F2A98}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DoxygenEditor", "DoxygenEditor\DoxygenEditor.csproj", "{70A53966-525E-4F6D-AA1C-229B428F2A98}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParserTest", "FastTokenizer\ParserTest.csproj", "{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DoxygenParsers", "DoxygenParsers\DoxygenParsers.csproj", "{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoxygenParsers", "DoxygenParsers\DoxygenParsers.csproj", "{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "DoxygenEditorUnitTest\UnitTests.csproj", "{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CParserTest", "CParserTest\CParserTest.vcxproj", "{3A201660-2B12-45C4-A594-EA1C9077DDEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSMLexing", "FSMLexing\FSMLexing.csproj", "{F0640C02-3BBE-4381-8F15-9062DD910B2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "DoxygenEditorUnitTest\UnitTests.csproj", "{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastColoredTextBox", "FastColoredTextBox\FastColoredTextBox.csproj", "{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{DCFB2720-C2DF-4A74-9B83-E4582009DB08}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,27 +25,34 @@ Global
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Debug|x64.Build.0 = Debug|x64
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Release|x64.ActiveCfg = Release|x64
 		{70A53966-525E-4F6D-AA1C-229B428F2A98}.Release|x64.Build.0 = Release|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Debug|x64.ActiveCfg = Debug|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Debug|x64.Build.0 = Debug|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Release|x64.ActiveCfg = Release|x64
-		{BF2A8A79-2A6C-4B97-A15A-5C22841A97B9}.Release|x64.Build.0 = Release|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Debug|x64.ActiveCfg = Debug|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Debug|x64.Build.0 = Debug|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Release|x64.ActiveCfg = Release|x64
 		{3FCFB7F9-107F-432F-AA9F-09C64EEDC1A8}.Release|x64.Build.0 = Release|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Debug|x64.ActiveCfg = Debug|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Debug|x64.Build.0 = Debug|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Release|x64.ActiveCfg = Release|x64
-		{3A201660-2B12-45C4-A594-EA1C9077DDEC}.Release|x64.Build.0 = Release|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Debug|x64.ActiveCfg = Debug|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Debug|x64.Build.0 = Debug|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Release|x64.ActiveCfg = Release|x64
 		{A9D2ED79-163A-4C6C-80C9-C6FB799FB19F}.Release|x64.Build.0 = Release|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Debug|x64.ActiveCfg = Debug|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Debug|x64.Build.0 = Debug|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Release|x64.ActiveCfg = Release|x64
+		{F0640C02-3BBE-4381-8F15-9062DD910B2E}.Release|x64.Build.0 = Release|x64
+		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Debug|x64.ActiveCfg = Debug|x64
+		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Debug|x64.Build.0 = Debug|x64
+		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Release|x64.ActiveCfg = Release|x64
+		{6DB9F725-2CDD-42A8-B1AD-AAF78216C7FD}.Release|x64.Build.0 = Release|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Debug|x64.ActiveCfg = Debug|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Debug|x64.Build.0 = Debug|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Release|x64.ActiveCfg = Release|x64
+		{DCFB2720-C2DF-4A74-9B83-E4582009DB08}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1A4C51AE-5F2F-43EE-8639-C6FDEB31B3C6}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

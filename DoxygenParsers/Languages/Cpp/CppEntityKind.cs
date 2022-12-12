@@ -12,7 +12,10 @@
         ForwardEnum,
         EnumValue,
         Struct,
+        Class,
         ForwardStruct,
-        Define,
+        MacroDefinition,
+        MacroUsage,
+        MacroMatch,
     }
 }

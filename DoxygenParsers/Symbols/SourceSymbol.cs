@@ -1,29 +1,26 @@
-﻿using TSP.DoxygenEditor.Lexers;
+﻿using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.Parsers;
 using TSP.DoxygenEditor.TextAnalysis;
 
 namespace TSP.DoxygenEditor.Symbols
 {
-    public class SourceSymbol
+    public class SourceSymbol : BaseSymbol
     {
-        public TextRange Range { get; }
         public SourceSymbolKind Kind { get; }
-        public IBaseNode Node { get; }
+        public string Caption { get; }
 
-        public enum SymbolType
-        {
-       
-        }
-
-        public SourceSymbol(SourceSymbolKind kind, TextRange range, IBaseNode node = null)
+        public SourceSymbol(LanguageKind lang, SourceSymbolKind kind, string name, string caption, TextRange range, IBaseNode node = null) : base(lang, name, range, node)
         {
             Kind = kind;
-            Range = range;
-            Node = node;
+            Caption = caption;
+        }
+        public SourceSymbol(LanguageKind lang, SourceSymbolKind kind, string name, TextRange range, IBaseNode node = null) : this(lang, kind, name, null, range, node)
+        {
+            Kind = kind;
         }
         public override string ToString()
         {
-            return $"{Range} as {Kind} => {Node}";
+            return $"{Kind} => {base.ToString()})";
         }
     }
 }
