@@ -1,15 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<Platform>x64</Platform>
-		<Platforms>$(Platform)</Platforms>
-		<PlatformName>$(Platform)</PlatformName>
-		<PlatformTarget>$(Platform)</PlatformTarget>
+		<TargetFramework>net60</TargetFramework>
+		<Platforms>x64</Platforms>
 		<OutputType>Exe</OutputType>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<LangVersion>8.0</LangVersion>
-		<OutputPath>..\build\FSMLexing\$(PlatformName)-$(Configuration)\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>..\build\FSMLexing\$(Platform)-$(Configuration)\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
