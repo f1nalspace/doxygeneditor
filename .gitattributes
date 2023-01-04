@@ -11,3 +11,5 @@
 *.bmp binary
 *.zip binary
 *.pdf binary
+*.dll binary
+*.exe binary
