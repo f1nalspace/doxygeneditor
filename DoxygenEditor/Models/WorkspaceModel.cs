@@ -1,6 +1,9 @@
 ﻿using TSP.DoxygenEditor.Services;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections.Immutable;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace TSP.DoxygenEditor.Models
 {
@@ -137,18 +140,21 @@ namespace TSP.DoxygenEditor.Models
             public bool ExcludeFunctionBodies { get; internal set; } = false;
             public bool ExcludeFunctionBodySymbols { get; internal set; } = false;
             public bool ExcludeFunctionCallSymbols { get; internal set; } = false;
+
             public void Assign(ParserCppOptions other)
             {
                 ExcludeFunctionBodies = other.ExcludeFunctionBodies;
                 ExcludeFunctionBodySymbols = other.ExcludeFunctionBodySymbols;
                 ExcludeFunctionCallSymbols = other.ExcludeFunctionCallSymbols;
             }
+
             public void Load(IConfigurarionReader reader)
             {
                 ExcludeFunctionBodies = reader.ReadBool(SectionName, () => ExcludeFunctionBodies, false);
                 ExcludeFunctionBodySymbols = reader.ReadBool(SectionName, () => ExcludeFunctionBodySymbols, false);
                 ExcludeFunctionCallSymbols = reader.ReadBool(SectionName, () => ExcludeFunctionCallSymbols, false);
             }
+
             public void Save(IConfigurarionWriter writer)
             {
                 writer.WriteBool(SectionName, () => ExcludeFunctionBodies, ExcludeFunctionBodies);
@@ -160,14 +166,45 @@ namespace TSP.DoxygenEditor.Models
         public class ValidationCppOptions : IWorkspaceOptions<ValidationCppOptions>
         {
             const string SectionName = "Validation/Cpp";
-            public bool ExcludePreprocessorMatch { get; internal set; } = false;
-            public bool ExcludePreprocessorUsage { get; internal set; } = false;
-            public bool RequireDoxygenReference { get; internal set; } = true;
+
+            public bool ExcludePreprocessorMatch { get; internal set; }
+            public bool ExcludePreprocessorUsage { get; internal set; }
+            public bool RequireDoxygenReference { get; internal set; }
+            public bool ValidateFunctionDefinitions { get; internal set; }
+
+            public ImmutableArray<string> SkipFunctionPatterns { get; internal set; }
+            public IEnumerable<Regex> SkipFunctionRexes
+            {
+                get
+                {
+                    if (_skipFunctionRexes.Length != SkipFunctionPatterns.Length)
+                    {
+                        List<Regex> list = new List<Regex>();
+                        foreach (var pattern in SkipFunctionPatterns)
+                            list.Add(new Regex(pattern, RegexOptions.Compiled));
+                        _skipFunctionRexes = list.ToImmutableArray();
+                    }
+                    return _skipFunctionRexes;
+                }
+            }
+            private ImmutableArray<Regex> _skipFunctionRexes = ImmutableArray<Regex>.Empty;
+
+            public ValidationCppOptions()
+            {
+                ExcludePreprocessorMatch = false;
+                ExcludePreprocessorUsage  = false;
+                RequireDoxygenReference = true;
+                ValidateFunctionDefinitions = true;
+                SkipFunctionPatterns = new[] { "fplAtomic[a-zA-Z0-9_]+", "fpl__[a-zA-Z0-9_]+" }.ToImmutableArray();
+            }
+
             public void Assign(ValidationCppOptions other)
             {
                 ExcludePreprocessorMatch = other.ExcludePreprocessorMatch;
                 ExcludePreprocessorUsage = other.ExcludePreprocessorUsage;
                 RequireDoxygenReference = other.RequireDoxygenReference;
+                ValidateFunctionDefinitions = other.ValidateFunctionDefinitions;
+                SkipFunctionPatterns = other.SkipFunctionPatterns;
             }
 
             public void Load(IConfigurarionReader reader)
@@ -175,6 +212,8 @@ namespace TSP.DoxygenEditor.Models
                 ExcludePreprocessorMatch = reader.ReadBool(SectionName, () => ExcludePreprocessorMatch, false);
                 ExcludePreprocessorUsage = reader.ReadBool(SectionName, () => ExcludePreprocessorUsage, false);
                 RequireDoxygenReference = reader.ReadBool(SectionName, () => RequireDoxygenReference, true);
+                ValidateFunctionDefinitions = reader.ReadBool(SectionName, () => ValidateFunctionDefinitions, true);
+                SkipFunctionPatterns = reader.ReadList(SectionName, () => SkipFunctionPatterns).ToImmutableArray();
             }
 
             public void Save(IConfigurarionWriter writer)
@@ -182,6 +221,8 @@ namespace TSP.DoxygenEditor.Models
                 writer.WriteBool(SectionName, () => ExcludePreprocessorMatch, ExcludePreprocessorMatch);
                 writer.WriteBool(SectionName, () => ExcludePreprocessorUsage, ExcludePreprocessorUsage);
                 writer.WriteBool(SectionName, () => RequireDoxygenReference, RequireDoxygenReference);
+                writer.WriteBool(SectionName, () => ValidateFunctionDefinitions, ValidateFunctionDefinitions);
+                writer.WriteList(SectionName, () => SkipFunctionPatterns, SkipFunctionPatterns);
             }
         }
 
