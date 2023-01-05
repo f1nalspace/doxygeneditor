@@ -120,7 +120,7 @@ namespace TSP.DoxygenEditor.Views
             dlgSaveFile.Filter = fileExtensionsFilter.ToString();
 
             _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
-            if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath))
+            if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath) && File.Exists(_globalConfig.WorkspacePath))
             {
                 WorkspaceModel loadedWorkspace = WorkspaceModel.Load(_globalConfig.WorkspacePath);
                 if (loadedWorkspace == null)
