@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Services
 {
@@ -18,6 +19,6 @@ namespace TSP.DoxygenEditor.Services
         IEnumerable<string> ReadList(string section, Expression<Func<object>> nameExpression);
         IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, string name) where TValue : struct;
         IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, Expression<Func<object>> nameExpression) where TValue : struct;
-        bool Load(string filePath);
+        Result<bool> Load(string filePath);
     }
 }

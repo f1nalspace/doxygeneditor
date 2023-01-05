@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using System.IO;
+using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Models
 {
@@ -252,26 +253,27 @@ namespace TSP.DoxygenEditor.Models
             Build.Assign(other.Build);
         }
 
-        public static WorkspaceModel Load(string filePath)
+        public static Result<WorkspaceModel> Load(string filePath)
         {
-            WorkspaceModel result = new WorkspaceModel(filePath);
-            using (IConfigurarionReader reader = new XMLConfigurationStore(DefaultWorkspaceNamespace, "Workspace", new DefaultConfigurationConverter()))
+            using (IConfigurarionReader reader = new JSONConfigurationStore("Workspace", new DefaultConfigurationConverter()))
             {
-                if (!reader.Load(filePath))
-                    result = null;
+                Result<bool> loadRes = reader.Load(filePath);
+                if (!loadRes.Success)
+                    return new Result<WorkspaceModel>(loadRes.Error);
+                WorkspaceModel result = new WorkspaceModel(filePath);
                 result.View.Load(reader);
                 result.History.Load(reader);
                 result.ParserCpp.Load(reader);
                 result.ValidationCpp.Load(reader);
                 result.Build.Load(reader);
+                return new Result<WorkspaceModel>(result);
             }
-            return (result);
         }
 
         public void Save()
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(FilePath));
-            using (IConfigurarionWriter writer = new XMLConfigurationStore(DefaultWorkspaceNamespace, "Workspace", new DefaultConfigurationConverter()))
+            using (IConfigurarionWriter writer = new JSONConfigurationStore("Workspace", new DefaultConfigurationConverter()))
             {
                 View.Save(writer);
                 History.Save(writer);

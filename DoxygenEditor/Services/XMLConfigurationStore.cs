@@ -28,28 +28,27 @@ namespace TSP.DoxygenEditor.Services
             _rootNode = null;
         }
 
-        public bool Load(string filePath)
+        public Result<bool> Load(string filePath)
         {
             _rootNode = null;
-            if (File.Exists(filePath))
+            if (!File.Exists(filePath))
+                return new Result<bool>(new FileNotFoundException($"The XML file '{filePath}' was not found"));
+            try
             {
-                try
-                {
-                    if (_doc == null)
-                        _doc = new XmlDocument();
-                    _doc.Load(filePath);
-                    _nsMng = new XmlNamespaceManager(_doc.NameTable);
-                    _nsMng.AddNamespace("d", _defaultNamespace);
-                    XmlNode baseNode = _doc.SelectSingleNode($"d:{_baseName}", _nsMng);
-                    _rootNode = baseNode;
-                    return (true);
-                }
-                catch
-                {
-                    _doc.RemoveAll();
-                }
+                if (_doc == null)
+                    _doc = new XmlDocument();
+                _doc.Load(filePath);
+                _nsMng = new XmlNamespaceManager(_doc.NameTable);
+                _nsMng.AddNamespace("d", _defaultNamespace);
+                XmlNode baseNode = _doc.SelectSingleNode($"d:{_baseName}", _nsMng);
+                _rootNode = baseNode;
+                return new Result<bool>(true);
             }
-            return (false);
+            catch (Exception e)
+            {
+                _doc.RemoveAll();
+                return new Result<bool>(new IOException($"Failed to load XML file '{filePath}'", e));
+            }
         }
 
         public void Save(string filePath)

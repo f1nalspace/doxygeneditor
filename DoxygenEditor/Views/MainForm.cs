@@ -25,6 +25,7 @@ using System.Threading;
 using System.Text;
 using System.Collections.ObjectModel;
 using TSP.DoxygenEditor.Languages;
+using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -124,11 +125,14 @@ namespace TSP.DoxygenEditor.Views
             _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
             if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath) && File.Exists(_globalConfig.WorkspacePath))
             {
-                WorkspaceModel loadedWorkspace = WorkspaceModel.Load(_globalConfig.WorkspacePath);
-                if (loadedWorkspace == null)
-                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!");
+                Result<WorkspaceModel> loadRes = WorkspaceModel.Load(_globalConfig.WorkspacePath);
+                if (!loadRes.Success)
+                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found or invalid", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!{Environment.NewLine}{Environment.NewLine}{loadRes.Error}");
                 else
+                {
+                    WorkspaceModel loadedWorkspace = loadRes.Value;
                     _workspace.Assign(loadedWorkspace);
+                }
             }
             _globalConfig.WorkspacePath = _workspace.FilePath;
             UpdatedWorkspaceFile();
@@ -1130,7 +1134,7 @@ namespace TSP.DoxygenEditor.Views
             }
 
             foreach (IBaseNode child in rootNode.Children)
-               ValidateNodes(editor, child, fileName, "Child", entries);
+                ValidateNodes(editor, child, fileName, "Child", entries);
         }
 
         struct IssuesTimings
@@ -1394,14 +1398,17 @@ namespace TSP.DoxygenEditor.Views
         {
             if (dlgOpenWorkspace.ShowDialog() == DialogResult.OK)
             {
-                WorkspaceModel newWorkspace = WorkspaceModel.Load(dlgOpenWorkspace.FileName);
-                if (newWorkspace == null)
+                Result<WorkspaceModel> loadRes = WorkspaceModel.Load(dlgOpenWorkspace.FileName);
+                if (!loadRes.Success)
                 {
-                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!");
+                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!{Environment.NewLine}{Environment.NewLine}{loadRes.Error}");
                     _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath));
                 }
                 else
+                {
+                    WorkspaceModel newWorkspace = loadRes.Value;
                     _workspace.Assign(newWorkspace);
+                }
                 _globalConfig.WorkspacePath = _workspace.FilePath;
                 UpdatedWorkspaceFile();
             }

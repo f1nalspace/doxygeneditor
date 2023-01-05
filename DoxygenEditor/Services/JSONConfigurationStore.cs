@@ -2,14 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
-using System.Text;
 using System.Text.Json;
-using System.Windows.Forms;
-using System.Xml;
+using System.Text.Json.Nodes;
 using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Services
@@ -29,71 +25,29 @@ namespace TSP.DoxygenEditor.Services
             _rootNode = null;
         }
 
-        public bool Load(string filePath)
+        public Result<bool> Load(string filePath)
         {
             _doc = null;
             if (!File.Exists(filePath))
-                return false;
+                return new Result<bool>(new FileNotFoundException($"The JSON file '{filePath}' was not found"));
             try
             {
-                var bytes = File.ReadAllBytes(filePath);
+                byte[] bytes = File.ReadAllBytes(filePath);
                 _doc = JsonDocument.Parse(bytes);
                 _rootNode = _doc.RootElement;
-                return (true);
+                return new Result<bool>(true);
             }
-            catch
+            catch (Exception e)
             {
                 _doc = null;
                 _rootNode = null;
+                return new Result<bool>(new IOException($"Failed to load JSON file '{filePath}'", e));
             }
-            return (false);
-        }
-
-        class WriteNode : IEnumerable<WriteNode>
-        {
-            public WriteNode Parent { get; }
-            public string Name { get; }
-            public WriteKind Kind { get; }
-            public object Value { get; }
-            public IEnumerable<WriteNode> Children => _children;
-            private readonly List<WriteNode> _children = new List<WriteNode>();
-            private readonly Dictionary<string, WriteNode> _childMap = new Dictionary<string, WriteNode>();
-
-            public bool HasChildren => _children.Count > 0;
-
-            public WriteNode(WriteNode parent, string name, WriteKind kind, object value)
-            {
-                Parent = parent;
-                Name = name;
-                Kind = kind;
-                Value = value;
-            }
-
-            public WriteNode Add(string name, WriteKind kind, object value)
-            {
-                if (_childMap.ContainsKey(name))
-                    throw new DuplicateNameException($"There is already a node with the key '{name}' in '{Name}'");
-                WriteNode node = new WriteNode(this, name, kind, value);
-                _children.Add(node);
-                _childMap.Add(name, node);
-                return node;
-            }
-
-            public WriteNode Get(string name)
-            {
-                _childMap.TryGetValue(name, out WriteNode node);
-                return node;
-            }
-
-            public IEnumerator<WriteNode> GetEnumerator() => _children.GetEnumerator();
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-            public override string ToString() => $"{Name} as [{Kind}] => {Value}";
         }
 
         public void Save(string filePath)
         {
-            WriteNode root = new WriteNode(null, "Root", WriteKind.None, null);
+            JsonObject root = new JsonObject();
 
             foreach (WriteEntry writeEntry in WriteEntries)
             {
@@ -102,64 +56,49 @@ namespace TSP.DoxygenEditor.Services
                 object value = writeEntry.Value;
                 WriteKind kind = writeEntry.Kind;
                 string[] s = section.Split('/');
-                WriteNode cur = root;
+
+                JsonObject curObj = root;
                 for (int i = 0; i < s.Length; ++i)
                 {
                     string thisSection = s[i];
-                    WriteNode sectionNode = cur.Get(thisSection);
-                    if (sectionNode == null)
-                        sectionNode = cur.Add(thisSection, WriteKind.None, null);
-                    cur = sectionNode;
+                    JsonObject partObj = curObj[thisSection] as JsonObject;
+                    if (partObj == null)
+                    {
+                        partObj = new JsonObject();
+                        curObj.Add(thisSection, partObj);
+                    }
+                    curObj = partObj;
                 }
-                cur.Add(name, kind, value);
-            }
 
-            using var stream = File.Create(filePath);
+                if (curObj == root)
+                    throw new InvalidOperationException($"Cannot write entry '{writeEntry}' to root!");
 
-            using Utf8JsonWriter writer = new Utf8JsonWriter(stream, new JsonWriterOptions() { Indented = true });
-
-            writer.WriteStartObject(_baseName);
-
-            void WriteValue(WriteKind kind, string name, object value)
-            {
                 switch (kind)
                 {
                     case WriteKind.Bool:
-                        {
-                            bool boolValue = (bool)value;
-                            writer.WriteBoolean(name, boolValue);
-                        }
+                        curObj[name] = (bool)value;
                         break;
                     case WriteKind.Int:
-                        {
-                            int intValue = (int)value;
-                            writer.WriteNumber(name, intValue);
-                        }
+                        curObj[name] = (int)value;
                         break;
                     case WriteKind.Double:
-                        {
-                            double doubleValue = (double)value;
-                            writer.WriteNumber(name, doubleValue);
-                        }
+                        curObj[name] = (double)value;
                         break;
                     case WriteKind.String:
-                        {
-                            string stringValue = (string)value;
-                            writer.WriteString(name, stringValue);
-                        }
+                        curObj[name] = (string)value;
                         break;
                     case WriteKind.List:
                         {
+                            JsonArray newArray = new JsonArray();
                             List<string> list = (List<string>)value;
-                            writer.WriteStartArray(name);
                             foreach (string item in list)
-                                writer.WriteStringValue(item);
-                            writer.WriteEndArray();
+                                newArray.Add(item);
+                            curObj[name] = newArray;
                         }
                         break;
                     case WriteKind.Dictionary:
                         {
-                            writer.WriteStartObject(name);
+                            JsonObject newObj = new JsonObject();
                             IDictionary<string, object> dict = (IDictionary<string, object>)value;
                             foreach (KeyValuePair<string, object> pair in dict)
                             {
@@ -175,65 +114,49 @@ namespace TSP.DoxygenEditor.Services
                                         if (_converter != null)
                                         {
                                             string convertedValue = _converter.ConvertToString(propValue);
-                                            WriteValue(WriteKind.String, propName, convertedValue);
+                                            newObj[propName] = convertedValue;
                                         }
                                         else
                                         {
                                             if (typeof(string).Equals(propType))
                                             {
                                                 string stringValue = (string)propValue;
-                                                WriteValue(WriteKind.String, propName, stringValue);
+                                                newObj[propName] = stringValue;
                                             }
                                             else if (typeof(double).Equals(propType))
                                             {
                                                 double doubleValue = (double)propValue;
-                                                WriteValue(WriteKind.Double, propName, doubleValue);
+                                                newObj[propName] = doubleValue;
                                             }
                                             else if (typeof(int).Equals(propType))
                                             {
                                                 int intValue = (int)propValue;
-                                                WriteValue(WriteKind.Int, propName, intValue);
+                                                newObj[propName] = intValue;
                                             }
                                             else if (typeof(bool).Equals(propType))
                                             {
                                                 bool boolValue = (bool)propValue;
-                                                WriteValue(WriteKind.Bool, propName, boolValue);
+                                                newObj[propName] = boolValue;
                                             }
                                             else
-                                                WriteValue(WriteKind.Null, propName, null);
+                                                newObj[propName] = null;
                                         }
                                     }
                                 }
                             }
-                            writer.WriteEndObject();
                         }
-                        break;
-                    case WriteKind.Null:
-                        writer.WriteNull(name);
                         break;
                     default:
                         break;
                 }
             }
 
-            void WriteChilds(IEnumerable<WriteNode> childs)
+            JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
+            using (var stream = File.Create(filePath))
             {
-                foreach (WriteNode child in childs)
-                {
-                    if (child.HasChildren)
-                    {
-                        writer.WriteStartObject(child.Name);
-                        WriteChilds(child);
-                        writer.WriteEndObject();
-                    }
-                    else
-                        WriteValue(child.Kind, child.Name, child.Value);
-                }
+                using (Utf8JsonWriter writer = new Utf8JsonWriter(stream, new JsonWriterOptions() { Indented = true }))
+                    root.WriteTo(writer, options);
             }
-
-            writer.WriteEndObject();
-
-            writer.Flush();
         }
 
         private JsonElement? FindElementBySection(JsonElement? root, string section)
