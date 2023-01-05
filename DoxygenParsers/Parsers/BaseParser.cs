@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Collections;
+using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.Symbols;
 using TSP.DoxygenEditor.TextAnalysis;
@@ -20,6 +21,8 @@ namespace TSP.DoxygenEditor.Parsers
 
         public SymbolTable LocalSymbolTable { get; }
 
+        public LanguageKind Language { get; }
+
         class RootNode : BaseNode<TEntity>
         {
             public RootNode() : base(null, null)
@@ -29,15 +32,16 @@ namespace TSP.DoxygenEditor.Parsers
 
         protected IEntityBaseNode<TEntity> Top { get { return _stack.Count > 0 ? _stack.Peek() : null; } }
 
-        public BaseParser(ISymbolTableId id)
+        public BaseParser(ISymbolTableId id, LanguageKind language)
         {
             Root = new RootNode();
             LocalSymbolTable = new SymbolTable(id);
+            Language = language;
         }
         protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {
             string category = GetType().Name;
-            _parseErrors.Add(new TextError(pos, category, message, type, symbol, tag: this));
+            _parseErrors.Add(new TextError(Language, pos, category, message, type, symbol));
         }
 
         protected enum SearchMode

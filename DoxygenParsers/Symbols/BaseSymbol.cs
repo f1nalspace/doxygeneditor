@@ -10,6 +10,7 @@ namespace TSP.DoxygenEditor.Symbols
         public string Name { get; }
         public TextRange Range { get; }
         public IBaseNode Node { get; }
+
         public BaseSymbol(LanguageKind lang, string name, TextRange range, IBaseNode node = null)
         {
             Lang = lang;

@@ -23,6 +23,8 @@ using System.Collections;
 using TSP.DoxygenEditor.FilterControls;
 using System.Threading;
 using System.Text;
+using System.Collections.ObjectModel;
+using TSP.DoxygenEditor.Languages;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -1011,25 +1013,54 @@ namespace TSP.DoxygenEditor.Views
         #endregion
 
         #region Issues
-        enum IssueType
+        enum IssueKind
         {
             Error,
             Warning,
             Info,
         }
+
+        readonly struct IssueEntry
+        {
+            public LanguageKind Lang { get; }
+            public TextPosition Pos { get; }
+            public IssueKind Kind { get; }
+            public string Message { get; }
+            public string SymbolName { get; }
+            public string SymbolType { get; }
+            public string GroupName { get; }
+            public string File { get; }
+            public int Line { get; }
+
+            public IssueEntry(LanguageKind lang, IssueKind kind, TextPosition pos, string message, string symbolName, string symbolType, string groupName, string file, int line)
+            {
+                Lang = lang;
+                Pos = pos;
+                Kind = kind;
+                Message = message;
+                SymbolName = symbolName;
+                SymbolType = symbolType;
+                GroupName = groupName;
+                File = file;
+                Line = line;
+            }
+        }
+
         class IssueTag
         {
             public IEditor Editor { get; }
             public TextPosition Pos { get; }
-            public IssueType Type { get; }
-            public IssueTag(IEditor editor, TextPosition pos, IssueType type)
+            public IssueKind Type { get; }
+
+            public IssueTag(IEditor editor, TextPosition pos, IssueKind type)
             {
                 Editor = editor;
                 Pos = pos;
                 Type = type;
             }
         }
-        private void AddIssue(FilterListView listView, IssueTag tag, string message, string symbolName, string symbolType, string group, int line, string file)
+
+        private void AddIssue(FilterListView listView, IssueTag tag, string message, string symbolName, string symbolType, string group, string file, int line)
         {
             ListViewItem newItem = new ListViewItem(message);
             newItem.Tag = tag;
@@ -1060,7 +1091,9 @@ namespace TSP.DoxygenEditor.Views
             return true;
         }
 
-        private void AddIssuesFromNode(IEnumerable<IEditor> editors, IEditor mainEditor, IBaseNode rootNode, string fileName, string groupName)
+
+
+        private void ValidateNodes(IEditor editor, IBaseNode rootNode, string fileName, string groupName, ICollection<IssueEntry> entries)
         {
             if (typeof(CppNode).Equals(rootNode.GetType()))
             {
@@ -1083,25 +1116,21 @@ namespace TSP.DoxygenEditor.Views
                                     hasDocumented = true;
                                 }
                             }
-
                             if (!hasDocumented)
-                            {
-                                AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
-                            }
+                                entries.Add(new IssueEntry(LanguageKind.Doxygen, IssueKind.Warning, docsPos, "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", fileName, cppEntity.StartRange.Position.Line + 1));
                         }
                     }
 
                     if (_workspace.ValidationCpp.ValidateFunctionDefinitions && cppEntity.Kind == CppEntityKind.FunctionDefinition)
                     {
                         if (!ValidateFunctionDefinition(_workspace.ValidationCpp, cppEntity))
-                            AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, cppEntity.StartRange.Position, IssueType.Warning), "Incorrect function name", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ API", cppEntity.StartRange.Position.Line + 1, fileName);
+                            entries.Add(new IssueEntry(LanguageKind.Cpp, IssueKind.Warning, cppEntity.StartRange.Position, "Incorrect function name", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ API", fileName, cppEntity.StartRange.Position.Line + 1));
                     }
                 }
             }
+
             foreach (IBaseNode child in rootNode.Children)
-            {
-                AddIssuesFromNode(editors, mainEditor, child, fileName, "Child");
-            }
+               ValidateNodes(editor, child, fileName, "Child", entries);
         }
 
         struct IssuesTimings
@@ -1128,6 +1157,21 @@ namespace TSP.DoxygenEditor.Views
                 ExcludeCppPreprocessorUsage = _workspace.ValidationCpp.ExcludePreprocessorUsage,
             };
             IEnumerable<KeyValuePair<ISymbolTableId, TextError>> symbolErrors = GlobalSymbolCache.Validate(validationConfig);
+
+            Dictionary<IEditor, IEnumerable<IssueEntry>> entriesMap = new Dictionary<IEditor, IEnumerable<IssueEntry>>();
+            foreach (IEditor editor in editors)
+            {
+                IParseInfo parseInfo = editor.ParseInfo;
+                List<IssueEntry> entries = new List<IssueEntry>();
+                if (parseInfo.CppTree != null)
+                    ValidateNodes(editor, parseInfo.CppTree, editor.Name, "Root", entries);
+                if (parseInfo.DoxyBlockTree != null)
+                    ValidateNodes(editor, parseInfo.DoxyBlockTree, editor.Name, "Root", entries);
+                if (parseInfo.DoxyConfigTree != null)
+                    ValidateNodes(editor, parseInfo.DoxyConfigTree, editor.Name, "Root", entries);
+                entriesMap.Add(editor, entries);
+            }
+
             result.ValidationDuration = w.StopAndReturn();
 
             lvCppIssues.BeginUpdate();
@@ -1152,34 +1196,50 @@ namespace TSP.DoxygenEditor.Views
             IssueTag selectedCppIssue = lvCppIssues.SelectedItem?.Tag as IssueTag;
             IssueTag selectedDoxyIssue = lvDoxygenIssues.SelectedItem?.Tag as IssueTag;
 
+            FilterListView GetView(LanguageKind lang)
+            {
+                return lang switch
+                {
+                    LanguageKind.Cpp => lvCppIssues,
+                    LanguageKind.Doxygen or
+                    LanguageKind.DoxygenCode or
+                    LanguageKind.DoxygenConfig => lvDoxygenIssues,
+                    _ => null,
+                };
+            }
+
+            void AddIssueFromError(IEditor editor, TextError error)
+            {
+                FilterListView view = GetView(error.Lang);
+                if (view != null)
+                    AddIssue(view, new IssueTag(editor, error.Pos, IssueKind.Error), error.Message, null, null, error.Category, editor.Name, error.Pos.Line + 1);
+            }
+
+            void AddIssueFromEntry(IEditor editor, IssueEntry entry)
+            {
+                FilterListView view = GetView(entry.Lang);
+                if (view != null)
+                    AddIssue(view, new IssueTag(editor, entry.Pos, entry.Kind), entry.Message, entry.SymbolName, entry.SymbolType, entry.GroupName, entry.File, entry.Line);
+            }
+
             w.Restart();
             foreach (KeyValuePair<ISymbolTableId, TextError> errorPair in symbolErrors)
             {
                 TextError error = errorPair.Value;
                 IEditor editor = (IEditor)errorPair.Key;
-                ReferenceSymbol symbol = (ReferenceSymbol)error.Tag;
-                Type nodeType = symbol.Node.GetType();
-                if (typeof(CppNode).Equals(nodeType))
-                    AddIssue(lvCppIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, editor.Name);
-                else if (typeof(DoxygenBlockNode).Equals(nodeType))
-                    AddIssue(lvDoxygenIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, editor.Name);
+                AddIssueFromError(editor, error);
             }
 
             foreach (IEditor editor in editors)
             {
                 IParseInfo parseInfo = editor.ParseInfo;
                 foreach (TextError error in parseInfo.Errors)
-                {
-                    Type errorType = error.Tag.GetType();
-                    if (typeof(CppLexer).Equals(errorType) || typeof(CppParser).Equals(errorType))
-                        AddIssue(lvCppIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, editor.Name);
-                    else if (typeof(DoxygenBlockLexer).Equals(errorType) || typeof(DoxygenConfigLexer).Equals(errorType) || typeof(DoxygenBlockParser).Equals(errorType))
-                        AddIssue(lvDoxygenIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, editor.Name);
-                }
+                    AddIssueFromError(editor, error);
 
-                if (parseInfo.CppTree != null)
+                if (entriesMap.TryGetValue(editor, out IEnumerable<IssueEntry> entries))
                 {
-                    AddIssuesFromNode(editors, editor, parseInfo.CppTree, editor.Name, "Root");
+                    foreach (IssueEntry entry in entries)
+                        AddIssueFromEntry(editor, entry);
                 }
             }
             result.CollectDuration = w.StopAndReturn();

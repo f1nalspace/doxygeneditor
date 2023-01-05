@@ -8,6 +8,7 @@ namespace TSP.DoxygenEditor.Symbols
     public class ReferenceSymbol : BaseSymbol
     {
         public ReferenceSymbolKind Kind { get; internal set; }
+
         public ReferenceSymbol(LanguageKind lang, ReferenceSymbolKind kind, string name, TextRange range, IBaseNode node) : base(lang, name, range, node)
         {
             if (lang == LanguageKind.None)

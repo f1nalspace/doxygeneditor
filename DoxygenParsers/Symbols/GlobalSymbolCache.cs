@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using TSP.DoxygenEditor.TextAnalysis;
 using System.Collections;
+using TSP.DoxygenEditor.Languages;
+using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.Languages.Doxygen;
 
 namespace TSP.DoxygenEditor.Symbols
 {
@@ -180,7 +183,18 @@ namespace TSP.DoxygenEditor.Symbols
                                 continue;
                         }
                         if (!HasReference(name) && !HasSystemSymbol(name))
-                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name, tag: reference)));
+                        {
+                            LanguageKind lang;
+                            if (reference.Node is CppNode)
+                                lang = LanguageKind.Cpp;
+                            else if (reference.Node is DoxygenBlockNode)
+                                lang = LanguageKind.DoxygenCode;
+                            else if (reference.Node is DoxygenConfigNode)
+                                lang = LanguageKind.DoxygenConfig;
+                            else
+                                lang = reference.Lang;
+                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(lang, reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name)));
+                        }
                     }
                 }
             }

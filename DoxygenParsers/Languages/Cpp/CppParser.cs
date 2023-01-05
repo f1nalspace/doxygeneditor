@@ -70,7 +70,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
         public CppConfiguration Configuration { get; }
 
-        public CppParser(ISymbolTableId id, CppConfiguration configuration) : base(id)
+        public CppParser(ISymbolTableId id, CppConfiguration configuration) : base(id, LanguageKind.Cpp)
         {
             Configuration = configuration;
             LocalSymbolTable.AddSymbols(configuration.SystemSymbols);

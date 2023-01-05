@@ -20,7 +20,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenBlockEntityKind.SubSubSection,
         };
 
-        public DoxygenBlockParser(ISymbolTableId id) : base(id)
+        public DoxygenBlockParser(ISymbolTableId id) : base(id, LanguageKind.DoxygenCode)
         {
         }
 
