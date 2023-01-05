@@ -612,6 +612,8 @@ namespace TSP.DoxygenEditor.Editor
         }
         #endregion
 
+        public override string ToString() => FilePath;
+
         #region IDisposable Support
         protected virtual void DisposeManaged()
         {
