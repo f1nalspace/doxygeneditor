@@ -180,7 +180,7 @@ namespace TSP.DoxygenEditor.Symbols
                                 continue;
                         }
                         if (!HasReference(name) && !HasSystemSymbol(name))
-                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name) { Tag = reference }));
+                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name, tag: reference)));
                     }
                 }
             }

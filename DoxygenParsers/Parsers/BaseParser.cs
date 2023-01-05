@@ -37,7 +37,7 @@ namespace TSP.DoxygenEditor.Parsers
         protected void AddError(TextPosition pos, string message, string type, string symbol = null)
         {
             string category = GetType().Name;
-            _parseErrors.Add(new TextError(pos, category, message, type, symbol) { Tag = this });
+            _parseErrors.Add(new TextError(pos, category, message, type, symbol, tag: this));
         }
 
         protected enum SearchMode

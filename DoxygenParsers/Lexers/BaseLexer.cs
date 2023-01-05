@@ -36,7 +36,7 @@ namespace TSP.DoxygenEditor.Lexers
         protected void AddError(TextPosition pos, string message, string what, string symbol = null)
         {
             string category = GetType().Name;
-            _lexErrors.Add(new TextError(pos, category, message, what, symbol) { Tag = this });
+            _lexErrors.Add(new TextError(pos, category, message, what, symbol, tag: this));
         }
 
         protected bool PushToken(T token, LexIntern intern = LexIntern.Normal)
