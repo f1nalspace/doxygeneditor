@@ -1041,34 +1041,60 @@ namespace TSP.DoxygenEditor.Views
             newItem.SubItems.Add(file);
             listView.AddItem(newItem);
         }
-        private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
+
+        private static readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
+
+        private static bool ValidateFunctionDefinition(WorkspaceModel.ValidationCppOptions options, CppEntity entity)
+        {
+            // (fpl__[a-zA-Z0-9_]+)|(fplAtomic[a-zA-Z0-9_]+)|(fpl[A-Z][a-z0-9_]+)|
+            if (entity.Kind == CppEntityKind.FunctionDefinition)
+            {
+                foreach (Regex skipRex in options.SkipFunctionRexes)
+                {
+                    if (skipRex.IsMatch(entity.Id))
+                        return true;
+                }
+                Debug.WriteLine(entity.Id);
+                return false;
+            }
+            return true;
+        }
+
         private void AddIssuesFromNode(IEnumerable<IEditor> editors, IEditor mainEditor, IBaseNode rootNode, string fileName, string groupName)
         {
             if (typeof(CppNode).Equals(rootNode.GetType()))
             {
                 CppNode cppNode = (CppNode)rootNode;
                 CppEntity cppEntity = cppNode.Entity;
-                if (cppEntity.IsDefinition && cppEntity.DocumentationNode != null && _workspace.ValidationCpp.RequireDoxygenReference)
+                if (cppEntity.IsDefinition && cppEntity.DocumentationNode is DoxygenBlockNode doxyNode)
                 {
-                    DoxygenBlockNode doxyNode = (DoxygenBlockNode)cppEntity.DocumentationNode;
-                    TextPosition docsPos = cppEntity.DocumentationNode.StartRange.Position;
-                    if (doxyNode.Entity.Kind == DoxygenBlockEntityKind.BlockMulti)
+                    if (_workspace.ValidationCpp.RequireDoxygenReference)
                     {
-                        DoxygenBlockNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.See) as DoxygenBlockNode;
-                        bool hasDocumented = false;
-                        if (seeNode != null)
+                        TextPosition docsPos = cppEntity.DocumentationNode.StartRange.Position;
+                        if (doxyNode.Entity.Kind == DoxygenBlockEntityKind.BlockMulti)
                         {
-                            DoxygenBlockNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.Reference) as DoxygenBlockNode;
-                            if (refNode != null)
+                            DoxygenBlockNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.See) as DoxygenBlockNode;
+                            bool hasDocumented = false;
+                            if (seeNode != null)
                             {
-                                hasDocumented = true;
+                                DoxygenBlockNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.Reference) as DoxygenBlockNode;
+                                if (refNode != null)
+                                {
+                                    hasDocumented = true;
+                                }
+                            }
+
+                            if (!hasDocumented)
+                            {
+                                AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
                             }
                         }
+                    }
 
-                        if (!hasDocumented)
-                        {
-                            AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
-                        }
+                    if (_workspace.ValidationCpp.ValidateFunctionDefinitions && cppEntity.Kind == CppEntityKind.FunctionDefinition)
+                    {
+                        if (!ValidateFunctionDefinition(_workspace.ValidationCpp, cppEntity))
+                            AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, cppEntity.StartRange.Position, IssueType.Warning), "Incorrect function name", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ API", cppEntity.StartRange.Position.Line + 1, fileName);
                     }
                 }
             }
