@@ -84,6 +84,8 @@ namespace TSP.DoxygenEditor.Services
                         rootSectionNode.AppendChild(thisNode);
                         rootSectionNode = thisNode;
                     }
+                    else
+                        rootSectionNode = thisNode;
                     sectionNode = thisNode;
                 }
                 Debug.Assert(sectionNode != null);
@@ -255,7 +257,22 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootNode != null)
             {
-                XmlNode nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
+                XmlNode sectionNode = null;
+                XmlNode currentNode = _rootNode;
+                string[] s = section.Split('/');
+                for (int i = 0; i < s.Length; ++i)
+                {
+                    string thisSection = s[i];
+                    XmlNode thisNode = currentNode.SelectSingleNode($"d:{thisSection}", _nsMng);
+                    if (thisNode == null)
+                    {
+                        sectionNode = null;
+                        break;
+                    }
+                    sectionNode = currentNode = thisNode;
+                }
+
+                XmlNode nameNode = sectionNode?.SelectSingleNode($"d:{name}", _nsMng);
                 if (nameNode != null)
                 {
                     XmlNodeList itemsNodeList = nameNode.SelectNodes("d:Item", _nsMng);
