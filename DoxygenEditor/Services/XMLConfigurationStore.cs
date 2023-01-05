@@ -179,7 +179,7 @@ namespace TSP.DoxygenEditor.Services
             }
         }
 
-        public object ReadRaw(string section, string name)
+        private object ReadRaw(string section, string name)
         {
             if (_rootNode != null)
             {
@@ -188,10 +188,8 @@ namespace TSP.DoxygenEditor.Services
             }
             return (null);
         }
-        public object ReadRaw(string section, Expression<Func<object>> nameExpression)
-        {
-            return ReadRaw(section, ReflectionUtils.GetName(nameExpression));
-        }
+        private object ReadRaw(string section, Expression<Func<object>> nameExpression)
+            => ReadRaw(section, ReflectionUtils.GetName(nameExpression));
 
         public bool ReadBool(string section, string name, bool defaultValue)
         {

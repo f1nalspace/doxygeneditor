@@ -6,8 +6,6 @@ namespace TSP.DoxygenEditor.Services
 {
     public interface IConfigurarionReader : IDisposable
     {
-        object ReadRaw(string section, string name);
-        object ReadRaw(string section, Expression<Func<object>> nameExpression);
         string ReadString(string section, string name, string defaultValue = null);
         string ReadString(string section, Expression<Func<object>> nameExpression, string defaultValue = null);
         int ReadInt(string section, string name, int defaultValue);
