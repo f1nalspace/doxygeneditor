@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Collections;
@@ -21,6 +22,50 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             public bool ExcludeFunctionBodies { get; set; } = false;
             public bool ExcludeFunctionCallSymbols { get; set; } = false;
             public bool ExcludeFunctionBodySymbols { get; set; } = false;
+            public ImmutableArray<SystemSymbolDescription> SystemSymbols { get; set; } = ImmutableArray<SystemSymbolDescription>.Empty;
+
+            public static readonly SystemSymbolDescription[] Symbols_CPP = new[]
+            {
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerDefine, "__cplusplus", "199711L"),
+            };
+
+            public static readonly SystemSymbolDescription[] Symbols_MSVC = new[]
+            {
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerDefine, "_MSC_VER", "1934"),
+
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedAdd"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedAdd64"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedExchange"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedExchange64"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedExchangeAdd"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedExchangeAdd64"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedIncrement"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedIncrement64"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedCompareExchange"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerFunction, "InterlockedCompareExchange64"),
+            };
+
+            public static readonly SystemSymbolDescription[] Symbols_Win64 = new[]
+            {
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerDefine, "_M_X64", "100"),
+
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerDefine, "_WIN32", "1"),
+                new SystemSymbolDescription(LanguageKind.Cpp, SystemSymbolKind.CppCompilerDefine, "_WIN64", "1"),
+            };
+
+            public CppConfiguration()
+            {
+                ExcludeFunctionBodies = false;
+                ExcludeFunctionCallSymbols = false;
+                ExcludeFunctionBodySymbols = false;
+
+                IEnumerable<SystemSymbolDescription> allDescriptions = Array.Empty<SystemSymbolDescription>();
+                allDescriptions = allDescriptions.Concat(Symbols_CPP);
+                allDescriptions = allDescriptions.Concat(Symbols_MSVC);
+                allDescriptions = allDescriptions.Concat(Symbols_Win64);
+
+                SystemSymbols = allDescriptions.ToImmutableArray();
+            }
         }
 
         public CppConfiguration Configuration { get; }
@@ -28,6 +73,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         public CppParser(ISymbolTableId id, CppConfiguration configuration) : base(id)
         {
             Configuration = configuration;
+            LocalSymbolTable.AddSymbols(configuration.SystemSymbols);
         }
 
         private IBaseNode FindDocumentationNode(LinkedListNode<IBaseToken> searchNode, int maxLineDelta)
@@ -134,7 +180,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     CppNode enumValueNode = new CppNode(rootNode, enumValueEntity);
                     rootNode.AddChild(enumValueNode);
-                    LocalSymbolTable.AddSource(new SourceSymbol(enumValueToken.Lang, SourceSymbolKind.CppMember, enumValueName, enumValueToken.Range, enumValueNode));
+                    LocalSymbolTable.AddSymbol(new SourceSymbol(enumValueToken.Lang, SourceSymbolKind.CppMember, enumValueName, enumValueToken.Range, enumValueNode));
 
                     SearchResult<CppToken> equalsResult = Search(stream, SearchMode.Current, CppTokenKind.EqOp);
                     if (equalsResult != null)
@@ -241,7 +287,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 enumRootNode.Entity = enumRootEntity;
                 Add(enumRootNode);
-                LocalSymbolTable.AddSource(new SourceSymbol(enumIdentToken.Lang, SourceSymbolKind.CppEnum, enumIdent, enumIdentToken.Range, enumRootNode));
+                LocalSymbolTable.AddSymbol(new SourceSymbol(enumIdentToken.Lang, SourceSymbolKind.CppEnum, enumIdent, enumIdentToken.Range, enumRootNode));
             }
         }
 
@@ -286,7 +332,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode structNode = new CppNode(Top, structEntity);
                 Add(structNode);
-                LocalSymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppStruct, structIdent, identToken.Range, structNode));
+                LocalSymbolTable.AddSymbol(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppStruct, structIdent, identToken.Range, structNode));
             }
 
             // @TODO(final): Parse struct members
@@ -312,7 +358,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 };
                 CppNode classNode = new CppNode(Top, classEntity);
                 Add(classNode);
-                LocalSymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppClass, classIdent, identToken.Range, classNode));
+                LocalSymbolTable.AddSymbol(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppClass, classIdent, identToken.Range, classNode));
 
                 // @TODO(final): Parse class members
             }
@@ -405,7 +451,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     };
                     CppNode typedefNode = new CppNode(Top, typedefEntity);
                     Add(typedefNode);
-                    LocalSymbolTable.AddSource(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppType, typedefIdent, identToken.Range));
+                    LocalSymbolTable.AddSymbol(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppType, typedefIdent, identToken.Range));
                 }
             }
         }
@@ -427,7 +473,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             CppNode defineNode = new CppNode(Top, defineKeyEntity);
             Add(defineNode);
             if (macroKind == PreprocessorMacroKind.Source)
-                LocalSymbolTable.AddSource(new SourceSymbol(token.Lang, SourceSymbolKind.CppMacro, token.Value, token.Range, defineNode));
+                LocalSymbolTable.AddSymbol(new SourceSymbol(token.Lang, SourceSymbolKind.CppMacro, token.Value, token.Range, defineNode));
             else
             {
                 ReferenceSymbolKind referenceKind;
@@ -435,7 +481,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     referenceKind = ReferenceSymbolKind.CppMacroMatch;
                 else
                     referenceKind = ReferenceSymbolKind.CppMacroUsage;
-                LocalSymbolTable.AddReference(new ReferenceSymbol(token.Lang, referenceKind, token.Value, token.Range, defineNode));
+                LocalSymbolTable.AddSymbol(new ReferenceSymbol(token.Lang, referenceKind, token.Value, token.Range, defineNode));
             }
         }
 
@@ -713,11 +759,11 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Add(functionNode);
 
             if (kind == CppEntityKind.FunctionCall && !Configuration.ExcludeFunctionCallSymbols)
-                LocalSymbolTable.AddReference(new ReferenceSymbol(functionIdentToken.Lang, ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
+                LocalSymbolTable.AddSymbol(new ReferenceSymbol(functionIdentToken.Lang, ReferenceSymbolKind.CppFunction, functionName, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionBody && !Configuration.ExcludeFunctionBodySymbols)
-                LocalSymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionBody, functionName, functionIdentToken.Range, functionNode));
+                LocalSymbolTable.AddSymbol(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionBody, functionName, functionIdentToken.Range, functionNode));
             else if (kind == CppEntityKind.FunctionDefinition)
-                LocalSymbolTable.AddSource(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
+                LocalSymbolTable.AddSymbol(new SourceSymbol(functionIdentToken.Lang, SourceSymbolKind.CppFunctionDefinition, functionName, functionIdentToken.Range, functionNode));
 
             return (ParseTokenResult.AlreadyAdvanced);
         }
@@ -736,7 +782,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (result);
         }
 
-        protected override ParseTokenResult ParseToken(string source,LinkedListStream<IBaseToken> stream)
+        protected override ParseTokenResult ParseToken(string source, LinkedListStream<IBaseToken> stream)
         {
             CppToken token = stream.Peek<CppToken>();
             if (token == null) return (ParseTokenResult.ReadNext);

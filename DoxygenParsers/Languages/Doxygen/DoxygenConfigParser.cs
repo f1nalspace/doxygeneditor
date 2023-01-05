@@ -65,7 +65,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenConfigNode node = new DoxygenConfigNode(Top, entity);
             Add(node);
 
-            LocalSymbolTable.AddSource(new SourceSymbol(LanguageKind.DoxygenConfig, SourceSymbolKind.DoxygenConfigValue, key, keyToken.Range, node));
+            LocalSymbolTable.AddSymbol(new SourceSymbol(LanguageKind.DoxygenConfig, SourceSymbolKind.DoxygenConfigValue, key, keyToken.Range, node));
         }
 
         protected override ParseTokenResult ParseToken(string source, LinkedListStream<IBaseToken> stream)

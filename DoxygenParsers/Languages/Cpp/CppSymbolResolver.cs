@@ -52,7 +52,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                 token.Kind = CppTokenKind.MemberIdent;
                                 refKind = ReferenceSymbolKind.CppMember;
                             }
-                            _localSymbolTable.AddReference(new ReferenceSymbol(token.Lang, refKind, token.Value, token.Range, null));
+                            _localSymbolTable.AddSymbol(new ReferenceSymbol(token.Lang, refKind, token.Value, token.Range, null));
                         }
                         else
                         {
@@ -75,6 +75,22 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                                     case ReferenceSymbolKind.CppMember:
                                         token.Kind = CppTokenKind.MemberIdent;
                                         break;
+                                }
+                            }
+                            else
+                            {
+                                SystemSymbol systemSymbol = _localSymbolTable.GetSystemSymbol(value);
+                                if (systemSymbol != null)
+                                {
+                                    switch (systemSymbol.Kind)
+                                    {
+                                        case SystemSymbolKind.CppCompilerDefine:
+                                            token.Kind = CppTokenKind.PreprocessorDefineUsage;
+                                            break;
+                                        case SystemSymbolKind.CppCompilerFunction:
+                                            token.Kind = CppTokenKind.FunctionIdent;
+                                            break;
+                                    }
                                 }
                             }
                         }

@@ -181,7 +181,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             SourceSymbolKind kind = SourceSymbolKind.DoxygenSection;
                             if ("page".Equals(commandName) || "mainpage".Equals(commandName))
                                 kind = SourceSymbolKind.DoxygenPage;
-                            LocalSymbolTable.AddSource(new SourceSymbol(nameParam.Token.Lang, kind, symbolName, symbolDisplayName, nameParam.Token.Range, commandNode));
+                            LocalSymbolTable.AddSymbol(new SourceSymbol(nameParam.Token.Lang, kind, symbolName, symbolDisplayName, nameParam.Token.Range, commandNode));
                         }
                         else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
                         {
@@ -218,7 +218,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             }
                                         }
                                         TextRange symbolRange = new TextRange(new TextPosition(nameParam.Token.Position.Index + refRange.Position.Index, refRange.Position.Line, refRange.Position.Column), refRange.Length);
-                                        LocalSymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, referenceTarget, singleRereference, symbolRange, commandNode));
+                                        LocalSymbolTable.AddSymbol(new ReferenceSymbol(nameParam.Token.Lang, referenceTarget, singleRereference, symbolRange, commandNode));
                                     }
                                     else if (first == '#' || first == '.')
                                     {
@@ -235,7 +235,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             }
                         }
                         else if ("subpage".Equals(commandName))
-                            LocalSymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
+                            LocalSymbolTable.AddSymbol(new ReferenceSymbol(nameParam.Token.Lang, ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
                     }
                 }
                 ParseBlockContent(source, stream, commandNode);
