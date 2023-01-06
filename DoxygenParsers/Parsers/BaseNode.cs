@@ -61,19 +61,10 @@ namespace TSP.DoxygenEditor.Parsers
             IBaseNode found = _children.FirstOrDefault(n => n.EndRange.Equals(range));
             if (found != null)
                 return (found);
-            foreach (IBaseNode child in _children)
-            {
-                IBaseNode foundInChild = child.FindNodeByRange(range);
-                if (foundInChild != null)
-                    return (foundInChild);
-            }
             return (null);
         }
 
-        public override string ToString()
-        {
-            return $"{Level} -> {Entity} ({Entity.StartRange} - {Entity.EndRange}, {Entity.Length})";
-        }
+        public override string ToString() => $"{Level} -> {Entity} ({Entity.StartRange} - {Entity.EndRange}, {Entity.Length})";
 
         public int CompareTo(object obj)
         {
