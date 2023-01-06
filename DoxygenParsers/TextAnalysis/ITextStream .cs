@@ -1,4 +1,5 @@
 ﻿using System;
+using TSP.DoxygenEditor.Types;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
@@ -18,8 +19,8 @@ namespace TSP.DoxygenEditor.TextAnalysis
         char Peek();
         char Peek(int delta);
 
-        string GetSourceText(int index, int length);
-        string GetSourceText(TextRange range);
+        string GetSourceText(int index, int length, InternMode intern = InternMode.Normal);
+        string GetSourceText(TextRange range, InternMode intern = InternMode.Normal);
         ReadOnlySpan<char> GetSourceSpan(int index, int length);
 
         bool MatchRelative(int index, string match);

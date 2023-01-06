@@ -1,4 +1,5 @@
 ﻿using System;
+using TSP.DoxygenEditor.Types;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
@@ -13,11 +14,13 @@ namespace TSP.DoxygenEditor.TextAnalysis
             _source = source;
         }
 
-        public override string GetSourceText(int index, int length)
+        public override string GetSourceText(int index, int length, InternMode intern = InternMode.Normal)
         {
             if ((index < StreamBase) || ((index + length) > StreamOnePastEnd))
                 throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {StreamBase} to {StreamOnePastEnd - 1}");
             string result = _source.Substring(index, length);
+            if (intern == InternMode.Intern && !string.IsNullOrEmpty(result))
+                result = string.Intern(result);
             return (result);
         }
 

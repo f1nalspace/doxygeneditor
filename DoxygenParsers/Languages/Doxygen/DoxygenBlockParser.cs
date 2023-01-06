@@ -80,7 +80,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenToken commandToken = stream.Peek<DoxygenToken>();
             Debug.Assert(commandToken != null && commandToken.Kind == DoxygenTokenKind.Command);
 
-            string commandName = commandToken.Value.Substring(1);
+            string commandName = string.Intern(commandToken.Value.Substring(1));
             stream.Next();
 
             string typeName = "Command";
@@ -205,7 +205,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             referenceTextStream.AdvanceColumn();
                                         }
                                         TextRange refRange = referenceTextStream.LexemeRange;
-                                        string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length);
+                                        string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length, Types.InternMode.Intern);
                                         if (referenceTextStream.Peek() == '(')
                                         {
                                             referenceTarget = ReferenceSymbolKind.CppFunction;

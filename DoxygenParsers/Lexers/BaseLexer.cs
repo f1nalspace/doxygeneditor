@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.TextAnalysis;
+using TSP.DoxygenEditor.Types;
 
 namespace TSP.DoxygenEditor.Lexers
 {
@@ -17,12 +18,6 @@ namespace TSP.DoxygenEditor.Lexers
         public IEnumerable<TextError> LexErrors => _lexErrors;
 
         public LanguageKind Language { get; }
-
-        public enum LexIntern
-        {
-            Normal,
-            Intern,
-        }
 
         public abstract class State
         {
@@ -42,13 +37,9 @@ namespace TSP.DoxygenEditor.Lexers
             _lexErrors.Add(new TextError(Language, pos, category, message, what, symbol));
         }
 
-        protected bool PushToken(T token, LexIntern intern = LexIntern.Normal)
+        protected bool PushToken(T token, InternMode intern = InternMode.Normal)
         {
-            string value = Buffer.GetSourceText(token.Index, token.Length);
-            if ((intern == LexIntern.Intern) && !string.IsNullOrWhiteSpace(value))
-                token.Value = string.Intern(value);
-            else
-                token.Value = value;
+            token.Value = Buffer.GetSourceText(token.Index, token.Length, intern);
             T lastToken = _tokens.LastOrDefault();
             if (lastToken != null)
                 Debug.Assert(token.Index >= lastToken.End);

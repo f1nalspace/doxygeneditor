@@ -6,8 +6,8 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 {
     public static class DoxygenSyntax
     {
-        public static HashSet<char> MultiLineDocChars = new HashSet<char>() { '!', '*' };
-        public static HashSet<char> SingleLineDocChars = new HashSet<char>() { '!', '/' };
+        public static readonly HashSet<char> MultiLineDocChars = new HashSet<char>() { '!', '*' };
+        public static readonly HashSet<char> SingleLineDocChars = new HashSet<char>() { '!', '/' };
 
         public enum ArgumentKind
         {
@@ -397,7 +397,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "---", new EscapeCommandRule() },
         };
 
-        public static HashSet<char> SpecialCommandStartChars = new HashSet<char>()
+        public static readonly HashSet<char> SpecialCommandStartChars = new HashSet<char>()
         {
             '$','@','\\','~','<','=','>','#','"',':','|','-','{','}'
         };
@@ -421,10 +421,11 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
         public static CommandRule GetCommandRule(string commandName)
         {
-            if (EquivalentCommandMap.ContainsKey(commandName))
-                return EquivalentCommandMap[commandName];
-            else
-                return CommandRules.ContainsKey(commandName) ? CommandRules[commandName] : null;
+            if (EquivalentCommandMap.TryGetValue(commandName, out CommandRule eqResult))
+                return eqResult;
+            if (CommandRules.TryGetValue(commandName, out CommandRule basicResult))
+                return basicResult;
+            return null;
         }
 
         public static bool IsCommandBegin(char c)

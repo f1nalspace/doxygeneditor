@@ -5,6 +5,7 @@ using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Languages.Utils;
 using TSP.DoxygenEditor.Lexers;
 using TSP.DoxygenEditor.TextAnalysis;
+using TSP.DoxygenEditor.Types;
 
 namespace TSP.DoxygenEditor.Languages.Cpp
 {
@@ -213,15 +214,15 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         {
             public CppTokenKind Kind { get; set; }
             public LexCompletion Complete { get; set; }
-            public LexIntern Intern { get; set; }
+            public InternMode Intern { get; set; }
             public bool IsComplete => Complete == LexCompletion.Complete;
-            public LexResult(CppTokenKind kind, LexCompletion complete, LexIntern intern = LexIntern.Normal)
+            public LexResult(CppTokenKind kind, LexCompletion complete, InternMode intern = InternMode.Normal)
             {
                 Kind = kind;
                 Complete = complete;
                 Intern = intern;
             }
-            public LexResult(CppTokenKind kind, bool isComplete, LexIntern intern = LexIntern.Normal) : this(kind, isComplete ? LexCompletion.Complete : LexCompletion.Incomplete, intern)
+            public LexResult(CppTokenKind kind, bool isComplete, InternMode intern = InternMode.Normal) : this(kind, isComplete ? LexCompletion.Complete : LexCompletion.Incomplete, intern)
             {
             }
         }
@@ -328,7 +329,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 kind = CppTokenKind.GlobalTypeKeyword;
             else
                 kind = CppTokenKind.IdentLiteral;
-            return new LexResult(kind, LexCompletion.Complete, LexIntern.Intern);
+            return new LexResult(kind, LexCompletion.Complete, InternMode.Intern);
         }
 
         private LexResult LexString(string whatName)
@@ -721,7 +722,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
 
                     if (state.Preprocessor.HasDefine)
                     {
-                        string value = Buffer.GetSourceText(Buffer.LexemeRange);
+                        string value = Buffer.GetSourceText(Buffer.LexemeRange, InternMode.Intern);
                         if (state.Preprocessor.HasDefineArgument(value))
                             identResult.Kind = CppTokenKind.PreprocessorDefineArgument;
                     }

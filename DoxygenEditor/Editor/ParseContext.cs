@@ -292,7 +292,7 @@ namespace TSP.DoxygenEditor.Editor
 
                 if (doxyToken.Kind == DoxygenTokenKind.CommandEnd)
                 {
-                    string commandName = text.Substring(doxyToken.Index + 1, doxyToken.Length - 1);
+                    string commandName = string.Intern(text.Substring(doxyToken.Index + 1, doxyToken.Length - 1));
                     CommandStartState topStartState = startStates.Count > 0 ? startStates.Peek() : null;
                     if (topStartState != null)
                     {

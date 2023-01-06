@@ -130,7 +130,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
 
             TextPosition commandStart = Buffer.LexemeStart;
             int commandLen = Buffer.LexemeWidth;
-            string commandName = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, commandLen - 1);
+            string commandName = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, commandLen - 1, Types.InternMode.Intern);
             DoxygenSyntax.CommandRule rule = DoxygenSyntax.GetCommandRule(commandName);
             if (rule != null)
             {
@@ -635,7 +635,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                     Buffer.StartLexeme();
                     Buffer.AdvanceColumn();
                     Buffer.AdvanceColumnsWhile(SyntaxUtils.IsIdentPart);
-                    string ident = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, Buffer.LexemeWidth - 1);
+                    string ident = Buffer.GetSourceText(Buffer.LexemeStart.Index + 1, Buffer.LexemeWidth - 1, Types.InternMode.Intern);
                     if (endCommand.Equals(ident))
                     {
                         PushToken(DoxygenTokenPool.Make(DoxygenTokenKind.CommandEnd, Buffer.LexemeRange, true));
