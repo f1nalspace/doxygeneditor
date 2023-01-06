@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
@@ -28,26 +29,9 @@ namespace TSP.DoxygenEditor.TextAnalysis
             return (result);
         }
 
-        public bool Equals(TextRange other)
-        {
-            bool result = (other.Index == Index) && (other.Length == Length);
-            return (result);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int result = 17;
-                result *= 23 + Index.GetHashCode();
-                result *= 23 + Length.GetHashCode();
-                return (result);
-            }
-        }
-
-        public override string ToString()
-        {
-            return $"{Position}, {Length}";
-        }
+        public bool Equals(TextRange other) => (other.Index == Index) && (other.Length == Length);
+        public override bool Equals([NotNullWhen(true)] object obj) => obj is TextRange range && Equals(range);
+        public override int GetHashCode() => HashCode.Combine(Index, Length);
+        public override string ToString() => $"{Position}, {Length}";
     }
 }
