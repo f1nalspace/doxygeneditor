@@ -85,7 +85,7 @@ namespace TSP.DoxygenEditor.Styles
         static int doxygenConfigOpStyle = styleIndex++;
         static int doxygenConfigValueStyle = styleIndex++;
 
-        static Dictionary<DoxygenTokenKind, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenKind, int>() {
+        static readonly Dictionary<DoxygenTokenKind, int> doxygenTokenTypeToStyleDict = new Dictionary<DoxygenTokenKind, int>() {
             { DoxygenTokenKind.DoxyBlockStartSingle, doxygenBlockStyle },
             { DoxygenTokenKind.DoxyBlockStartMulti, doxygenBlockStyle },
             { DoxygenTokenKind.DoxyBlockEnd, doxygenBlockStyle },
@@ -115,7 +115,7 @@ namespace TSP.DoxygenEditor.Styles
         static int htmlAttrNameStyle = styleIndex++;
         static int htmlAttrValueStyle = styleIndex++;
 
-        static Dictionary<HtmlTokenKind, int> htmlTokenTypeToStyleDict = new Dictionary<HtmlTokenKind, int>() {
+        static readonly Dictionary<HtmlTokenKind, int> htmlTokenTypeToStyleDict = new Dictionary<HtmlTokenKind, int>() {
             { HtmlTokenKind.TagChars, htmlTagCharsStyle },
             { HtmlTokenKind.TagName, htmlTagNameStyle },
             { HtmlTokenKind.AttrName, htmlAttrNameStyle },
