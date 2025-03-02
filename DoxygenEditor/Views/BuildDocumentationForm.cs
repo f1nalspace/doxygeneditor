@@ -49,9 +49,22 @@ namespace TSP.DoxygenEditor.Views
                 string doxgenExe = "doxygen.exe";
                 if (!string.IsNullOrWhiteSpace(CompilerPath))
                 {
-                    string fullDoxygenFilePath = Path.Combine(CompilerPath, doxgenExe);
-                    if (File.Exists(fullDoxygenFilePath))
-                        doxgenExe = fullDoxygenFilePath;
+                    FileInfo file = new FileInfo(CompilerPath);
+                    if (file.Exists)
+                    {
+                        if (file.Name.Equals(doxgenExe, StringComparison.InvariantCultureIgnoreCase))
+                            doxgenExe = CompilerPath;
+                    }
+                    else
+                    {
+                        DirectoryInfo dir = new DirectoryInfo(CompilerPath);
+                        if (dir.Exists)
+                        {
+                            string fullDoxygenFilePath = Path.Combine(dir.FullName, doxgenExe);
+                            if (File.Exists(fullDoxygenFilePath))
+                                doxgenExe = fullDoxygenFilePath;
+                        }
+                    }
                 }
 
                 ProcessStartInfo startInfo = new ProcessStartInfo()
