@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq.Expressions;
 using TSP.DoxygenEditor.Utils;
 
@@ -19,7 +20,7 @@ namespace TSP.DoxygenEditor.Services
             _converter = converter;
         }
 
-        public bool Load(string filePath)
+        public Result<bool> Load(string filePath)
         {
             RegistryKey softwareKey = Registry.CurrentUser.OpenSubKey("Software", false);
             string[] names = filePath.Split('/');
@@ -36,7 +37,10 @@ namespace TSP.DoxygenEditor.Services
                 _rootKey = newKey;
                 curKey = newKey;
             }
-            return (_rootKey != null);
+            if (_rootKey == null)
+                return new Result<bool>(new KeyNotFoundException($"The registry key '{filePath}' was not found"));
+            else
+                return new Result<bool>(true);
         }
 
         public void Save(string filePath)

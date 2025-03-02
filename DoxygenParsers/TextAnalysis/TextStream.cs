@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using TSP.DoxygenEditor.Languages.Utils;
+using TSP.DoxygenEditor.Types;
 using static TSP.DoxygenEditor.TextAnalysis.ITextStream;
 
 namespace TSP.DoxygenEditor.TextAnalysis
@@ -44,8 +45,8 @@ namespace TSP.DoxygenEditor.TextAnalysis
             _lexemeStart = new TextPosition(-1);
         }
 
-        public abstract string GetSourceText(int index, int length);
-        public virtual string GetSourceText(TextRange range) => GetSourceText(range.Index, range.Length);
+        public abstract string GetSourceText(int index, int length, InternMode intern = InternMode.Normal);
+        public virtual string GetSourceText(TextRange range, InternMode intern = InternMode.Normal) => GetSourceText(range.Index, range.Length, intern);
 
         public abstract ReadOnlySpan<char> GetSourceSpan(int index, int length);
         public virtual ReadOnlySpan<char> GetSourceSpan(TextRange range) => GetSourceSpan(range.Index, range.Length);

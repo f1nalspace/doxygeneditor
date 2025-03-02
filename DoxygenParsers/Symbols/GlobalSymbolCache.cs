@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using TSP.DoxygenEditor.TextAnalysis;
 using System.Collections;
+using TSP.DoxygenEditor.Languages;
+using TSP.DoxygenEditor.Languages.Cpp;
+using TSP.DoxygenEditor.Languages.Doxygen;
 
 namespace TSP.DoxygenEditor.Symbols
 {
@@ -59,6 +62,20 @@ namespace TSP.DoxygenEditor.Symbols
             });
         }
 
+        public static bool HasSystemSymbol(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+                throw new ArgumentNullException("Symbol may not be null or empty");
+            foreach (KeyValuePair<ISymbolTableId, SymbolTable> entryPair in _tableMap)
+            {
+                ISymbolTableId id = entryPair.Key;
+                SymbolTable table = entryPair.Value;
+                if (table.HasSystemSymbol(symbol))
+                    return (true);
+            }
+            return (false);
+        }
+
         public static bool HasReference(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
@@ -93,6 +110,7 @@ namespace TSP.DoxygenEditor.Symbols
             }
             return bestSource;
         }
+
         public static IEnumerable<Tuple<SourceSymbol, ISymbolTableId>> FindSources(string symbol, Func<ISymbolTableId, bool> tableFilter = null)
         {
             if (string.IsNullOrWhiteSpace(symbol))
@@ -164,8 +182,19 @@ namespace TSP.DoxygenEditor.Symbols
                             if (reference.Kind == ReferenceSymbolKind.CppMacroUsage)
                                 continue;
                         }
-                        if (!HasReference(name))
-                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name) { Tag = reference }));
+                        if (!HasReference(name) && !HasSystemSymbol(name))
+                        {
+                            LanguageKind lang;
+                            if (reference.Node is CppNode)
+                                lang = LanguageKind.Cpp;
+                            else if (reference.Node is DoxygenBlockNode)
+                                lang = LanguageKind.DoxygenCode;
+                            else if (reference.Node is DoxygenConfigNode)
+                                lang = LanguageKind.DoxygenConfig;
+                            else
+                                lang = reference.Lang;
+                            result.Add(new KeyValuePair<ISymbolTableId, TextError>(id, new TextError(lang, reference.Range.Position, "Symbols", $"Missing symbol '{name}'", reference.Kind.ToString(), name)));
+                        }
                     }
                 }
             }

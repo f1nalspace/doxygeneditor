@@ -9,6 +9,7 @@ namespace TSP.DoxygenEditor.Services
     {
         public enum WriteKind
         {
+            None = 0,
             Bool,
             Int,
             Double,

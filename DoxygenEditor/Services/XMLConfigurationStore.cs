@@ -28,28 +28,27 @@ namespace TSP.DoxygenEditor.Services
             _rootNode = null;
         }
 
-        public bool Load(string filePath)
+        public Result<bool> Load(string filePath)
         {
             _rootNode = null;
-            if (File.Exists(filePath))
+            if (!File.Exists(filePath))
+                return new Result<bool>(new FileNotFoundException($"The XML file '{filePath}' was not found"));
+            try
             {
-                try
-                {
-                    if (_doc == null)
-                        _doc = new XmlDocument();
-                    _doc.Load(filePath);
-                    _nsMng = new XmlNamespaceManager(_doc.NameTable);
-                    _nsMng.AddNamespace("d", _defaultNamespace);
-                    XmlNode baseNode = _doc.SelectSingleNode($"d:{_baseName}", _nsMng);
-                    _rootNode = baseNode;
-                    return (true);
-                }
-                catch
-                {
-                    _doc.RemoveAll();
-                }
+                if (_doc == null)
+                    _doc = new XmlDocument();
+                _doc.Load(filePath);
+                _nsMng = new XmlNamespaceManager(_doc.NameTable);
+                _nsMng.AddNamespace("d", _defaultNamespace);
+                XmlNode baseNode = _doc.SelectSingleNode($"d:{_baseName}", _nsMng);
+                _rootNode = baseNode;
+                return new Result<bool>(true);
             }
-            return (false);
+            catch (Exception e)
+            {
+                _doc.RemoveAll();
+                return new Result<bool>(new IOException($"Failed to load XML file '{filePath}'", e));
+            }
         }
 
         public void Save(string filePath)
@@ -84,6 +83,8 @@ namespace TSP.DoxygenEditor.Services
                         rootSectionNode.AppendChild(thisNode);
                         rootSectionNode = thisNode;
                     }
+                    else
+                        rootSectionNode = thisNode;
                     sectionNode = thisNode;
                 }
                 Debug.Assert(sectionNode != null);
@@ -177,7 +178,7 @@ namespace TSP.DoxygenEditor.Services
             }
         }
 
-        public object ReadRaw(string section, string name)
+        private object ReadRaw(string section, string name)
         {
             if (_rootNode != null)
             {
@@ -186,10 +187,8 @@ namespace TSP.DoxygenEditor.Services
             }
             return (null);
         }
-        public object ReadRaw(string section, Expression<Func<object>> nameExpression)
-        {
-            return ReadRaw(section, ReflectionUtils.GetName(nameExpression));
-        }
+        private object ReadRaw(string section, Expression<Func<object>> nameExpression)
+            => ReadRaw(section, ReflectionUtils.GetName(nameExpression));
 
         public bool ReadBool(string section, string name, bool defaultValue)
         {
@@ -255,7 +254,22 @@ namespace TSP.DoxygenEditor.Services
         {
             if (_rootNode != null)
             {
-                XmlNode nameNode = _rootNode.SelectSingleNode($"d:{section}/d:{name}", _nsMng);
+                XmlNode sectionNode = null;
+                XmlNode currentNode = _rootNode;
+                string[] s = section.Split('/');
+                for (int i = 0; i < s.Length; ++i)
+                {
+                    string thisSection = s[i];
+                    XmlNode thisNode = currentNode.SelectSingleNode($"d:{thisSection}", _nsMng);
+                    if (thisNode == null)
+                    {
+                        sectionNode = null;
+                        break;
+                    }
+                    sectionNode = currentNode = thisNode;
+                }
+
+                XmlNode nameNode = sectionNode?.SelectSingleNode($"d:{name}", _nsMng);
                 if (nameNode != null)
                 {
                     XmlNodeList itemsNodeList = nameNode.SelectNodes("d:Item", _nsMng);

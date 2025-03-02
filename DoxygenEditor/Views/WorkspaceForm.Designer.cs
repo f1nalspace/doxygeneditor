@@ -94,20 +94,20 @@
             this.panControls.Controls.Add(this.btnOk);
             this.panControls.Controls.Add(this.btnCancel);
             this.panControls.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panControls.Location = new System.Drawing.Point(0, 391);
-            this.panControls.Margin = new System.Windows.Forms.Padding(4);
+            this.panControls.Location = new System.Drawing.Point(0, 554);
+            this.panControls.Margin = new System.Windows.Forms.Padding(5, 6, 5, 6);
             this.panControls.Name = "panControls";
-            this.panControls.Size = new System.Drawing.Size(629, 47);
+            this.panControls.Size = new System.Drawing.Size(734, 66);
             this.panControls.TabIndex = 0;
             // 
             // btnOk
             // 
             this.btnOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnOk.Location = new System.Drawing.Point(439, 7);
-            this.btnOk.Margin = new System.Windows.Forms.Padding(4);
+            this.btnOk.Location = new System.Drawing.Point(512, 10);
+            this.btnOk.Margin = new System.Windows.Forms.Padding(5, 6, 5, 6);
             this.btnOk.Name = "btnOk";
-            this.btnOk.Size = new System.Drawing.Size(88, 30);
+            this.btnOk.Size = new System.Drawing.Size(103, 42);
             this.btnOk.TabIndex = 1;
             this.btnOk.Text = "OK";
             this.btnOk.UseVisualStyleBackColor = true;
@@ -116,10 +116,10 @@
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(533, 7);
-            this.btnCancel.Margin = new System.Windows.Forms.Padding(4);
+            this.btnCancel.Location = new System.Drawing.Point(622, 10);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(5, 6, 5, 6);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(88, 30);
+            this.btnCancel.Size = new System.Drawing.Size(103, 42);
             this.btnCancel.TabIndex = 0;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
@@ -132,17 +132,18 @@
             this.panTree.Location = new System.Drawing.Point(0, 0);
             this.panTree.Margin = new System.Windows.Forms.Padding(0);
             this.panTree.Name = "panTree";
-            this.panTree.Padding = new System.Windows.Forms.Padding(5, 6, 0, 0);
-            this.panTree.Size = new System.Drawing.Size(175, 391);
+            this.panTree.Padding = new System.Windows.Forms.Padding(6, 8, 0, 0);
+            this.panTree.Size = new System.Drawing.Size(250, 554);
             this.panTree.TabIndex = 2;
             // 
             // tvOptions
             // 
             this.tvOptions.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.tvOptions.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tvOptions.Font = new System.Drawing.Font("Segoe UI", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tvOptions.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.tvOptions.HideSelection = false;
-            this.tvOptions.Location = new System.Drawing.Point(5, 36);
+            this.tvOptions.Location = new System.Drawing.Point(6, 50);
+            this.tvOptions.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tvOptions.Name = "tvOptions";
             treeNode1.Name = "nodeParserCpp";
             treeNode1.Tag = "";
@@ -165,7 +166,7 @@
             treeNode4,
             treeNode6,
             treeNode7});
-            this.tvOptions.Size = new System.Drawing.Size(170, 355);
+            this.tvOptions.Size = new System.Drawing.Size(244, 504);
             this.tvOptions.TabIndex = 1;
             this.tvOptions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvOptions_AfterSelect);
             // 
@@ -173,17 +174,19 @@
             // 
             this.panOptionsFilterTop.Controls.Add(this.tbOptionsFilter);
             this.panOptionsFilterTop.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panOptionsFilterTop.Location = new System.Drawing.Point(5, 6);
+            this.panOptionsFilterTop.Location = new System.Drawing.Point(6, 8);
+            this.panOptionsFilterTop.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panOptionsFilterTop.Name = "panOptionsFilterTop";
-            this.panOptionsFilterTop.Size = new System.Drawing.Size(170, 30);
+            this.panOptionsFilterTop.Size = new System.Drawing.Size(244, 42);
             this.panOptionsFilterTop.TabIndex = 0;
             // 
             // tbOptionsFilter
             // 
             this.tbOptionsFilter.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tbOptionsFilter.Location = new System.Drawing.Point(0, 0);
+            this.tbOptionsFilter.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tbOptionsFilter.Name = "tbOptionsFilter";
-            this.tbOptionsFilter.Size = new System.Drawing.Size(170, 25);
+            this.tbOptionsFilter.Size = new System.Drawing.Size(244, 25);
             this.tbOptionsFilter.TabIndex = 0;
             // 
             // panTabFill
@@ -191,9 +194,10 @@
             this.panTabFill.Controls.Add(this.tcMain);
             this.panTabFill.Controls.Add(this.panOptionsTitleTop);
             this.panTabFill.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panTabFill.Location = new System.Drawing.Point(175, 0);
+            this.panTabFill.Location = new System.Drawing.Point(250, 0);
+            this.panTabFill.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panTabFill.Name = "panTabFill";
-            this.panTabFill.Size = new System.Drawing.Size(454, 391);
+            this.panTabFill.Size = new System.Drawing.Size(484, 554);
             this.panTabFill.TabIndex = 3;
             // 
             // tcMain
@@ -204,12 +208,12 @@
             this.tcMain.Controls.Add(this.tpBuildOptions);
             this.tcMain.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tcMain.ItemSize = new System.Drawing.Size(91, 25);
-            this.tcMain.Location = new System.Drawing.Point(0, 24);
+            this.tcMain.Location = new System.Drawing.Point(0, 34);
             this.tcMain.Margin = new System.Windows.Forms.Padding(0);
             this.tcMain.Name = "tcMain";
             this.tcMain.Padding = new System.Drawing.Point(0, 0);
             this.tcMain.SelectedIndex = 0;
-            this.tcMain.Size = new System.Drawing.Size(454, 367);
+            this.tcMain.Size = new System.Drawing.Size(484, 520);
             this.tcMain.TabIndex = 1;
             this.tcMain.SelectedIndexChanged += new System.EventHandler(this.tcMain_SelectedIndexChanged);
             // 
@@ -220,7 +224,7 @@
             this.tpParserCpp.Location = new System.Drawing.Point(4, 29);
             this.tpParserCpp.Margin = new System.Windows.Forms.Padding(0);
             this.tpParserCpp.Name = "tpParserCpp";
-            this.tpParserCpp.Size = new System.Drawing.Size(446, 334);
+            this.tpParserCpp.Size = new System.Drawing.Size(476, 487);
             this.tpParserCpp.TabIndex = 0;
             this.tpParserCpp.Text = "Parser\\C/C++";
             this.tpParserCpp.UseVisualStyleBackColor = true;
@@ -231,11 +235,11 @@
             this.gbParserCppExcludedSymbols.Controls.Add(this.cbParserCppExcludeFunctionBodySymbols);
             this.gbParserCppExcludedSymbols.Controls.Add(this.cbParserCppExcludeFunctionCallSymbols);
             this.gbParserCppExcludedSymbols.Dock = System.Windows.Forms.DockStyle.Top;
-            this.gbParserCppExcludedSymbols.Location = new System.Drawing.Point(0, 53);
+            this.gbParserCppExcludedSymbols.Location = new System.Drawing.Point(0, 55);
             this.gbParserCppExcludedSymbols.Margin = new System.Windows.Forms.Padding(0);
             this.gbParserCppExcludedSymbols.Name = "gbParserCppExcludedSymbols";
-            this.gbParserCppExcludedSymbols.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
-            this.gbParserCppExcludedSymbols.Size = new System.Drawing.Size(446, 76);
+            this.gbParserCppExcludedSymbols.Padding = new System.Windows.Forms.Padding(6, 8, 6, 8);
+            this.gbParserCppExcludedSymbols.Size = new System.Drawing.Size(476, 76);
             this.gbParserCppExcludedSymbols.TabIndex = 1;
             this.gbParserCppExcludedSymbols.TabStop = false;
             this.gbParserCppExcludedSymbols.Text = "Excluded Symbols";
@@ -244,9 +248,10 @@
             // 
             this.cbParserCppExcludeFunctionBodySymbols.AutoSize = true;
             this.cbParserCppExcludeFunctionBodySymbols.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbParserCppExcludeFunctionBodySymbols.Location = new System.Drawing.Point(5, 47);
+            this.cbParserCppExcludeFunctionBodySymbols.Location = new System.Drawing.Point(6, 47);
+            this.cbParserCppExcludeFunctionBodySymbols.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbParserCppExcludeFunctionBodySymbols.Name = "cbParserCppExcludeFunctionBodySymbols";
-            this.cbParserCppExcludeFunctionBodySymbols.Size = new System.Drawing.Size(436, 23);
+            this.cbParserCppExcludeFunctionBodySymbols.Size = new System.Drawing.Size(464, 21);
             this.cbParserCppExcludeFunctionBodySymbols.TabIndex = 1;
             this.cbParserCppExcludeFunctionBodySymbols.Text = "Function Bodies";
             this.cbParserCppExcludeFunctionBodySymbols.UseVisualStyleBackColor = true;
@@ -255,9 +260,10 @@
             // 
             this.cbParserCppExcludeFunctionCallSymbols.AutoSize = true;
             this.cbParserCppExcludeFunctionCallSymbols.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbParserCppExcludeFunctionCallSymbols.Location = new System.Drawing.Point(5, 24);
+            this.cbParserCppExcludeFunctionCallSymbols.Location = new System.Drawing.Point(6, 26);
+            this.cbParserCppExcludeFunctionCallSymbols.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbParserCppExcludeFunctionCallSymbols.Name = "cbParserCppExcludeFunctionCallSymbols";
-            this.cbParserCppExcludeFunctionCallSymbols.Size = new System.Drawing.Size(436, 23);
+            this.cbParserCppExcludeFunctionCallSymbols.Size = new System.Drawing.Size(464, 21);
             this.cbParserCppExcludeFunctionCallSymbols.TabIndex = 0;
             this.cbParserCppExcludeFunctionCallSymbols.Text = "Function Calls";
             this.cbParserCppExcludeFunctionCallSymbols.UseVisualStyleBackColor = true;
@@ -270,8 +276,8 @@
             this.gbParserCppExcludedNodes.Location = new System.Drawing.Point(0, 0);
             this.gbParserCppExcludedNodes.Margin = new System.Windows.Forms.Padding(0);
             this.gbParserCppExcludedNodes.Name = "gbParserCppExcludedNodes";
-            this.gbParserCppExcludedNodes.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
-            this.gbParserCppExcludedNodes.Size = new System.Drawing.Size(446, 53);
+            this.gbParserCppExcludedNodes.Padding = new System.Windows.Forms.Padding(6, 8, 6, 8);
+            this.gbParserCppExcludedNodes.Size = new System.Drawing.Size(476, 55);
             this.gbParserCppExcludedNodes.TabIndex = 0;
             this.gbParserCppExcludedNodes.TabStop = false;
             this.gbParserCppExcludedNodes.Text = "Excluded Types";
@@ -280,9 +286,10 @@
             // 
             this.cbParserCppSkipFunctionBodies.AutoSize = true;
             this.cbParserCppSkipFunctionBodies.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbParserCppSkipFunctionBodies.Location = new System.Drawing.Point(5, 24);
+            this.cbParserCppSkipFunctionBodies.Location = new System.Drawing.Point(6, 26);
+            this.cbParserCppSkipFunctionBodies.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbParserCppSkipFunctionBodies.Name = "cbParserCppSkipFunctionBodies";
-            this.cbParserCppSkipFunctionBodies.Size = new System.Drawing.Size(436, 23);
+            this.cbParserCppSkipFunctionBodies.Size = new System.Drawing.Size(464, 21);
             this.cbParserCppSkipFunctionBodies.TabIndex = 0;
             this.cbParserCppSkipFunctionBodies.Text = "Function Bodies";
             this.cbParserCppSkipFunctionBodies.UseVisualStyleBackColor = true;
@@ -294,7 +301,7 @@
             this.tpValidationCpp.Location = new System.Drawing.Point(4, 29);
             this.tpValidationCpp.Margin = new System.Windows.Forms.Padding(0);
             this.tpValidationCpp.Name = "tpValidationCpp";
-            this.tpValidationCpp.Size = new System.Drawing.Size(446, 334);
+            this.tpValidationCpp.Size = new System.Drawing.Size(477, 487);
             this.tpValidationCpp.TabIndex = 1;
             this.tpValidationCpp.Text = "Validation\\C/C++";
             this.tpValidationCpp.UseVisualStyleBackColor = true;
@@ -307,8 +314,8 @@
             this.gbValidationCppDocumentation.Location = new System.Drawing.Point(0, 76);
             this.gbValidationCppDocumentation.Margin = new System.Windows.Forms.Padding(0);
             this.gbValidationCppDocumentation.Name = "gbValidationCppDocumentation";
-            this.gbValidationCppDocumentation.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
-            this.gbValidationCppDocumentation.Size = new System.Drawing.Size(446, 53);
+            this.gbValidationCppDocumentation.Padding = new System.Windows.Forms.Padding(6, 8, 6, 8);
+            this.gbValidationCppDocumentation.Size = new System.Drawing.Size(477, 55);
             this.gbValidationCppDocumentation.TabIndex = 2;
             this.gbValidationCppDocumentation.TabStop = false;
             this.gbValidationCppDocumentation.Text = "Documentation";
@@ -317,9 +324,10 @@
             // 
             this.cbValidationCppRequireDoxygenReference.AutoSize = true;
             this.cbValidationCppRequireDoxygenReference.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbValidationCppRequireDoxygenReference.Location = new System.Drawing.Point(5, 24);
+            this.cbValidationCppRequireDoxygenReference.Location = new System.Drawing.Point(6, 26);
+            this.cbValidationCppRequireDoxygenReference.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbValidationCppRequireDoxygenReference.Name = "cbValidationCppRequireDoxygenReference";
-            this.cbValidationCppRequireDoxygenReference.Size = new System.Drawing.Size(436, 23);
+            this.cbValidationCppRequireDoxygenReference.Size = new System.Drawing.Size(465, 21);
             this.cbValidationCppRequireDoxygenReference.TabIndex = 0;
             this.cbValidationCppRequireDoxygenReference.Text = "Require Doxygen Reference (@see @ref)";
             this.cbValidationCppRequireDoxygenReference.UseVisualStyleBackColor = true;
@@ -333,8 +341,8 @@
             this.gbValidationCppExcludedTypes.Location = new System.Drawing.Point(0, 0);
             this.gbValidationCppExcludedTypes.Margin = new System.Windows.Forms.Padding(0);
             this.gbValidationCppExcludedTypes.Name = "gbValidationCppExcludedTypes";
-            this.gbValidationCppExcludedTypes.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
-            this.gbValidationCppExcludedTypes.Size = new System.Drawing.Size(446, 76);
+            this.gbValidationCppExcludedTypes.Padding = new System.Windows.Forms.Padding(6, 8, 6, 8);
+            this.gbValidationCppExcludedTypes.Size = new System.Drawing.Size(477, 76);
             this.gbValidationCppExcludedTypes.TabIndex = 1;
             this.gbValidationCppExcludedTypes.TabStop = false;
             this.gbValidationCppExcludedTypes.Text = "Excluded Types";
@@ -343,9 +351,10 @@
             // 
             this.cbValidationCppExcludePreprocessorUsage.AutoSize = true;
             this.cbValidationCppExcludePreprocessorUsage.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbValidationCppExcludePreprocessorUsage.Location = new System.Drawing.Point(5, 47);
+            this.cbValidationCppExcludePreprocessorUsage.Location = new System.Drawing.Point(6, 47);
+            this.cbValidationCppExcludePreprocessorUsage.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbValidationCppExcludePreprocessorUsage.Name = "cbValidationCppExcludePreprocessorUsage";
-            this.cbValidationCppExcludePreprocessorUsage.Size = new System.Drawing.Size(436, 23);
+            this.cbValidationCppExcludePreprocessorUsage.Size = new System.Drawing.Size(465, 21);
             this.cbValidationCppExcludePreprocessorUsage.TabIndex = 1;
             this.cbValidationCppExcludePreprocessorUsage.Text = "Preprocessor Usage";
             this.cbValidationCppExcludePreprocessorUsage.UseVisualStyleBackColor = true;
@@ -354,9 +363,10 @@
             // 
             this.cbValidationCppExcludePreprocessorMatch.AutoSize = true;
             this.cbValidationCppExcludePreprocessorMatch.Dock = System.Windows.Forms.DockStyle.Top;
-            this.cbValidationCppExcludePreprocessorMatch.Location = new System.Drawing.Point(5, 24);
+            this.cbValidationCppExcludePreprocessorMatch.Location = new System.Drawing.Point(6, 26);
+            this.cbValidationCppExcludePreprocessorMatch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbValidationCppExcludePreprocessorMatch.Name = "cbValidationCppExcludePreprocessorMatch";
-            this.cbValidationCppExcludePreprocessorMatch.Size = new System.Drawing.Size(436, 23);
+            this.cbValidationCppExcludePreprocessorMatch.Size = new System.Drawing.Size(465, 21);
             this.cbValidationCppExcludePreprocessorMatch.TabIndex = 0;
             this.cbValidationCppExcludePreprocessorMatch.Text = "Preprocessor Match";
             this.cbValidationCppExcludePreprocessorMatch.UseVisualStyleBackColor = true;
@@ -366,7 +376,7 @@
             this.tpEditorSyntaxHighlighting.Location = new System.Drawing.Point(4, 29);
             this.tpEditorSyntaxHighlighting.Margin = new System.Windows.Forms.Padding(0);
             this.tpEditorSyntaxHighlighting.Name = "tpEditorSyntaxHighlighting";
-            this.tpEditorSyntaxHighlighting.Size = new System.Drawing.Size(446, 334);
+            this.tpEditorSyntaxHighlighting.Size = new System.Drawing.Size(477, 487);
             this.tpEditorSyntaxHighlighting.TabIndex = 2;
             this.tpEditorSyntaxHighlighting.Text = "Editor\\Syntax-Highlighting";
             this.tpEditorSyntaxHighlighting.UseVisualStyleBackColor = true;
@@ -375,9 +385,10 @@
             // 
             this.tpBuildOptions.Controls.Add(this.groupBox1);
             this.tpBuildOptions.Location = new System.Drawing.Point(4, 29);
+            this.tpBuildOptions.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tpBuildOptions.Name = "tpBuildOptions";
-            this.tpBuildOptions.Padding = new System.Windows.Forms.Padding(3);
-            this.tpBuildOptions.Size = new System.Drawing.Size(446, 334);
+            this.tpBuildOptions.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.tpBuildOptions.Size = new System.Drawing.Size(477, 487);
             this.tpBuildOptions.TabIndex = 3;
             this.tpBuildOptions.Text = "Build";
             this.tpBuildOptions.UseVisualStyleBackColor = true;
@@ -394,20 +405,21 @@
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.tbBuildDoxygenExecutablePath);
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBox1.Location = new System.Drawing.Point(3, 3);
+            this.groupBox1.Location = new System.Drawing.Point(3, 4);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(5, 6, 5, 6);
-            this.groupBox1.Size = new System.Drawing.Size(440, 119);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(6, 8, 6, 8);
+            this.groupBox1.Size = new System.Drawing.Size(471, 168);
             this.groupBox1.TabIndex = 2;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Paths";
             // 
             // btnSelectBuildDoxygenConfigPath
             // 
-            this.btnSelectBuildDoxygenConfigPath.Location = new System.Drawing.Point(402, 82);
+            this.btnSelectBuildDoxygenConfigPath.Location = new System.Drawing.Point(469, 117);
+            this.btnSelectBuildDoxygenConfigPath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnSelectBuildDoxygenConfigPath.Name = "btnSelectBuildDoxygenConfigPath";
-            this.btnSelectBuildDoxygenConfigPath.Size = new System.Drawing.Size(30, 23);
+            this.btnSelectBuildDoxygenConfigPath.Size = new System.Drawing.Size(35, 32);
             this.btnSelectBuildDoxygenConfigPath.TabIndex = 8;
             this.btnSelectBuildDoxygenConfigPath.Text = "...";
             this.btnSelectBuildDoxygenConfigPath.UseVisualStyleBackColor = true;
@@ -415,9 +427,10 @@
             // 
             // btnSelectBuildSourcePath
             // 
-            this.btnSelectBuildSourcePath.Location = new System.Drawing.Point(402, 52);
+            this.btnSelectBuildSourcePath.Location = new System.Drawing.Point(469, 74);
+            this.btnSelectBuildSourcePath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnSelectBuildSourcePath.Name = "btnSelectBuildSourcePath";
-            this.btnSelectBuildSourcePath.Size = new System.Drawing.Size(30, 23);
+            this.btnSelectBuildSourcePath.Size = new System.Drawing.Size(35, 32);
             this.btnSelectBuildSourcePath.TabIndex = 7;
             this.btnSelectBuildSourcePath.Text = "...";
             this.btnSelectBuildSourcePath.UseVisualStyleBackColor = true;
@@ -425,9 +438,10 @@
             // 
             // btnSelectBuildDoxgenExecutable
             // 
-            this.btnSelectBuildDoxgenExecutable.Location = new System.Drawing.Point(402, 20);
+            this.btnSelectBuildDoxgenExecutable.Location = new System.Drawing.Point(469, 28);
+            this.btnSelectBuildDoxgenExecutable.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnSelectBuildDoxgenExecutable.Name = "btnSelectBuildDoxgenExecutable";
-            this.btnSelectBuildDoxgenExecutable.Size = new System.Drawing.Size(30, 23);
+            this.btnSelectBuildDoxgenExecutable.Size = new System.Drawing.Size(35, 32);
             this.btnSelectBuildDoxgenExecutable.TabIndex = 6;
             this.btnSelectBuildDoxgenExecutable.Text = "...";
             this.btnSelectBuildDoxgenExecutable.UseVisualStyleBackColor = true;
@@ -436,49 +450,52 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(8, 86);
+            this.label3.Location = new System.Drawing.Point(9, 121);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(154, 19);
+            this.label3.Size = new System.Drawing.Size(145, 17);
             this.label3.TabIndex = 5;
             this.label3.Text = "Doxygen Configuration:";
             // 
             // tbBuildDoxygenConfigFilePath
             // 
-            this.tbBuildDoxygenConfigFilePath.Location = new System.Drawing.Point(168, 83);
+            this.tbBuildDoxygenConfigFilePath.Location = new System.Drawing.Point(196, 117);
+            this.tbBuildDoxygenConfigFilePath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tbBuildDoxygenConfigFilePath.Name = "tbBuildDoxygenConfigFilePath";
-            this.tbBuildDoxygenConfigFilePath.Size = new System.Drawing.Size(228, 25);
+            this.tbBuildDoxygenConfigFilePath.Size = new System.Drawing.Size(265, 25);
             this.tbBuildDoxygenConfigFilePath.TabIndex = 4;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(49, 55);
+            this.label2.Location = new System.Drawing.Point(58, 78);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(113, 19);
+            this.label2.Size = new System.Drawing.Size(108, 17);
             this.label2.TabIndex = 3;
             this.label2.Text = "Source Directory:";
             // 
             // tbBuildSourcePath
             // 
-            this.tbBuildSourcePath.Location = new System.Drawing.Point(168, 52);
+            this.tbBuildSourcePath.Location = new System.Drawing.Point(196, 74);
+            this.tbBuildSourcePath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tbBuildSourcePath.Name = "tbBuildSourcePath";
-            this.tbBuildSourcePath.Size = new System.Drawing.Size(228, 25);
+            this.tbBuildSourcePath.Size = new System.Drawing.Size(265, 25);
             this.tbBuildSourcePath.TabIndex = 2;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(28, 24);
+            this.label1.Location = new System.Drawing.Point(33, 34);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(134, 19);
+            this.label1.Size = new System.Drawing.Size(128, 17);
             this.label1.TabIndex = 1;
             this.label1.Text = "Doxygen Executable:";
             // 
             // tbBuildDoxygenExecutablePath
             // 
-            this.tbBuildDoxygenExecutablePath.Location = new System.Drawing.Point(168, 21);
+            this.tbBuildDoxygenExecutablePath.Location = new System.Drawing.Point(196, 30);
+            this.tbBuildDoxygenExecutablePath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tbBuildDoxygenExecutablePath.Name = "tbBuildDoxygenExecutablePath";
-            this.tbBuildDoxygenExecutablePath.Size = new System.Drawing.Size(228, 25);
+            this.tbBuildDoxygenExecutablePath.Size = new System.Drawing.Size(265, 25);
             this.tbBuildDoxygenExecutablePath.TabIndex = 0;
             // 
             // panOptionsTitleTop
@@ -486,18 +503,19 @@
             this.panOptionsTitleTop.Controls.Add(this.lblOptionsTitle);
             this.panOptionsTitleTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.panOptionsTitleTop.Location = new System.Drawing.Point(0, 0);
+            this.panOptionsTitleTop.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panOptionsTitleTop.Name = "panOptionsTitleTop";
-            this.panOptionsTitleTop.Size = new System.Drawing.Size(454, 24);
+            this.panOptionsTitleTop.Size = new System.Drawing.Size(484, 34);
             this.panOptionsTitleTop.TabIndex = 2;
             // 
             // lblOptionsTitle
             // 
             this.lblOptionsTitle.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblOptionsTitle.Font = new System.Drawing.Font("Segoe UI", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblOptionsTitle.Font = new System.Drawing.Font("Segoe UI", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.lblOptionsTitle.Location = new System.Drawing.Point(0, 0);
             this.lblOptionsTitle.Name = "lblOptionsTitle";
-            this.lblOptionsTitle.Padding = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.lblOptionsTitle.Size = new System.Drawing.Size(454, 24);
+            this.lblOptionsTitle.Padding = new System.Windows.Forms.Padding(0, 11, 0, 0);
+            this.lblOptionsTitle.Size = new System.Drawing.Size(484, 34);
             this.lblOptionsTitle.TabIndex = 0;
             this.lblOptionsTitle.Text = "[Options Title]";
             // 
@@ -505,12 +523,12 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(629, 438);
+            this.ClientSize = new System.Drawing.Size(734, 620);
             this.Controls.Add(this.panTabFill);
             this.Controls.Add(this.panTree);
             this.Controls.Add(this.panControls);
-            this.Font = new System.Drawing.Font("Segoe UI", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Margin = new System.Windows.Forms.Padding(4);
+            this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Margin = new System.Windows.Forms.Padding(5, 6, 5, 6);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "WorkspaceForm";

@@ -23,6 +23,9 @@ using System.Collections;
 using TSP.DoxygenEditor.FilterControls;
 using System.Threading;
 using System.Text;
+using System.Collections.ObjectModel;
+using TSP.DoxygenEditor.Languages;
+using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -120,13 +123,16 @@ namespace TSP.DoxygenEditor.Views
             dlgSaveFile.Filter = fileExtensionsFilter.ToString();
 
             _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
-            if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath))
+            if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath) && File.Exists(_globalConfig.WorkspacePath))
             {
-                WorkspaceModel loadedWorkspace = WorkspaceModel.Load(_globalConfig.WorkspacePath);
-                if (loadedWorkspace == null)
-                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!");
+                Result<WorkspaceModel> loadRes = WorkspaceModel.Load(_globalConfig.WorkspacePath);
+                if (!loadRes.Success)
+                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found or invalid", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!{Environment.NewLine}{Environment.NewLine}{loadRes.Error}");
                 else
+                {
+                    WorkspaceModel loadedWorkspace = loadRes.Value;
                     _workspace.Assign(loadedWorkspace);
+                }
             }
             _globalConfig.WorkspacePath = _workspace.FilePath;
             UpdatedWorkspaceFile();
@@ -1011,25 +1017,54 @@ namespace TSP.DoxygenEditor.Views
         #endregion
 
         #region Issues
-        enum IssueType
+        enum IssueKind
         {
             Error,
             Warning,
             Info,
         }
+
+        readonly struct IssueEntry
+        {
+            public LanguageKind Lang { get; }
+            public TextPosition Pos { get; }
+            public IssueKind Kind { get; }
+            public string Message { get; }
+            public string SymbolName { get; }
+            public string SymbolType { get; }
+            public string GroupName { get; }
+            public string File { get; }
+            public int Line { get; }
+
+            public IssueEntry(LanguageKind lang, IssueKind kind, TextPosition pos, string message, string symbolName, string symbolType, string groupName, string file, int line)
+            {
+                Lang = lang;
+                Pos = pos;
+                Kind = kind;
+                Message = message;
+                SymbolName = symbolName;
+                SymbolType = symbolType;
+                GroupName = groupName;
+                File = file;
+                Line = line;
+            }
+        }
+
         class IssueTag
         {
             public IEditor Editor { get; }
             public TextPosition Pos { get; }
-            public IssueType Type { get; }
-            public IssueTag(IEditor editor, TextPosition pos, IssueType type)
+            public IssueKind Type { get; }
+
+            public IssueTag(IEditor editor, TextPosition pos, IssueKind type)
             {
                 Editor = editor;
                 Pos = pos;
                 Type = type;
             }
         }
-        private void AddIssue(FilterListView listView, IssueTag tag, string message, string symbolName, string symbolType, string group, int line, string file)
+
+        private void AddIssue(FilterListView listView, IssueTag tag, string message, string symbolName, string symbolType, string group, string file, int line)
         {
             ListViewItem newItem = new ListViewItem(message);
             newItem.Tag = tag;
@@ -1041,41 +1076,65 @@ namespace TSP.DoxygenEditor.Views
             newItem.SubItems.Add(file);
             listView.AddItem(newItem);
         }
-        private readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
-        private void AddIssuesFromNode(IEnumerable<IEditor> editors, IEditor mainEditor, IBaseNode rootNode, string fileName, string groupName)
+
+        private static readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
+
+        private static bool ValidateFunctionDefinition(WorkspaceModel.ValidationCppOptions options, CppEntity entity)
+        {
+            // (fpl__[a-zA-Z0-9_]+)|(fplAtomic[a-zA-Z0-9_]+)|(fpl[A-Z][a-z0-9_]+)|
+            if (entity.Kind == CppEntityKind.FunctionDefinition)
+            {
+                foreach (Regex skipRex in options.SkipFunctionRexes)
+                {
+                    if (skipRex.IsMatch(entity.Id))
+                        return true;
+                }
+                Debug.WriteLine(entity.Id);
+                return false;
+            }
+            return true;
+        }
+
+
+
+        private void ValidateNodes(IEditor editor, IBaseNode rootNode, string fileName, string groupName, ICollection<IssueEntry> entries)
         {
             if (typeof(CppNode).Equals(rootNode.GetType()))
             {
                 CppNode cppNode = (CppNode)rootNode;
                 CppEntity cppEntity = cppNode.Entity;
-                if (cppEntity.IsDefinition && cppEntity.DocumentationNode != null && _workspace.ValidationCpp.RequireDoxygenReference)
+                if (cppEntity.IsDefinition && cppEntity.DocumentationNode is DoxygenBlockNode doxyNode)
                 {
-                    DoxygenBlockNode doxyNode = (DoxygenBlockNode)cppEntity.DocumentationNode;
-                    TextPosition docsPos = cppEntity.DocumentationNode.StartRange.Position;
-                    if (doxyNode.Entity.Kind == DoxygenBlockEntityKind.BlockMulti)
+                    if (_workspace.ValidationCpp.RequireDoxygenReference)
                     {
-                        DoxygenBlockNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.See) as DoxygenBlockNode;
-                        bool hasDocumented = false;
-                        if (seeNode != null)
+                        TextPosition docsPos = cppEntity.DocumentationNode.StartRange.Position;
+                        if (doxyNode.Entity.Kind == DoxygenBlockEntityKind.BlockMulti)
                         {
-                            DoxygenBlockNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.Reference) as DoxygenBlockNode;
-                            if (refNode != null)
+                            DoxygenBlockNode seeNode = doxyNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.See) as DoxygenBlockNode;
+                            bool hasDocumented = false;
+                            if (seeNode != null)
                             {
-                                hasDocumented = true;
+                                DoxygenBlockNode refNode = seeNode.TypedChildren.FirstOrDefault(c => c.Entity.Kind == DoxygenBlockEntityKind.Reference) as DoxygenBlockNode;
+                                if (refNode != null)
+                                {
+                                    hasDocumented = true;
+                                }
                             }
+                            if (!hasDocumented)
+                                entries.Add(new IssueEntry(LanguageKind.Doxygen, IssueKind.Warning, docsPos, "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", fileName, cppEntity.StartRange.Position.Line + 1));
                         }
+                    }
 
-                        if (!hasDocumented)
-                        {
-                            AddIssue(lvDoxygenIssues, new IssueTag(mainEditor, docsPos, IssueType.Warning), "Missing documentation reference (Add a @see @ref [section or page id])", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ Documentation", cppEntity.StartRange.Position.Line + 1, fileName);
-                        }
+                    if (_workspace.ValidationCpp.ValidateFunctionDefinitions && cppEntity.Kind == CppEntityKind.FunctionDefinition)
+                    {
+                        if (!ValidateFunctionDefinition(_workspace.ValidationCpp, cppEntity))
+                            entries.Add(new IssueEntry(LanguageKind.Cpp, IssueKind.Warning, cppEntity.StartRange.Position, "Incorrect function name", cppEntity.Id, cppEntity.Kind.ToString(), "C/C++ API", fileName, cppEntity.StartRange.Position.Line + 1));
                     }
                 }
             }
+
             foreach (IBaseNode child in rootNode.Children)
-            {
-                AddIssuesFromNode(editors, mainEditor, child, fileName, "Child");
-            }
+                ValidateNodes(editor, child, fileName, "Child", entries);
         }
 
         struct IssuesTimings
@@ -1102,6 +1161,21 @@ namespace TSP.DoxygenEditor.Views
                 ExcludeCppPreprocessorUsage = _workspace.ValidationCpp.ExcludePreprocessorUsage,
             };
             IEnumerable<KeyValuePair<ISymbolTableId, TextError>> symbolErrors = GlobalSymbolCache.Validate(validationConfig);
+
+            Dictionary<IEditor, IEnumerable<IssueEntry>> entriesMap = new Dictionary<IEditor, IEnumerable<IssueEntry>>();
+            foreach (IEditor editor in editors)
+            {
+                IParseInfo parseInfo = editor.ParseInfo;
+                List<IssueEntry> entries = new List<IssueEntry>();
+                if (parseInfo.CppTree != null)
+                    ValidateNodes(editor, parseInfo.CppTree, editor.Name, "Root", entries);
+                if (parseInfo.DoxyBlockTree != null)
+                    ValidateNodes(editor, parseInfo.DoxyBlockTree, editor.Name, "Root", entries);
+                if (parseInfo.DoxyConfigTree != null)
+                    ValidateNodes(editor, parseInfo.DoxyConfigTree, editor.Name, "Root", entries);
+                entriesMap.Add(editor, entries);
+            }
+
             result.ValidationDuration = w.StopAndReturn();
 
             lvCppIssues.BeginUpdate();
@@ -1126,34 +1200,50 @@ namespace TSP.DoxygenEditor.Views
             IssueTag selectedCppIssue = lvCppIssues.SelectedItem?.Tag as IssueTag;
             IssueTag selectedDoxyIssue = lvDoxygenIssues.SelectedItem?.Tag as IssueTag;
 
+            FilterListView GetView(LanguageKind lang)
+            {
+                return lang switch
+                {
+                    LanguageKind.Cpp => lvCppIssues,
+                    LanguageKind.Doxygen or
+                    LanguageKind.DoxygenCode or
+                    LanguageKind.DoxygenConfig => lvDoxygenIssues,
+                    _ => null,
+                };
+            }
+
+            void AddIssueFromError(IEditor editor, TextError error)
+            {
+                FilterListView view = GetView(error.Lang);
+                if (view != null)
+                    AddIssue(view, new IssueTag(editor, error.Pos, IssueKind.Error), error.Message, null, null, error.Category, editor.Name, error.Pos.Line + 1);
+            }
+
+            void AddIssueFromEntry(IEditor editor, IssueEntry entry)
+            {
+                FilterListView view = GetView(entry.Lang);
+                if (view != null)
+                    AddIssue(view, new IssueTag(editor, entry.Pos, entry.Kind), entry.Message, entry.SymbolName, entry.SymbolType, entry.GroupName, entry.File, entry.Line);
+            }
+
             w.Restart();
             foreach (KeyValuePair<ISymbolTableId, TextError> errorPair in symbolErrors)
             {
                 TextError error = errorPair.Value;
                 IEditor editor = (IEditor)errorPair.Key;
-                ReferenceSymbol symbol = (ReferenceSymbol)error.Tag;
-                Type nodeType = symbol.Node.GetType();
-                if (typeof(CppNode).Equals(nodeType))
-                    AddIssue(lvCppIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, editor.Name);
-                else if (typeof(DoxygenBlockNode).Equals(nodeType))
-                    AddIssue(lvDoxygenIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, error.Symbol, error.What, error.Category, error.Pos.Line + 1, editor.Name);
+                AddIssueFromError(editor, error);
             }
 
             foreach (IEditor editor in editors)
             {
                 IParseInfo parseInfo = editor.ParseInfo;
                 foreach (TextError error in parseInfo.Errors)
-                {
-                    Type errorType = error.Tag.GetType();
-                    if (typeof(CppLexer).Equals(errorType) || typeof(CppParser).Equals(errorType))
-                        AddIssue(lvCppIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, editor.Name);
-                    else if (typeof(DoxygenBlockLexer).Equals(errorType) || typeof(DoxygenConfigLexer).Equals(errorType) || typeof(DoxygenBlockParser).Equals(errorType))
-                        AddIssue(lvDoxygenIssues, new IssueTag(editor, error.Pos, IssueType.Error), error.Message, null, null, error.Category, error.Pos.Line + 1, editor.Name);
-                }
+                    AddIssueFromError(editor, error);
 
-                if (parseInfo.CppTree != null)
+                if (entriesMap.TryGetValue(editor, out IEnumerable<IssueEntry> entries))
                 {
-                    AddIssuesFromNode(editors, editor, parseInfo.CppTree, editor.Name, "Root");
+                    foreach (IssueEntry entry in entries)
+                        AddIssueFromEntry(editor, entry);
                 }
             }
             result.CollectDuration = w.StopAndReturn();
@@ -1308,14 +1398,17 @@ namespace TSP.DoxygenEditor.Views
         {
             if (dlgOpenWorkspace.ShowDialog() == DialogResult.OK)
             {
-                WorkspaceModel newWorkspace = WorkspaceModel.Load(dlgOpenWorkspace.FileName);
-                if (newWorkspace == null)
+                Result<WorkspaceModel> loadRes = WorkspaceModel.Load(dlgOpenWorkspace.FileName);
+                if (!loadRes.Success)
                 {
-                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!");
+                    ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!{Environment.NewLine}{Environment.NewLine}{loadRes.Error}");
                     _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath));
                 }
                 else
+                {
+                    WorkspaceModel newWorkspace = loadRes.Value;
                     _workspace.Assign(newWorkspace);
+                }
                 _globalConfig.WorkspacePath = _workspace.FilePath;
                 UpdatedWorkspaceFile();
             }

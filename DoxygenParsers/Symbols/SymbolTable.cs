@@ -18,31 +18,32 @@ namespace TSP.DoxygenEditor.Symbols
         {
             Id = other.Id;
             IsValid = other.IsValid;
-            foreach (KeyValuePair<string, List<SourceSymbol>> sourcePair in other.SourceMap)
-            {
-                foreach (SourceSymbol symbol in sourcePair.Value)
-                    AddSource(symbol);
-            }
-            foreach (KeyValuePair<string, List<ReferenceSymbol>> refPair in other.ReferenceMap)
-            {
-                foreach (ReferenceSymbol symbol in refPair.Value)
-                    AddReference(symbol);
-            }
+            AddTable(other);
         }
 
-        private readonly Dictionary<string, List<SourceSymbol>> _sources = new Dictionary<string, List<SourceSymbol>>();
         public IEnumerable<KeyValuePair<string, List<SourceSymbol>>> SourceMap => _sources;
+        private readonly Dictionary<string, List<SourceSymbol>> _sources = new Dictionary<string, List<SourceSymbol>>();
         public int SourceCount => _sources.Count;
 
-        private readonly Dictionary<string, List<ReferenceSymbol>> _references = new Dictionary<string, List<ReferenceSymbol>>();
         public IEnumerable<KeyValuePair<string, List<ReferenceSymbol>>> ReferenceMap => _references;
+        private readonly Dictionary<string, List<ReferenceSymbol>> _references = new Dictionary<string, List<ReferenceSymbol>>();
         public int ReferenceCount => _references.Count;
+
+        public IEnumerable<KeyValuePair<string, SystemSymbol>> SystemSymbols => _systemSymbols;
+        private readonly Dictionary<string, SystemSymbol> _systemSymbols = new Dictionary<string, SystemSymbol>();
+        public int SystemSymbolCount => _systemSymbols.Count;
 
         private readonly Dictionary<TextRange, BaseSymbol> _rangeToSymbolMap = new Dictionary<TextRange, BaseSymbol>();
 
         public bool HasSource(string name)
         {
             bool result = _sources.ContainsKey(name);
+            return (result);
+        }
+
+        public bool HasSystemSymbol(string name)
+        {
+            bool result = _systemSymbols.ContainsKey(name);
             return (result);
         }
 
@@ -84,12 +85,17 @@ namespace TSP.DoxygenEditor.Symbols
             return (null);
         }
 
-        public void AddSource(SourceSymbol source)
+        public SystemSymbol GetSystemSymbol(string name)
+        {
+            if (_systemSymbols.TryGetValue(name, out SystemSymbol symbol))
+                return (symbol);
+            return (null);
+        }
+
+        public void AddSymbol(SourceSymbol source)
         {
             List<SourceSymbol> list;
-            if (_sources.ContainsKey(source.Name))
-                list = _sources[source.Name];
-            else
+            if (!_sources.TryGetValue(source.Name, out list))
             {
                 list = new List<SourceSymbol>();
                 _sources.Add(source.Name, list);
@@ -98,12 +104,10 @@ namespace TSP.DoxygenEditor.Symbols
             _rangeToSymbolMap[source.Range] = source;
         }
 
-        public void AddReference(ReferenceSymbol reference)
+        public void AddSymbol(ReferenceSymbol reference)
         {
             List<ReferenceSymbol> list;
-            if (_references.ContainsKey(reference.Name))
-                list = _references[reference.Name];
-            else
+            if (!_references.TryGetValue(reference.Name, out list))
             {
                 list = new List<ReferenceSymbol>();
                 _references.Add(reference.Name, list);
@@ -112,24 +116,43 @@ namespace TSP.DoxygenEditor.Symbols
             _rangeToSymbolMap[reference.Range] = reference;
         }
 
+        public void AddSymbol(SystemSymbol systemSym)
+        {
+            _systemSymbols[systemSym.Name] = systemSym;
+        }
+
+        public void AddSymbol(SystemSymbolDescription symbolDesc)
+        {
+            AddSymbol(new SystemSymbol(symbolDesc.Language, symbolDesc.Kind, symbolDesc.Name));
+        }
+
+        public void AddSymbols(IEnumerable<SystemSymbolDescription> descriptions)
+        {
+            foreach (SystemSymbolDescription symbol in descriptions) 
+                AddSymbol(symbol);
+        }
+
         public void AddTable(SymbolTable table)
         {
             foreach (KeyValuePair<string, List<SourceSymbol>> sourcePair in table.SourceMap)
             {
                 foreach (SourceSymbol source in sourcePair.Value)
-                    AddSource(source);
+                    AddSymbol(source);
             }
             foreach (KeyValuePair<string, List<ReferenceSymbol>> referencePair in table.ReferenceMap)
             {
                 foreach (ReferenceSymbol reference in referencePair.Value)
-                    AddReference(reference);
+                    AddSymbol(reference);
             }
+            foreach (KeyValuePair<string, SystemSymbol> systemPair in table.SystemSymbols)
+                AddSymbol(systemPair.Value);
         }
 
         public void Clear()
         {
             _sources.Clear();
             _references.Clear();
+            _systemSymbols.Clear();
             _rangeToSymbolMap.Clear();
         }
 

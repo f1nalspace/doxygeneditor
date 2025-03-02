@@ -43,19 +43,19 @@
             // 
             this.panBottom.Controls.Add(this.btnOk);
             this.panBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panBottom.Location = new System.Drawing.Point(0, 317);
+            this.panBottom.Location = new System.Drawing.Point(0, 336);
             this.panBottom.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panBottom.Name = "panBottom";
-            this.panBottom.Size = new System.Drawing.Size(732, 47);
+            this.panBottom.Size = new System.Drawing.Size(640, 50);
             this.panBottom.TabIndex = 0;
             // 
             // btnOk
             // 
             this.btnOk.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnOk.Location = new System.Drawing.Point(268, 5);
+            this.btnOk.Location = new System.Drawing.Point(234, 6);
             this.btnOk.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnOk.Name = "btnOk";
-            this.btnOk.Size = new System.Drawing.Size(189, 37);
+            this.btnOk.Size = new System.Drawing.Size(165, 40);
             this.btnOk.TabIndex = 0;
             this.btnOk.Text = "OK";
             this.btnOk.UseVisualStyleBackColor = true;
@@ -71,7 +71,7 @@
             this.panClient.Location = new System.Drawing.Point(0, 0);
             this.panClient.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panClient.Name = "panClient";
-            this.panClient.Size = new System.Drawing.Size(732, 317);
+            this.panClient.Size = new System.Drawing.Size(640, 336);
             this.panClient.TabIndex = 1;
             // 
             // tbLicense
@@ -80,54 +80,55 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbLicense.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.tbLicense.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F);
-            this.tbLicense.Location = new System.Drawing.Point(3, 137);
+            this.tbLicense.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.tbLicense.Location = new System.Drawing.Point(3, 145);
             this.tbLicense.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tbLicense.Multiline = true;
             this.tbLicense.Name = "tbLicense";
             this.tbLicense.ReadOnly = true;
             this.tbLicense.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tbLicense.Size = new System.Drawing.Size(725, 177);
+            this.tbLicense.Size = new System.Drawing.Size(634, 187);
             this.tbLicense.TabIndex = 4;
             this.tbLicense.WordWrap = false;
             // 
             // labelDescription
             // 
             this.labelDescription.AutoSize = true;
-            this.labelDescription.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelDescription.Location = new System.Drawing.Point(8, 98);
+            this.labelDescription.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.labelDescription.Location = new System.Drawing.Point(7, 104);
             this.labelDescription.Name = "labelDescription";
-            this.labelDescription.Size = new System.Drawing.Size(117, 21);
+            this.labelDescription.Size = new System.Drawing.Size(96, 17);
             this.labelDescription.TabIndex = 3;
             this.labelDescription.Text = "[Description]";
             // 
             // labelAppVersion
             // 
             this.labelAppVersion.AutoSize = true;
-            this.labelAppVersion.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelAppVersion.Location = new System.Drawing.Point(7, 62);
+            this.labelAppVersion.Font = new System.Drawing.Font("Lucida Sans Unicode", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.labelAppVersion.Location = new System.Drawing.Point(6, 66);
             this.labelAppVersion.Name = "labelAppVersion";
-            this.labelAppVersion.Size = new System.Drawing.Size(118, 21);
+            this.labelAppVersion.Size = new System.Drawing.Size(98, 17);
             this.labelAppVersion.TabIndex = 1;
             this.labelAppVersion.Text = "[AppVersion]";
             // 
             // labelAppName
             // 
             this.labelAppName.AutoSize = true;
-            this.labelAppName.Font = new System.Drawing.Font("Lucida Sans Unicode", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelAppName.Location = new System.Drawing.Point(5, 15);
+            this.labelAppName.Font = new System.Drawing.Font("Lucida Sans Unicode", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.labelAppName.Location = new System.Drawing.Point(4, 16);
             this.labelAppName.Name = "labelAppName";
-            this.labelAppName.Size = new System.Drawing.Size(166, 34);
+            this.labelAppName.Size = new System.Drawing.Size(130, 27);
             this.labelAppName.TabIndex = 0;
             this.labelAppName.Text = "[AppName]";
             // 
             // AboutForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(732, 364);
+            this.ClientSize = new System.Drawing.Size(640, 386);
             this.Controls.Add(this.panClient);
             this.Controls.Add(this.panBottom);
+            this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MaximizeBox = false;

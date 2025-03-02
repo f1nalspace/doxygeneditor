@@ -5,6 +5,7 @@ using TSP.DoxygenEditor.Extensions;
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace TSP.DoxygenEditor.FilterControls
 {
@@ -20,11 +21,13 @@ namespace TSP.DoxygenEditor.FilterControls
         public delegate void ItemDoubleClickEventHandler(object sender, ListViewItem item);
         public event ItemDoubleClickEventHandler ItemDoubleClick;
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public ImageList ImageList
         {
             set { _listView.SmallImageList = value; }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string FilterText
         {
             get { return _filterText; }
@@ -37,7 +40,7 @@ namespace TSP.DoxygenEditor.FilterControls
             }
         }
 
-        private int _filterColumn = -1;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int FilterColumn
         {
             get { return _filterColumn; }
@@ -49,6 +52,8 @@ namespace TSP.DoxygenEditor.FilterControls
                 EndUpdate();
             }
         }
+        private int _filterColumn = -1;
+
         public void SetFilterColumn(string columnName)
         {
             FilterColumn = GetColumnIndexByName(columnName);
@@ -66,7 +71,7 @@ namespace TSP.DoxygenEditor.FilterControls
             return (-1);
         }
 
-        private int _groupColumn = -1;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int GroupColumn
         {
             get { return _groupColumn; }
@@ -78,6 +83,7 @@ namespace TSP.DoxygenEditor.FilterControls
                 EndUpdate();
             }
         }
+        private int _groupColumn = -1;
 
         public void SetGroupColumn(string columnName)
         {
@@ -101,6 +107,7 @@ namespace TSP.DoxygenEditor.FilterControls
             }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public Comparison<ListViewItem> Comparer
         {
             set { _listView.ListViewItemSorter = new ListviewItemSorter(value); }

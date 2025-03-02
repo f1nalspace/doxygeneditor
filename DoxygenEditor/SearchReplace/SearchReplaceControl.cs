@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows.Forms;
 
 namespace TSP.DoxygenEditor.SearchReplace
@@ -7,36 +8,42 @@ namespace TSP.DoxygenEditor.SearchReplace
     {
         private int _initHeight;
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string SearchText
         {
             get { return cbSearchText.Text; }
             set { cbSearchText.Text = value; }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string ReplaceText
         {
             get { return cbReplaceText.Text; }
             set { cbReplaceText.Text = value; }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool MatchCase
         {
             get { return cbMatchCase.Checked; }
             set { cbMatchCase.Checked = value; }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool MatchWords
         {
             get { return cbMatchWords.Checked; }
             set { cbMatchWords.Checked = value; }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool IsRegex
         {
             get { return cbIsRegex.Checked; }
             set { cbIsRegex.Checked = value; }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool IsWrap
         {
             get { return cbWrap.Checked; }

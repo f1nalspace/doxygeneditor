@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net60-windows</TargetFramework>
+    <TargetFramework>net90-windows</TargetFramework>
 	<Platforms>x64</Platforms>
 	<OutputType>Library</OutputType>
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -8,6 +8,8 @@
 	<OutputPath>..\build\Scintilla.NET\$(Platform)-$(Configuration)\</OutputPath>
 	<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	<GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
+	<NoWarn>CA1416;</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DocumentationFile>bin\Debug\ScintillaNET.xml</DocumentationFile>
@@ -20,8 +22,8 @@
   <ItemGroup>
     <Compile Remove="x64\**" />
     <Compile Remove="x86\**" />
-    <EmbeddedResource Remove="x64\**" />
-    <EmbeddedResource Remove="x86\**" />
+    <EmbeddedResource Include="x64\**" />
+    <EmbeddedResource Include="x86\**" />
     <None Remove="x64\**" />
     <None Remove="x86\**" />
   </ItemGroup>
@@ -31,8 +33,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.2" />
   </ItemGroup>
 </Project>

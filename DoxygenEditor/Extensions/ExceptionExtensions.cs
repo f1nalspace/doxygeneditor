@@ -13,7 +13,7 @@ namespace TSP.DoxygenEditor.Extensions
         private const int ERROR_FILE_EXISTS = 80;
         private const int ERROR_ALREADY_EXISTS = 183;
 
-        private static Dictionary<int, string> hResultToStringMapping = new Dictionary<int, string>()
+        private static readonly Dictionary<int, string> hResultToStringMapping = new Dictionary<int, string>()
         {
             { ERROR_SHARING_VIOLATION, "The file '%FILE%' is already open!" },
             { ERROR_FILE_EXISTS, "The file '%FILE%' already exists!" },
@@ -24,7 +24,7 @@ namespace TSP.DoxygenEditor.Extensions
         {
             public string FilePath { get; set; }
 
-            public static ValueStrings FromDictionary(Dictionary<string, string> values)
+            public static ValueStrings FromDictionary(IReadOnlyDictionary<string, string> values)
             {
                 ValueStrings result = new ValueStrings();
                 result.FilePath = values.ContainsKey("filepath") ? values["filepath"] : null;
@@ -32,7 +32,7 @@ namespace TSP.DoxygenEditor.Extensions
             }
         }
 
-        public static ErrorMessageModel ToErrorMessage(this Exception exception, string caption, Dictionary<string, string> values)
+        public static ErrorMessageModel ToErrorMessage(this Exception exception, string caption, IReadOnlyDictionary<string, string> values)
         {
             StringBuilder shortText = new StringBuilder();
             Type t = exception.GetType();
@@ -67,7 +67,7 @@ namespace TSP.DoxygenEditor.Extensions
             return (result);
         }
 
-        private static string ToHumanReadable(this Exception exception, Dictionary<string, string> values)
+        private static string ToHumanReadable(this Exception exception, IReadOnlyDictionary<string, string> values)
         {
             StringBuilder result = new StringBuilder();
             Type t = exception.GetType();

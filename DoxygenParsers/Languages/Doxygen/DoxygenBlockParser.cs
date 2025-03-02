@@ -20,7 +20,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenBlockEntityKind.SubSubSection,
         };
 
-        public DoxygenBlockParser(ISymbolTableId id) : base(id)
+        public DoxygenBlockParser(ISymbolTableId id) : base(id, LanguageKind.DoxygenCode)
         {
         }
 
@@ -80,7 +80,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             DoxygenToken commandToken = stream.Peek<DoxygenToken>();
             Debug.Assert(commandToken != null && commandToken.Kind == DoxygenTokenKind.Command);
 
-            string commandName = commandToken.Value.Substring(1);
+            string commandName = string.Intern(commandToken.Value.Substring(1));
             stream.Next();
 
             string typeName = "Command";
@@ -181,7 +181,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             SourceSymbolKind kind = SourceSymbolKind.DoxygenSection;
                             if ("page".Equals(commandName) || "mainpage".Equals(commandName))
                                 kind = SourceSymbolKind.DoxygenPage;
-                            LocalSymbolTable.AddSource(new SourceSymbol(nameParam.Token.Lang, kind, symbolName, symbolDisplayName, nameParam.Token.Range, commandNode));
+                            LocalSymbolTable.AddSymbol(new SourceSymbol(nameParam.Token.Lang, kind, symbolName, symbolDisplayName, nameParam.Token.Range, commandNode));
                         }
                         else if ("ref".Equals(commandName) || "refitem".Equals(commandName))
                         {
@@ -205,7 +205,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             referenceTextStream.AdvanceColumn();
                                         }
                                         TextRange refRange = referenceTextStream.LexemeRange;
-                                        string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length);
+                                        string singleRereference = referenceTextStream.GetSourceText(refRange.Index, refRange.Length, Types.InternMode.Intern);
                                         if (referenceTextStream.Peek() == '(')
                                         {
                                             referenceTarget = ReferenceSymbolKind.CppFunction;
@@ -218,7 +218,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                                             }
                                         }
                                         TextRange symbolRange = new TextRange(new TextPosition(nameParam.Token.Position.Index + refRange.Position.Index, refRange.Position.Line, refRange.Position.Column), refRange.Length);
-                                        LocalSymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, referenceTarget, singleRereference, symbolRange, commandNode));
+                                        LocalSymbolTable.AddSymbol(new ReferenceSymbol(nameParam.Token.Lang, referenceTarget, singleRereference, symbolRange, commandNode));
                                     }
                                     else if (first == '#' || first == '.')
                                     {
@@ -235,7 +235,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
                             }
                         }
                         else if ("subpage".Equals(commandName))
-                            LocalSymbolTable.AddReference(new ReferenceSymbol(nameParam.Token.Lang, ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
+                            LocalSymbolTable.AddSymbol(new ReferenceSymbol(nameParam.Token.Lang, ReferenceSymbolKind.DoxygenPage, symbolName, nameParam.Token.Range, commandNode));
                     }
                 }
                 ParseBlockContent(source, stream, commandNode);

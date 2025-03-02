@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using TSP.DoxygenEditor.Languages.Utils;
+using TSP.DoxygenEditor.Types;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
@@ -18,11 +19,13 @@ namespace TSP.DoxygenEditor.TextAnalysis
             _source = source.ToArray();
         }
 
-        public override string GetSourceText(int index, int length)
+        public override string GetSourceText(int index, int length, InternMode intern = InternMode.Normal)
         {
             if (index < 0 || index + length > StreamLength)
                 throw new ArgumentOutOfRangeException(nameof(index), index, $"The index '{index}' with length '{length}' is out-of-range {0} to {StreamLength}");
             ReadOnlySpan<char> span = _source.AsSpan(index, length);
+            if (intern == InternMode.Intern && length > 0)
+                return string.Intern(span.ToString());
             return span.ToString();
         }
 

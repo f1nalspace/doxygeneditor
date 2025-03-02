@@ -3,6 +3,7 @@ using TSP.DoxygenEditor.SearchReplace;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace TSP.DoxygenEditor.SymbolSearch
 {
@@ -10,12 +11,14 @@ namespace TSP.DoxygenEditor.SymbolSearch
     {
         private readonly Timer _delayedTextChangeTimer;
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string SearchText
         {
             get;
             private set;
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string SearchType
         {
             get;
@@ -24,6 +27,7 @@ namespace TSP.DoxygenEditor.SymbolSearch
 
         private readonly IEnumerable<SymbolItemModel> _allItems;
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public SymbolItemModel SelectedItem
         {
             get;
