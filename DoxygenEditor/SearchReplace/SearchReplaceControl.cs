@@ -78,7 +78,7 @@ namespace TSP.DoxygenEditor.SearchReplace
             {
                 if (e.KeyCode == Keys.Escape)
                     Hide();
-                else if (e.KeyCode == Keys.Return)
+                else if (e.KeyCode == Keys.Return || e.KeyCode == Keys.F3)
                 {
                     if (!string.IsNullOrEmpty(cbSearchText.Text))
                         Search?.Invoke(this, SearchDirection.Next);

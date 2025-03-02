@@ -12,11 +12,11 @@ namespace TSP.DoxygenEditor.Views
             InitializeComponent();
 
             Assembly asm = Assembly.GetExecutingAssembly();
-            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(asm.Location);
-            string appName = versionInfo.ProductName;
-            string appVersion = versionInfo.FileVersion;
-            string appCopyright = versionInfo.LegalCopyright;
-            string appDescription = versionInfo.Comments;
+            var appVersion = asm.GetName().Version.ToString();
+            var appName = asm.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "Unknown Product";
+            var appCopyright = asm.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "No Copyright";
+            var appDescription = asm.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? "No Description";
+
 #if DEBUG
             appVersion += " (Debug-Build)";
 #else
