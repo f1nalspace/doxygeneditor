@@ -10,13 +10,7 @@
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
 	<NoWarn>CA1416;</NoWarn>
-	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-	<Title>Scintilla.NET</Title>
-	<Product>Scintilla.NET</Product>
-	<Description>Editor based on Scintilla.NET</Description>
-	<Company>TSPSoftware</Company>
-	<Copyright>Copyright (c) 2017-2025 Torsten Spaete</Copyright>
-	<Version>1.1.0.0</Version>
+	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DocumentationFile>bin\Debug\ScintillaNET.xml</DocumentationFile>
