@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net80</TargetFramework>
+		<TargetFramework>net90</TargetFramework>
 		<Platforms>x64</Platforms>
 		<OutputType>Library</OutputType>
 		<RootNamespace>TSP.DoxygenEditor</RootNamespace>

@@ -3349,6 +3349,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override Color BackColor
         {
             get
@@ -3366,6 +3367,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override Image BackgroundImage
         {
             get
@@ -3383,6 +3385,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override ImageLayout BackgroundImageLayout
         {
             get
@@ -3784,6 +3787,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override Cursor Cursor
         {
             get
@@ -4045,6 +4049,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override Font Font
         {
             get
@@ -4085,6 +4090,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override Color ForeColor
         {
             get
@@ -4578,6 +4584,7 @@ namespace ScintillaNET
         /// </summary>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new Padding Padding
         {
             get
@@ -5107,6 +5114,7 @@ namespace ScintillaNET
         /// <returns>The text displayed in the control.</returns>
         /// <remarks>Depending on the length of text get or set, this operation can be expensive.</remarks>
         [Editor("System.ComponentModel.Design.MultilineStringEditor, System.Design", typeof(UITypeEditor))]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public unsafe override string Text
         {
             get
@@ -5173,6 +5181,7 @@ namespace ScintillaNET
         /// Gets or sets a value indicating whether to use the wait cursor for the current control.
         /// </summary>
         /// <returns>true to use the wait cursor for the current control; otherwise, false. The default is false.</returns>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public new bool UseWaitCursor
         {
             get

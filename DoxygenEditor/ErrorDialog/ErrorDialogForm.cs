@@ -12,16 +12,21 @@ namespace TSP.DoxygenEditor.ErrorDialog
 {
     public partial class ErrorDialogForm : Form
     {
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string Title
         {
             get { return lblTitle.Text; }
             set { lblTitle.Text = value; }
         }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string ShortText
         {
             get { return lblMessage.Text; }
             set { lblMessage.Text = value; }
         }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string Details
         {
             get { return rtbDetails.Text; }
