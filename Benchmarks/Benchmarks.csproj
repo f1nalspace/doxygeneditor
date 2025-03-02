@@ -7,7 +7,12 @@
 	<OutputPath>..\build\Benchmarks\$(Platform)-$(Configuration)\</OutputPath>
 	<AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-	<Version>1.0.0.0</Version>
+	<Title>Doxygen Editor Benchmarks</Title>
+	<Product>Doxygen Editor Benchmarks</Product>
+	<Description>Benchmarks Tool to test parsers</Description>
+	<Company>TSPSoftware</Company>
+	<Copyright>Copyright (c) 2017-2025 Torsten Spaete</Copyright>
+	<Version>1.1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
