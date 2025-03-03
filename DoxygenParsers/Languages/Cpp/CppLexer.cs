@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using TSP.DoxygenEditor.Languages.Doxygen;
@@ -304,23 +305,24 @@ namespace TSP.DoxygenEditor.Languages.Cpp
         private LexResult LexIdent(bool isPreprocessor)
         {
             Debug.Assert(SyntaxUtils.IsIdentStart(Buffer.Peek()));
-            StringBuilder identBuffer = new StringBuilder();
+            int startPosition = Buffer.StreamPosition;
+            int length = 0;
             while (!Buffer.IsEOF)
             {
                 char c = Buffer.Peek();
                 if (SyntaxUtils.IsIdentPart(c))
                 {
-                    identBuffer.Append(c);
+                    length++;
                     Buffer.AdvanceColumn();
                 }
                 else
+                {
                     break;
+                }
             }
-            CppTokenKind kind = CppTokenKind.IdentLiteral;
-            TextPosition identStart = Buffer.LexemeStart;
-            int identLength = Buffer.LexemeWidth;
-            string identString = identBuffer.ToString();
-
+            ReadOnlySpan<char> identSpan = Buffer.GetSourceSpan(startPosition, length);
+            string identString = identSpan.ToString();
+            CppTokenKind kind;
             if (isPreprocessor && PreProcessorKeywords.Contains(identString))
                 kind = CppTokenKind.PreprocessorKeyword;
             else if (ReservedKeywords.Contains(identString))
