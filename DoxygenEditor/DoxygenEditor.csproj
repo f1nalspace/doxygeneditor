@@ -23,7 +23,7 @@
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<PublishDir>..\publish\DoxygenEditor\</PublishDir>
-		<PublishSingleFile>false</PublishSingleFile>
+		<PublishSingleFile>true</PublishSingleFile>
 		<SelfContained>true</SelfContained>
 	</PropertyGroup>
 	<PropertyGroup>
