@@ -190,6 +190,23 @@ namespace TSP.DoxygenEditor.Models
             }
             private ImmutableArray<Regex> _skipFunctionRexes = ImmutableArray<Regex>.Empty;
 
+            public IEnumerable<Regex> CheckFunctionRexes
+            {
+                get
+                {
+                    if (_checkFunctionRexes.Length != CheckFunctionPatterns.Length)
+                    {
+                        List<Regex> list = new List<Regex>();
+                        foreach (var pattern in CheckFunctionPatterns)
+                            list.Add(new Regex(pattern, RegexOptions.Compiled));
+                        _checkFunctionRexes = list.ToImmutableArray();
+                    }
+                    return _checkFunctionRexes;
+                }
+            }
+            private ImmutableArray<Regex> _checkFunctionRexes = ImmutableArray<Regex>.Empty;
+            public ImmutableArray<string> CheckFunctionPatterns { get; internal set; }
+
             public ValidationCppOptions()
             {
                 ExcludePreprocessorMatch = false;
@@ -197,6 +214,7 @@ namespace TSP.DoxygenEditor.Models
                 RequireDoxygenReference = true;
                 ValidateFunctionDefinitions = true;
                 SkipFunctionPatterns = new[] { "fplAtomic[a-zA-Z0-9_]+", "fpl__[a-zA-Z0-9_]+" }.ToImmutableArray();
+                CheckFunctionPatterns = new[] { "fpl[A-Z][a-zA-Z0-9_]+", "FPL_[A-Z][A-Z0-9_]+" }.ToImmutableArray();
             }
 
             public void Assign(ValidationCppOptions other)
@@ -206,6 +224,7 @@ namespace TSP.DoxygenEditor.Models
                 RequireDoxygenReference = other.RequireDoxygenReference;
                 ValidateFunctionDefinitions = other.ValidateFunctionDefinitions;
                 SkipFunctionPatterns = other.SkipFunctionPatterns;
+                CheckFunctionPatterns = other.CheckFunctionPatterns;
             }
 
             public void Load(IConfigurarionReader reader)
@@ -215,6 +234,7 @@ namespace TSP.DoxygenEditor.Models
                 RequireDoxygenReference = reader.ReadBool(SectionName, () => RequireDoxygenReference, true);
                 ValidateFunctionDefinitions = reader.ReadBool(SectionName, () => ValidateFunctionDefinitions, true);
                 SkipFunctionPatterns = reader.ReadList(SectionName, () => SkipFunctionPatterns).ToImmutableArray();
+                CheckFunctionPatterns = reader.ReadList(SectionName, () => CheckFunctionPatterns).ToImmutableArray();
             }
 
             public void Save(IConfigurarionWriter writer)
@@ -224,6 +244,7 @@ namespace TSP.DoxygenEditor.Models
                 writer.WriteBool(SectionName, () => RequireDoxygenReference, RequireDoxygenReference);
                 writer.WriteBool(SectionName, () => ValidateFunctionDefinitions, ValidateFunctionDefinitions);
                 writer.WriteList(SectionName, () => SkipFunctionPatterns, SkipFunctionPatterns);
+                writer.WriteList(SectionName, () => CheckFunctionPatterns, CheckFunctionPatterns);
             }
         }
 

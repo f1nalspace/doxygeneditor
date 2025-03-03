@@ -1088,13 +1088,20 @@ namespace TSP.DoxygenEditor.Views
             // (fpl__[a-zA-Z0-9_]+)|(fplAtomic[a-zA-Z0-9_]+)|(fpl[A-Z][a-z0-9_]+)|
             if (entity.Kind == CppEntityKind.FunctionDefinition)
             {
-                foreach (Regex skipRex in options.SkipFunctionRexes)
+                foreach (Regex rex in options.SkipFunctionRexes)
                 {
-                    if (skipRex.IsMatch(entity.Id))
+                    if (rex.IsMatch(entity.Id))
                         return true;
                 }
-                Debug.WriteLine(entity.Id);
-                return false;
+
+                bool checkFunctionMatches = false;
+                foreach (Regex rex in options.CheckFunctionRexes)
+                {
+                    if (rex.IsMatch(entity.Id))
+                        checkFunctionMatches |= true;
+                }
+
+                return checkFunctionMatches;
             }
             return true;
         }
