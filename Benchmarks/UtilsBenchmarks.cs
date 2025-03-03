@@ -44,6 +44,7 @@ namespace Benchmarks
                 result |= SyntaxUtils.IsFloatSuffix(c);
                 result |= SyntaxUtils.IsIdentStart(c);
                 result |= SyntaxUtils.IsIdentPart(c);
+                result |= SyntaxUtils.IsFilename(c);
             }
             return result;
         }
@@ -66,6 +67,7 @@ namespace Benchmarks
                 result |= SyntaxUtils.IsFloatSuffix(c);
                 result |= SyntaxUtils.IsIdentStart(c);
                 result |= SyntaxUtils.IsIdentPart(c);
+                result |= SyntaxUtils.IsFilename(c);
             }
             return result;
         }
