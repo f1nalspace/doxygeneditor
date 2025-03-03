@@ -95,22 +95,26 @@ namespace TSP.DoxygenEditor.Views
 
             Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName asmName = assembly.GetName();
-            FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
-            string companyName = verInfo.CompanyName;
-            string appId = verInfo.FileDescription;
 
-            _appName = $"{verInfo.ProductName}";
+            string appVersion = asmName.Version.ToString();
+            string appName = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "Unknown Product";
+            string appCopyright = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "No Copyright";
+            string appDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? "No Description";
+            string appCompanyName = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "No Company";
+            string appId = asmName.Name;
 
-            if (string.IsNullOrWhiteSpace(companyName))
+            _appName = $"{appName}";
+
+            if (string.IsNullOrWhiteSpace(appCompanyName))
                 throw new Exception("Company name is missing in assembly!");
             if (string.IsNullOrWhiteSpace(appId))
                 throw new Exception("Title is missing in assembly!");
 
-            _dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), companyName, appId);
+            _dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appCompanyName, appId);
             if (!Directory.Exists(_dataPath)) Directory.CreateDirectory(_dataPath);
             _defaultWorkspaceFilePath = Path.Combine(_dataPath, "DefaultWorkspace.doxyedit");
 
-            _globalConfig = new GlobalConfigModel(companyName, appId);
+            _globalConfig = new GlobalConfigModel(appCompanyName, appId);
             _globalConfig.Load();
 
             StringBuilder fileExtensionsFilter = new StringBuilder();
