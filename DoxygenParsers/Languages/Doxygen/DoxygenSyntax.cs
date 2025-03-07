@@ -327,7 +327,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             { "page", new SectionCommandRule(DoxygenBlockEntityKind.Page, new ArgumentRule(ArgumentKind.Identifier, "name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "title").Optional()) },
             { "par", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.UntilEndOfLine, "paragraph title").Optional(), new ArgumentRule(ArgumentKind.ComplexBlock, "paragraph").Required()) },
             { "paragraph", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.Identifier, "paragraph-name").Required(), new ArgumentRule(ArgumentKind.UntilEndOfLine, "paragraph title").Required()) },
-            { "param", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.Identifier, "dir", "[", "]", ArgumentFlags.DirectlyAfterCommand).Optional(), new ArgumentRule(ArgumentKind.Identifier, "parameter-name").Required(), new ArgumentRule(ArgumentKind.ComplexLine, "parameter description").Required()) },
+            { "param", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.PrefixToPostfix, "dir", "[", "]", ArgumentFlags.DirectlyAfterCommand).Optional(), new ArgumentRule(ArgumentKind.Identifier, "parameter-name").Required(), new ArgumentRule(ArgumentKind.ComplexLine, "parameter description").Required()) },
             { "parblock", new StartBlockCommandRule() },
             { "post", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "description of the postcondition").Required()) },
             { "pre", new ParagraphCommandRule(new ArgumentRule(ArgumentKind.ComplexBlock, "description of the precondition").Required()) },
