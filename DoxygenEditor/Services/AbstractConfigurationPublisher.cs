@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using TSP.DoxygenEditor.Utils;
+﻿using System.Collections.Generic;
 
 namespace TSP.DoxygenEditor.Services
 {
@@ -18,7 +15,7 @@ namespace TSP.DoxygenEditor.Services
             Dictionary,
         }
 
-        public struct WriteEntry
+        public readonly struct WriteEntry
         {
             public WriteKind Kind { get; }
             public string Section { get; }
@@ -54,45 +51,25 @@ namespace TSP.DoxygenEditor.Services
         {
             PushWrite(WriteKind.String, section, name, value);
         }
-        public void WriteString(string section, Expression<Func<object>> nameExpression, string value)
-        {
-            WriteString(section, ReflectionUtils.GetName(nameExpression), value);
-        }
 
         public void WriteInt(string section, string name, int value)
         {
             PushWrite(WriteKind.Int, section, name, value);
-        }
-        public void WriteInt(string section, Expression<Func<object>> nameExpression, int value)
-        {
-            WriteInt(section, ReflectionUtils.GetName(nameExpression), value);
         }
 
         public void WriteDouble(string section, string name, double value)
         {
             PushWrite(WriteKind.Double, section, name, value);
         }
-        public void WriteDouble(string section, Expression<Func<object>> nameExpression, double value)
-        {
-            WriteDouble(section, ReflectionUtils.GetName(nameExpression), value);
-        }
 
         public void WriteBool(string section, string name, bool value)
         {
             PushWrite(WriteKind.Bool, section, name, value);
         }
-        public void WriteBool(string section, Expression<Func<object>> nameExpression, bool value)
-        {
-            WriteBool(section, ReflectionUtils.GetName(nameExpression), value);
-        }
 
         public void WriteList(string section, string name, IEnumerable<string> list)
         {
             PushWrite(WriteKind.List, section, name, new List<string>(list));
-        }
-        public void WriteList(string section, Expression<Func<object>> nameExpression, IEnumerable<string> list)
-        {
-            WriteList(section, ReflectionUtils.GetName(nameExpression), new List<string>(list));
         }
         public void WriteDictionary<TValue>(string section, string name, IDictionary<string, TValue> dict) where TValue : struct
         {
@@ -100,10 +77,6 @@ namespace TSP.DoxygenEditor.Services
             foreach (KeyValuePair<string, TValue> pair in dict)
                 outDict[pair.Key] =  pair.Value;
             PushWrite(WriteKind.Dictionary, section, name, outDict);
-        }
-        public void WriteDictionary<TValue>(string section, Expression<Func<object>> nameExpression, IDictionary<string, TValue> dict) where TValue : struct
-        {
-            WriteDictionary(section, ReflectionUtils.GetName(nameExpression), dict);
         }
     }
 }

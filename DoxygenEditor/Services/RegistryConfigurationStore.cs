@@ -152,10 +152,6 @@ namespace TSP.DoxygenEditor.Services
             }
             return (null);
         }
-        public object ReadRaw(string section, Expression<Func<object>> nameExpression)
-        {
-            return ReadRaw(section, ReflectionUtils.GetName(nameExpression));
-        }
 
         public string ReadString(string section, string name, string defaultValue)
         {
@@ -163,10 +159,6 @@ namespace TSP.DoxygenEditor.Services
             if (result == null)
                 result = defaultValue;
             return (result);
-        }
-        public string ReadString(string section, Expression<Func<object>> nameExpression, string defaultValue)
-        {
-            return ReadString(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
 
         public int ReadInt(string section, string name, int defaultValue)
@@ -176,10 +168,6 @@ namespace TSP.DoxygenEditor.Services
                 return (value.Value);
             return (defaultValue);
         }
-        public int ReadInt(string section, Expression<Func<object>> nameExpression, int defaultValue)
-        {
-            return ReadInt(section, ReflectionUtils.GetName(nameExpression), defaultValue);
-        }
 
         public double ReadDouble(string section, string name, double defaultValue)
         {
@@ -187,10 +175,6 @@ namespace TSP.DoxygenEditor.Services
             if (value.HasValue)
                 return (value.Value);
             return (defaultValue);
-        }
-        public double ReadDouble(string section, Expression<Func<object>> nameExpression, double defaultValue)
-        {
-            return ReadDouble(section, ReflectionUtils.GetName(nameExpression), defaultValue);
         }
 
         public bool ReadBool(string section, string name, bool defaultValue)
@@ -200,10 +184,7 @@ namespace TSP.DoxygenEditor.Services
                 return (value.Value == 1);
             return (defaultValue);
         }
-        public bool ReadBool(string section, Expression<Func<object>> nameExpression, bool defaultValue)
-        {
-            return ReadBool(section, ReflectionUtils.GetName(nameExpression), defaultValue);
-        }
+
         public IEnumerable<string> ReadList(string section, string name)
         {
             if (_rootKey != null)
@@ -226,10 +207,6 @@ namespace TSP.DoxygenEditor.Services
                     }
                 }
             }
-        }
-        public IEnumerable<string> ReadList(string section, Expression<Func<object>> nameExpression)
-        {
-            return ReadList(section, ReflectionUtils.GetName(nameExpression));
         }
 
         public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, string name) where TValue : struct
@@ -279,10 +256,6 @@ namespace TSP.DoxygenEditor.Services
                     }
                 }
             }
-        }
-        public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, Expression<Func<object>> nameExpression) where TValue : struct
-        {
-            return ReadDictionary<TValue>(section, ReflectionUtils.GetName(nameExpression));
         }
 
         #region IDisposable Support
