@@ -11,6 +11,7 @@ namespace TSP.DoxygenEditor.Services
         void WriteBool(string section, string name, bool value);
         void WriteList(string section, string name, IEnumerable<string> list);
         void WriteDictionary<TValue>(string section, string name, IDictionary<string, TValue> dict) where TValue : struct;
+        void WriteEnum<TEnum>(string section, string name, TEnum value) where TEnum : struct, IConvertible;
         void Save(string filePath);
     }
 }

@@ -8,11 +8,22 @@ using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Models
 {
+    public enum WorkspaceModelVersion
+    {
+        Initial = 0,
+        AddedVersion = 1,
+        Current = AddedVersion,
+    }
+
     public class WorkspaceModel
     {
         const string DefaultWorkspaceNamespace = "https://tspsoftware.net/doxygeneditor/workspace/";
 
+        const string RootSection = "_root_";
+
         public string FilePath { get; private set; }
+
+        public WorkspaceModelVersion Version { get; private set; }
 
         public interface IWorkspaceOptions<T>
         {
@@ -254,8 +265,9 @@ namespace TSP.DoxygenEditor.Models
         public ValidationCppOptions ValidationCpp { get; }
         public BuildOptions Build { get; }
 
-        public WorkspaceModel(string filePath)
+        public WorkspaceModel(string filePath, WorkspaceModelVersion version)
         {
+            Version = version;
             FilePath = filePath;
             View = new ViewOptions();
             History = new HistoryOptions();
@@ -266,6 +278,7 @@ namespace TSP.DoxygenEditor.Models
 
         public void Assign(WorkspaceModel other)
         {
+            Version = other.Version;
             FilePath = other.FilePath;
             View.Assign(other.View);
             History.Assign(other.History);
@@ -281,12 +294,17 @@ namespace TSP.DoxygenEditor.Models
                 Result<bool> loadRes = reader.Load(filePath);
                 if (!loadRes.Success)
                     return new Result<WorkspaceModel>(loadRes.Error);
-                WorkspaceModel result = new WorkspaceModel(filePath);
+
+                WorkspaceModelVersion version = reader.ReadEnum<WorkspaceModelVersion>(RootSection, nameof(Version), WorkspaceModelVersion.Initial);
+
+                WorkspaceModel result = new WorkspaceModel(filePath, version);
+
                 result.View.Load(reader);
                 result.History.Load(reader);
                 result.ParserCpp.Load(reader);
                 result.ValidationCpp.Load(reader);
                 result.Build.Load(reader);
+
                 return new Result<WorkspaceModel>(result);
             }
         }
@@ -296,11 +314,14 @@ namespace TSP.DoxygenEditor.Models
             Debug.Assert(!string.IsNullOrWhiteSpace(FilePath));
             using (IConfigurarionWriter writer = new JSONConfigurationStore("Workspace", new DefaultConfigurationConverter()))
             {
+                writer.WriteEnum<WorkspaceModelVersion>(RootSection, nameof(Version), Version);
+
                 View.Save(writer);
                 History.Save(writer);
                 ParserCpp.Save(writer);
                 ValidationCpp.Save(writer);
                 Build.Save(writer);
+
                 writer.Save(FilePath);
             }
         }
