@@ -26,6 +26,7 @@ using System.Text;
 using System.Collections.ObjectModel;
 using TSP.DoxygenEditor.Languages;
 using TSP.DoxygenEditor.Utils;
+using TSP.DoxygenEditor.Styles;
 
 namespace TSP.DoxygenEditor.Views
 {
@@ -88,6 +89,8 @@ namespace TSP.DoxygenEditor.Views
                 return (0);
             };
         }
+
+        private readonly DarkModeCS _dm;
 
         public MainForm()
         {
@@ -188,6 +191,12 @@ namespace TSP.DoxygenEditor.Views
                 else UpdateMenuSelection(null);
             };
             NativeMethods.AddClipboardFormatListener(Handle);
+
+            _dm = new DarkModeCS(this)
+            {
+                //[Optional] Choose your preferred color mode here:
+                ColorMode = DarkModeCS.DisplayMode.SystemDefault
+            };
         }
 
         private void UpdatedWorkspaceFile()
