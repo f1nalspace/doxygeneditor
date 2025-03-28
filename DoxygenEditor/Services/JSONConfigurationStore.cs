@@ -184,8 +184,6 @@ namespace TSP.DoxygenEditor.Services
                 return value.GetBoolean();
             return defaultValue;
         }
-        public bool ReadBool(string section, Expression<Func<object>> nameExpression, bool defaultValue)
-            => ReadBool(section, ReflectionUtils.GetName(nameExpression), defaultValue);
 
         public int ReadInt(string section, string name, int defaultValue)
         {
@@ -196,8 +194,6 @@ namespace TSP.DoxygenEditor.Services
                 return value.GetInt32();
             return defaultValue;
         }
-        public int ReadInt(string section, Expression<Func<object>> nameExpression, int defaultValue)
-            => ReadInt(section, ReflectionUtils.GetName(nameExpression), defaultValue);
 
         public double ReadDouble(string section, string name, double defaultValue)
         {
@@ -208,8 +204,6 @@ namespace TSP.DoxygenEditor.Services
                 return value.GetDouble();
             return defaultValue;
         }
-        public double ReadDouble(string section, Expression<Func<object>> nameExpression, double defaultValue)
-            => ReadDouble(section, ReflectionUtils.GetName(nameExpression), defaultValue);
 
         public string ReadString(string section, string name, string defaultValue)
         {
@@ -220,8 +214,6 @@ namespace TSP.DoxygenEditor.Services
                 return value.GetString();
             return defaultValue;
         }
-        public string ReadString(string section, Expression<Func<object>> nameExpression, string defaultValue)
-            => ReadString(section, ReflectionUtils.GetName(nameExpression), defaultValue);
 
         public IEnumerable<string> ReadList(string section, string name)
         {
@@ -238,8 +230,6 @@ namespace TSP.DoxygenEditor.Services
                 }
             }
         }
-        public IEnumerable<string> ReadList(string section, Expression<Func<object>> nameExpression)
-            => ReadList(section, ReflectionUtils.GetName(nameExpression));
 
         public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, string name) where TValue : struct
         {
@@ -282,8 +272,6 @@ namespace TSP.DoxygenEditor.Services
                 }
             }
         }
-        public IEnumerable<KeyValuePair<string, TValue>> ReadDictionary<TValue>(string section, Expression<Func<object>> nameExpression) where TValue : struct
-            => ReadDictionary<TValue>(section, ReflectionUtils.GetName(nameExpression));
 
         #region IDisposable Support
         protected virtual void DisposeManaged()
