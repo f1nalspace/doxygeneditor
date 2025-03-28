@@ -19,7 +19,7 @@ namespace TSP.DoxygenEditor.Views
 
             tvOptions.SelectedNode = tvOptions.Nodes[0];
 
-            Workspace = new WorkspaceModel(string.Empty);
+            Workspace = new WorkspaceModel(string.Empty, WorkspaceModelVersion.Current);
             if (model != null)
                 Workspace.Assign(model);
             WorkspaceToVisual();

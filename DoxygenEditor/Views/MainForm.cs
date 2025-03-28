@@ -126,7 +126,7 @@ namespace TSP.DoxygenEditor.Views
             dlgOpenFile.Filter = fileExtensionsFilter.ToString();
             dlgSaveFile.Filter = fileExtensionsFilter.ToString();
 
-            _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
+            _workspace = new WorkspaceModel(_defaultWorkspaceFilePath, WorkspaceModelVersion.Current);
             if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath) && File.Exists(_globalConfig.WorkspacePath))
             {
                 Result<WorkspaceModel> loadRes = WorkspaceModel.Load(_globalConfig.WorkspacePath);
@@ -1399,7 +1399,7 @@ namespace TSP.DoxygenEditor.Views
             if (dlgSaveWorkspace.ShowDialog() == DialogResult.OK)
             {
                 _globalConfig.WorkspacePath = dlgSaveWorkspace.FileName;
-                WorkspaceModel newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath);
+                WorkspaceModel newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath, WorkspaceModelVersion.Current);
                 _workspace.Assign(newWorkspace);
                 UpdatedWorkspaceFile();
             }
@@ -1413,7 +1413,7 @@ namespace TSP.DoxygenEditor.Views
                 if (!loadRes.Success)
                 {
                     ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!{Environment.NewLine}{Environment.NewLine}{loadRes.Error}");
-                    _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath));
+                    _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath, WorkspaceModelVersion.Current));
                 }
                 else
                 {
