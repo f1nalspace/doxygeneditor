@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq.Expressions;
 using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Services
@@ -256,6 +254,17 @@ namespace TSP.DoxygenEditor.Services
                     }
                 }
             }
+        }
+
+        public TEnum ReadEnum<TEnum>(string section, string name, TEnum defaultValue) where TEnum : struct, IConvertible
+        {
+            if (!typeof(TEnum).IsEnum)
+                throw new ArgumentException($"Type '{typeof(TEnum)}' is not an enum type");
+            string rawValue = (string)ReadRaw(section, name);
+            if (string.IsNullOrWhiteSpace(rawValue) || (!Enum.TryParse<TEnum>(rawValue, out TEnum result))) {
+                return default(TEnum);
+            }
+            return result;
         }
 
         #region IDisposable Support

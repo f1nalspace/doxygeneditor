@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TSP.DoxygenEditor.Services
 {
@@ -78,5 +79,13 @@ namespace TSP.DoxygenEditor.Services
                 outDict[pair.Key] =  pair.Value;
             PushWrite(WriteKind.Dictionary, section, name, outDict);
         }
+
+        public void WriteEnum<TEnum>(string section, string name, TEnum value) where TEnum : struct, IConvertible
+        {
+            if (!typeof(TEnum).IsEnum)
+                throw new ArgumentException($"Type '{typeof(TEnum)}' is not an enum type");
+            PushWrite(WriteKind.String, section, name, value.ToString());
+        }
+
     }
 }

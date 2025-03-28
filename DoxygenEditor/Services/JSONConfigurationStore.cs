@@ -273,6 +273,23 @@ namespace TSP.DoxygenEditor.Services
             }
         }
 
+        public TEnum ReadEnum<TEnum>(string section, string name, TEnum defaultValue) where TEnum : struct, IConvertible
+        {
+            if (!typeof(TEnum).IsEnum)
+                throw new ArgumentException($"Type '{typeof(TEnum)}' is not an enum type");
+            JsonElement? sectionElement = FindElementBySection(_rootNode, section);
+            if (sectionElement.HasValue &&
+                sectionElement.Value.TryGetProperty(name, out JsonElement value) &&
+                value.ValueKind == JsonValueKind.String)
+            {
+                string rawValue = value.GetString();
+                if (string.IsNullOrWhiteSpace(rawValue) || (!Enum.TryParse<TEnum>(rawValue, out TEnum result)))
+                    return default(TEnum);
+                return result;
+            }
+            return defaultValue;
+        }
+
         #region IDisposable Support
         protected virtual void DisposeManaged()
         {

@@ -230,7 +230,7 @@ namespace TSP.DoxygenEditor.Services
             if (rawValue == null)
                 rawValue = defaultValue;
             return (rawValue);
-        }
+        }        
 
         public IEnumerable<string> ReadList(string section, string name)
         {
@@ -308,6 +308,16 @@ namespace TSP.DoxygenEditor.Services
                     }
                 }
             }
+        }
+
+        public TEnum ReadEnum<TEnum>(string section, string name, TEnum defaultValue) where TEnum : struct, IConvertible
+        {
+            if (!typeof(TEnum).IsEnum)
+                throw new ArgumentException($"Type '{typeof(TEnum)}' is not an enum type");
+            string rawValue = ReadRaw(section, name) as string;
+            if (string.IsNullOrWhiteSpace(rawValue) || (!Enum.TryParse<TEnum>(rawValue, out TEnum result)))
+                return default(TEnum);
+            return (result);
         }
 
         #region IDisposable Support
