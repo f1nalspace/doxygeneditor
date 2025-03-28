@@ -35,13 +35,13 @@ namespace TSP.DoxygenEditor.Models
             }
             public void Load(IConfigurarionReader reader)
             {
-                IsWhitespaceVisible = reader.ReadBool(SectionName, () => IsWhitespaceVisible, false);
-                TreeSplitterDistance = reader.ReadDouble(SectionName, () => TreeSplitterDistance, 0.25);
+                IsWhitespaceVisible = reader.ReadBool(SectionName, nameof(IsWhitespaceVisible), false);
+                TreeSplitterDistance = reader.ReadDouble(SectionName, nameof(TreeSplitterDistance), 0.25);
             }
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => IsWhitespaceVisible, IsWhitespaceVisible);
-                writer.WriteDouble(SectionName, () => TreeSplitterDistance, TreeSplitterDistance);
+                writer.WriteBool(SectionName, nameof(IsWhitespaceVisible), IsWhitespaceVisible);
+                writer.WriteDouble(SectionName, nameof(TreeSplitterDistance), TreeSplitterDistance);
             }
         }
 
@@ -70,17 +70,17 @@ namespace TSP.DoxygenEditor.Models
             }
             public void Load(IConfigurarionReader reader)
             {
-                OpenInBrowser = reader.ReadBool(SectionName, () => OpenInBrowser, true);
-                PathToDoxygen = reader.ReadString(SectionName, () => PathToDoxygen);
-                BaseDirectory = reader.ReadString(SectionName, () => BaseDirectory);
-                ConfigFile = reader.ReadString(SectionName, () => ConfigFile);
+                OpenInBrowser = reader.ReadBool(SectionName, nameof(OpenInBrowser), true);
+                PathToDoxygen = reader.ReadString(SectionName, nameof(PathToDoxygen));
+                BaseDirectory = reader.ReadString(SectionName, nameof(BaseDirectory));
+                ConfigFile = reader.ReadString(SectionName, nameof(ConfigFile));
             }
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => OpenInBrowser, OpenInBrowser);
-                writer.WriteString(SectionName, () => PathToDoxygen, PathToDoxygen);
-                writer.WriteString(SectionName, () => BaseDirectory, BaseDirectory);
-                writer.WriteString(SectionName, () => ConfigFile, ConfigFile);
+                writer.WriteBool(SectionName, nameof(OpenInBrowser), OpenInBrowser);
+                writer.WriteString(SectionName, nameof(PathToDoxygen), PathToDoxygen);
+                writer.WriteString(SectionName, nameof(BaseDirectory), BaseDirectory);
+                writer.WriteString(SectionName, nameof(ConfigFile), ConfigFile);
             }
         }
 
@@ -106,14 +106,14 @@ namespace TSP.DoxygenEditor.Models
             public void Load(IConfigurarionReader reader)
             {
                 _recentFiles.Clear();
-                _recentFiles.AddRange(reader.ReadList(SectionName, () => RecentFiles));
+                _recentFiles.AddRange(reader.ReadList(SectionName, nameof(RecentFiles)));
                 _lastOpenedFiles.Clear();
-                _lastOpenedFiles.AddRange(reader.ReadList(SectionName, () => LastOpenedFiles));
+                _lastOpenedFiles.AddRange(reader.ReadList(SectionName, nameof(LastOpenedFiles)));
             }
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteList(SectionName, () => RecentFiles, _recentFiles);
-                writer.WriteList(SectionName, () => LastOpenedFiles, _lastOpenedFiles);
+                writer.WriteList(SectionName, nameof(RecentFiles), _recentFiles);
+                writer.WriteList(SectionName, nameof(LastOpenedFiles), _lastOpenedFiles);
             }
 
             public void ClearRecentFiles()
@@ -151,16 +151,16 @@ namespace TSP.DoxygenEditor.Models
 
             public void Load(IConfigurarionReader reader)
             {
-                ExcludeFunctionBodies = reader.ReadBool(SectionName, () => ExcludeFunctionBodies, false);
-                ExcludeFunctionBodySymbols = reader.ReadBool(SectionName, () => ExcludeFunctionBodySymbols, false);
-                ExcludeFunctionCallSymbols = reader.ReadBool(SectionName, () => ExcludeFunctionCallSymbols, false);
+                ExcludeFunctionBodies = reader.ReadBool(SectionName, nameof(ExcludeFunctionBodies), false);
+                ExcludeFunctionBodySymbols = reader.ReadBool(SectionName, nameof(ExcludeFunctionBodySymbols), false);
+                ExcludeFunctionCallSymbols = reader.ReadBool(SectionName, nameof(ExcludeFunctionCallSymbols), false);
             }
 
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => ExcludeFunctionBodies, ExcludeFunctionBodies);
-                writer.WriteBool(SectionName, () => ExcludeFunctionBodySymbols, ExcludeFunctionBodySymbols);
-                writer.WriteBool(SectionName, () => ExcludeFunctionCallSymbols, ExcludeFunctionCallSymbols);
+                writer.WriteBool(SectionName, nameof(ExcludeFunctionBodies), ExcludeFunctionBodies);
+                writer.WriteBool(SectionName, nameof(ExcludeFunctionBodySymbols), ExcludeFunctionBodySymbols);
+                writer.WriteBool(SectionName, nameof(ExcludeFunctionCallSymbols), ExcludeFunctionCallSymbols);
             }
         }
 
@@ -229,22 +229,22 @@ namespace TSP.DoxygenEditor.Models
 
             public void Load(IConfigurarionReader reader)
             {
-                ExcludePreprocessorMatch = reader.ReadBool(SectionName, () => ExcludePreprocessorMatch, false);
-                ExcludePreprocessorUsage = reader.ReadBool(SectionName, () => ExcludePreprocessorUsage, false);
-                RequireDoxygenReference = reader.ReadBool(SectionName, () => RequireDoxygenReference, true);
-                ValidateFunctionDefinitions = reader.ReadBool(SectionName, () => ValidateFunctionDefinitions, true);
-                SkipFunctionPatterns = reader.ReadList(SectionName, () => SkipFunctionPatterns).ToImmutableArray();
-                CheckFunctionPatterns = reader.ReadList(SectionName, () => CheckFunctionPatterns).ToImmutableArray();
+                ExcludePreprocessorMatch = reader.ReadBool(SectionName, nameof(ExcludePreprocessorMatch), false);
+                ExcludePreprocessorUsage = reader.ReadBool(SectionName, nameof(ExcludePreprocessorUsage), false);
+                RequireDoxygenReference = reader.ReadBool(SectionName, nameof(RequireDoxygenReference), true);
+                ValidateFunctionDefinitions = reader.ReadBool(SectionName, nameof(ValidateFunctionDefinitions), true);
+                SkipFunctionPatterns = reader.ReadList(SectionName, nameof(SkipFunctionPatterns)).ToImmutableArray();
+                CheckFunctionPatterns = reader.ReadList(SectionName, nameof(CheckFunctionPatterns)).ToImmutableArray();
             }
 
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => ExcludePreprocessorMatch, ExcludePreprocessorMatch);
-                writer.WriteBool(SectionName, () => ExcludePreprocessorUsage, ExcludePreprocessorUsage);
-                writer.WriteBool(SectionName, () => RequireDoxygenReference, RequireDoxygenReference);
-                writer.WriteBool(SectionName, () => ValidateFunctionDefinitions, ValidateFunctionDefinitions);
-                writer.WriteList(SectionName, () => SkipFunctionPatterns, SkipFunctionPatterns);
-                writer.WriteList(SectionName, () => CheckFunctionPatterns, CheckFunctionPatterns);
+                writer.WriteBool(SectionName, nameof(ExcludePreprocessorMatch), ExcludePreprocessorMatch);
+                writer.WriteBool(SectionName, nameof(ExcludePreprocessorUsage), ExcludePreprocessorUsage);
+                writer.WriteBool(SectionName, nameof(RequireDoxygenReference), RequireDoxygenReference);
+                writer.WriteBool(SectionName, nameof(ValidateFunctionDefinitions), ValidateFunctionDefinitions);
+                writer.WriteList(SectionName, nameof(SkipFunctionPatterns), SkipFunctionPatterns);
+                writer.WriteList(SectionName, nameof(CheckFunctionPatterns), CheckFunctionPatterns);
             }
         }
 
