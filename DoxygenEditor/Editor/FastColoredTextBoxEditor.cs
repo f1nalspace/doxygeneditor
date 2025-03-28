@@ -9,7 +9,7 @@ using TSP.DoxygenEditor.Models;
 
 namespace TSP.DoxygenEditor.Editor
 {
-    class FCTBEditor : IEditor, IDisposable
+    class FastColoredTextBoxEditor : IEditor, IDisposable
     {
         private readonly IWin32Window _window;
         private readonly WorkspaceModel _workspace;
@@ -41,7 +41,7 @@ namespace TSP.DoxygenEditor.Editor
         public IParseInfo ParseInfo => _parseState;
         private IParseControl ParseControl => _parseState;
 
-        public FCTBEditor(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
+        public FastColoredTextBoxEditor(IWin32Window window, WorkspaceModel workspace, string name, TabPage tab, int tabIndex)
         {
             _window = window;
             _workspace = workspace;
