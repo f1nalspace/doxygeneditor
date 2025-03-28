@@ -17,7 +17,7 @@ namespace TSP.DoxygenEditor.Languages.Utils
                 return (1);
         }
 
-        private static HashSet<char> InvalidFilenameChars = new HashSet<char>(Path.GetInvalidFileNameChars());
+        private static readonly HashSet<char> InvalidFilenameChars = new HashSet<char>(Path.GetInvalidFileNameChars());
         public static bool IsFilename(char c)
         {
             bool result = (IsAlpha(c) || IsNumeric(c) || (c == '_') || (c == '-') || (c == '.')) && !InvalidFilenameChars.Contains(c);

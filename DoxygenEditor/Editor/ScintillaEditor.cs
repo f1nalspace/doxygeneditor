@@ -238,7 +238,9 @@ namespace TSP.DoxygenEditor.Editor
             };
             _searchControl.Replace += (s, mode) =>
             {
-                ReplaceText(_window, _searchControl.SearchText, _searchControl.ReplaceText, mode, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap);
+                if (ReplaceText(_window, _searchControl.SearchText, _searchControl.ReplaceText, mode, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap))
+                    SearchText(_window, _searchControl.SearchText, SearchDirection.Next, _searchControl.MatchCase, _searchControl.MatchWords, _searchControl.IsRegex, _searchControl.IsWrap);
+
             };
             _searchControl.FocusChanged += (s, focused) =>
             {
@@ -445,8 +447,9 @@ namespace TSP.DoxygenEditor.Editor
             return (false);
         }
 
-        private void ReplaceText(IWin32Window window, string searchText, string replacementText, ReplaceMode mode, bool matchCase, bool wholeWord, bool isRegex, bool wrap)
+        private bool ReplaceText(IWin32Window window, string searchText, string replacementText, ReplaceMode mode, bool matchCase, bool wholeWord, bool isRegex, bool wrap)
         {
+            bool found = false;
             if (searchText != null && replacementText != null)
             {
                 int replacementLength = replacementText.Length;
@@ -461,6 +464,7 @@ namespace TSP.DoxygenEditor.Editor
                         _editor.ClearSelections();
                         _editor.GotoPosition(selStart + replacementLength);
                         _editor.Focus();
+                        found = true;
                     }
                 }
                 else
@@ -472,6 +476,7 @@ namespace TSP.DoxygenEditor.Editor
                     {
                         if (!match.Success)
                             break;
+                        found = true;
                         text = text.Insert(match.Index + match.Length, replacementText);
                         text = text.Remove(match.Index, match.Length);
                         searchStart = match.Index + replacementLength;
@@ -479,6 +484,7 @@ namespace TSP.DoxygenEditor.Editor
                     _editor.Text = text;
                 }
             }
+            return found;
         }
 
         /// <summary>

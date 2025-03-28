@@ -95,22 +95,26 @@ namespace TSP.DoxygenEditor.Views
 
             Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName asmName = assembly.GetName();
-            FileVersionInfo verInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
-            string companyName = verInfo.CompanyName;
-            string appId = verInfo.FileDescription;
 
-            _appName = $"{verInfo.ProductName}";
+            string appVersion = asmName.Version.ToString();
+            string appName = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "Unknown Product";
+            string appCopyright = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "No Copyright";
+            string appDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? "No Description";
+            string appCompanyName = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "No Company";
+            string appId = asmName.Name;
 
-            if (string.IsNullOrWhiteSpace(companyName))
+            _appName = $"{appName}";
+
+            if (string.IsNullOrWhiteSpace(appCompanyName))
                 throw new Exception("Company name is missing in assembly!");
             if (string.IsNullOrWhiteSpace(appId))
                 throw new Exception("Title is missing in assembly!");
 
-            _dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), companyName, appId);
+            _dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appCompanyName, appId);
             if (!Directory.Exists(_dataPath)) Directory.CreateDirectory(_dataPath);
             _defaultWorkspaceFilePath = Path.Combine(_dataPath, "DefaultWorkspace.doxyedit");
 
-            _globalConfig = new GlobalConfigModel(companyName, appId);
+            _globalConfig = new GlobalConfigModel(appCompanyName, appId);
             _globalConfig.Load();
 
             StringBuilder fileExtensionsFilter = new StringBuilder();
@@ -122,7 +126,7 @@ namespace TSP.DoxygenEditor.Views
             dlgOpenFile.Filter = fileExtensionsFilter.ToString();
             dlgSaveFile.Filter = fileExtensionsFilter.ToString();
 
-            _workspace = new WorkspaceModel(_defaultWorkspaceFilePath);
+            _workspace = new WorkspaceModel(_defaultWorkspaceFilePath, WorkspaceModelVersion.Current);
             if (!string.IsNullOrWhiteSpace(_globalConfig.WorkspacePath) && File.Exists(_globalConfig.WorkspacePath))
             {
                 Result<WorkspaceModel> loadRes = WorkspaceModel.Load(_globalConfig.WorkspacePath);
@@ -1084,13 +1088,20 @@ namespace TSP.DoxygenEditor.Views
             // (fpl__[a-zA-Z0-9_]+)|(fplAtomic[a-zA-Z0-9_]+)|(fpl[A-Z][a-z0-9_]+)|
             if (entity.Kind == CppEntityKind.FunctionDefinition)
             {
-                foreach (Regex skipRex in options.SkipFunctionRexes)
+                foreach (Regex rex in options.SkipFunctionRexes)
                 {
-                    if (skipRex.IsMatch(entity.Id))
+                    if (rex.IsMatch(entity.Id))
                         return true;
                 }
-                Debug.WriteLine(entity.Id);
-                return false;
+
+                bool checkFunctionMatches = false;
+                foreach (Regex rex in options.CheckFunctionRexes)
+                {
+                    if (rex.IsMatch(entity.Id))
+                        checkFunctionMatches |= true;
+                }
+
+                return checkFunctionMatches;
             }
             return true;
         }
@@ -1388,7 +1399,7 @@ namespace TSP.DoxygenEditor.Views
             if (dlgSaveWorkspace.ShowDialog() == DialogResult.OK)
             {
                 _globalConfig.WorkspacePath = dlgSaveWorkspace.FileName;
-                WorkspaceModel newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath);
+                WorkspaceModel newWorkspace = new WorkspaceModel(_globalConfig.WorkspacePath, WorkspaceModelVersion.Current);
                 _workspace.Assign(newWorkspace);
                 UpdatedWorkspaceFile();
             }
@@ -1402,7 +1413,7 @@ namespace TSP.DoxygenEditor.Views
                 if (!loadRes.Success)
                 {
                     ShowError("Workspace", $"Workspace '{Path.GetFileName(_globalConfig.WorkspacePath)}' not found", $"The workspace by path '{_globalConfig.WorkspacePath}' could not be load!{Environment.NewLine}{Environment.NewLine}{loadRes.Error}");
-                    _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath));
+                    _workspace.Assign(new WorkspaceModel(_defaultWorkspaceFilePath, WorkspaceModelVersion.Current));
                 }
                 else
                 {

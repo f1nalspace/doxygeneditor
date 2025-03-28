@@ -136,7 +136,8 @@ namespace TSP.DoxygenEditor
             ErrorDialogForm dialog = new ErrorDialogForm();
             dialog.Title = "Unexpected Exception";
             dialog.ShortText = exception.Message;
-            dialog.Text = exception.ToString();
+            dialog.Text = "Unexpected Exception";
+            dialog.Details = exception.ToString();
             IWin32Window owner = Application.OpenForms.Count > 0 ? Application.OpenForms[0] : null;
             dialog.ShowDialog(owner);
             Application.Exit();

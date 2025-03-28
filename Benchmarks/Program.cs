@@ -33,7 +33,8 @@ namespace Benchmarks
             config = config.AddColumnProvider(DefaultColumnProviders.Instance);
             config = config.WithArtifactsPath(entryPath);
 
-            BenchmarkRunner.Run<TextStreamBenchmarks>(config);
+            BenchmarkRunner.Run<UtilsBenchmarks>(config);
+            //BenchmarkRunner.Run<TextStreamBenchmarks>(config);
             //BenchmarkRunner.Run<CppBenchmarks>(config);
             //BenchmarkRunner.Run<DoxygenBenchmarks>();
             //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);

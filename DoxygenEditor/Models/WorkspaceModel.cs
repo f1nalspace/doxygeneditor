@@ -8,11 +8,22 @@ using TSP.DoxygenEditor.Utils;
 
 namespace TSP.DoxygenEditor.Models
 {
+    public enum WorkspaceModelVersion
+    {
+        Initial = 0,
+        AddedVersion = 1,
+        Current = AddedVersion,
+    }
+
     public class WorkspaceModel
     {
         const string DefaultWorkspaceNamespace = "https://tspsoftware.net/doxygeneditor/workspace/";
 
+        const string RootSection = "_root_";
+
         public string FilePath { get; private set; }
+
+        public WorkspaceModelVersion Version { get; private set; }
 
         public interface IWorkspaceOptions<T>
         {
@@ -35,13 +46,13 @@ namespace TSP.DoxygenEditor.Models
             }
             public void Load(IConfigurarionReader reader)
             {
-                IsWhitespaceVisible = reader.ReadBool(SectionName, () => IsWhitespaceVisible, false);
-                TreeSplitterDistance = reader.ReadDouble(SectionName, () => TreeSplitterDistance, 0.25);
+                IsWhitespaceVisible = reader.ReadBool(SectionName, nameof(IsWhitespaceVisible), false);
+                TreeSplitterDistance = reader.ReadDouble(SectionName, nameof(TreeSplitterDistance), 0.25);
             }
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => IsWhitespaceVisible, IsWhitespaceVisible);
-                writer.WriteDouble(SectionName, () => TreeSplitterDistance, TreeSplitterDistance);
+                writer.WriteBool(SectionName, nameof(IsWhitespaceVisible), IsWhitespaceVisible);
+                writer.WriteDouble(SectionName, nameof(TreeSplitterDistance), TreeSplitterDistance);
             }
         }
 
@@ -70,17 +81,17 @@ namespace TSP.DoxygenEditor.Models
             }
             public void Load(IConfigurarionReader reader)
             {
-                OpenInBrowser = reader.ReadBool(SectionName, () => OpenInBrowser, true);
-                PathToDoxygen = reader.ReadString(SectionName, () => PathToDoxygen);
-                BaseDirectory = reader.ReadString(SectionName, () => BaseDirectory);
-                ConfigFile = reader.ReadString(SectionName, () => ConfigFile);
+                OpenInBrowser = reader.ReadBool(SectionName, nameof(OpenInBrowser), true);
+                PathToDoxygen = reader.ReadString(SectionName, nameof(PathToDoxygen));
+                BaseDirectory = reader.ReadString(SectionName, nameof(BaseDirectory));
+                ConfigFile = reader.ReadString(SectionName, nameof(ConfigFile));
             }
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => OpenInBrowser, OpenInBrowser);
-                writer.WriteString(SectionName, () => PathToDoxygen, PathToDoxygen);
-                writer.WriteString(SectionName, () => BaseDirectory, BaseDirectory);
-                writer.WriteString(SectionName, () => ConfigFile, ConfigFile);
+                writer.WriteBool(SectionName, nameof(OpenInBrowser), OpenInBrowser);
+                writer.WriteString(SectionName, nameof(PathToDoxygen), PathToDoxygen);
+                writer.WriteString(SectionName, nameof(BaseDirectory), BaseDirectory);
+                writer.WriteString(SectionName, nameof(ConfigFile), ConfigFile);
             }
         }
 
@@ -106,14 +117,14 @@ namespace TSP.DoxygenEditor.Models
             public void Load(IConfigurarionReader reader)
             {
                 _recentFiles.Clear();
-                _recentFiles.AddRange(reader.ReadList(SectionName, () => RecentFiles));
+                _recentFiles.AddRange(reader.ReadList(SectionName, nameof(RecentFiles)));
                 _lastOpenedFiles.Clear();
-                _lastOpenedFiles.AddRange(reader.ReadList(SectionName, () => LastOpenedFiles));
+                _lastOpenedFiles.AddRange(reader.ReadList(SectionName, nameof(LastOpenedFiles)));
             }
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteList(SectionName, () => RecentFiles, _recentFiles);
-                writer.WriteList(SectionName, () => LastOpenedFiles, _lastOpenedFiles);
+                writer.WriteList(SectionName, nameof(RecentFiles), _recentFiles);
+                writer.WriteList(SectionName, nameof(LastOpenedFiles), _lastOpenedFiles);
             }
 
             public void ClearRecentFiles()
@@ -151,16 +162,16 @@ namespace TSP.DoxygenEditor.Models
 
             public void Load(IConfigurarionReader reader)
             {
-                ExcludeFunctionBodies = reader.ReadBool(SectionName, () => ExcludeFunctionBodies, false);
-                ExcludeFunctionBodySymbols = reader.ReadBool(SectionName, () => ExcludeFunctionBodySymbols, false);
-                ExcludeFunctionCallSymbols = reader.ReadBool(SectionName, () => ExcludeFunctionCallSymbols, false);
+                ExcludeFunctionBodies = reader.ReadBool(SectionName, nameof(ExcludeFunctionBodies), false);
+                ExcludeFunctionBodySymbols = reader.ReadBool(SectionName, nameof(ExcludeFunctionBodySymbols), false);
+                ExcludeFunctionCallSymbols = reader.ReadBool(SectionName, nameof(ExcludeFunctionCallSymbols), false);
             }
 
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => ExcludeFunctionBodies, ExcludeFunctionBodies);
-                writer.WriteBool(SectionName, () => ExcludeFunctionBodySymbols, ExcludeFunctionBodySymbols);
-                writer.WriteBool(SectionName, () => ExcludeFunctionCallSymbols, ExcludeFunctionCallSymbols);
+                writer.WriteBool(SectionName, nameof(ExcludeFunctionBodies), ExcludeFunctionBodies);
+                writer.WriteBool(SectionName, nameof(ExcludeFunctionBodySymbols), ExcludeFunctionBodySymbols);
+                writer.WriteBool(SectionName, nameof(ExcludeFunctionCallSymbols), ExcludeFunctionCallSymbols);
             }
         }
 
@@ -190,6 +201,23 @@ namespace TSP.DoxygenEditor.Models
             }
             private ImmutableArray<Regex> _skipFunctionRexes = ImmutableArray<Regex>.Empty;
 
+            public IEnumerable<Regex> CheckFunctionRexes
+            {
+                get
+                {
+                    if (_checkFunctionRexes.Length != CheckFunctionPatterns.Length)
+                    {
+                        List<Regex> list = new List<Regex>();
+                        foreach (var pattern in CheckFunctionPatterns)
+                            list.Add(new Regex(pattern, RegexOptions.Compiled));
+                        _checkFunctionRexes = list.ToImmutableArray();
+                    }
+                    return _checkFunctionRexes;
+                }
+            }
+            private ImmutableArray<Regex> _checkFunctionRexes = ImmutableArray<Regex>.Empty;
+            public ImmutableArray<string> CheckFunctionPatterns { get; internal set; }
+
             public ValidationCppOptions()
             {
                 ExcludePreprocessorMatch = false;
@@ -197,6 +225,7 @@ namespace TSP.DoxygenEditor.Models
                 RequireDoxygenReference = true;
                 ValidateFunctionDefinitions = true;
                 SkipFunctionPatterns = new[] { "fplAtomic[a-zA-Z0-9_]+", "fpl__[a-zA-Z0-9_]+" }.ToImmutableArray();
+                CheckFunctionPatterns = new[] { "fpl[A-Z][a-zA-Z0-9_]+", "FPL_[A-Z][A-Z0-9_]+" }.ToImmutableArray();
             }
 
             public void Assign(ValidationCppOptions other)
@@ -206,24 +235,27 @@ namespace TSP.DoxygenEditor.Models
                 RequireDoxygenReference = other.RequireDoxygenReference;
                 ValidateFunctionDefinitions = other.ValidateFunctionDefinitions;
                 SkipFunctionPatterns = other.SkipFunctionPatterns;
+                CheckFunctionPatterns = other.CheckFunctionPatterns;
             }
 
             public void Load(IConfigurarionReader reader)
             {
-                ExcludePreprocessorMatch = reader.ReadBool(SectionName, () => ExcludePreprocessorMatch, false);
-                ExcludePreprocessorUsage = reader.ReadBool(SectionName, () => ExcludePreprocessorUsage, false);
-                RequireDoxygenReference = reader.ReadBool(SectionName, () => RequireDoxygenReference, true);
-                ValidateFunctionDefinitions = reader.ReadBool(SectionName, () => ValidateFunctionDefinitions, true);
-                SkipFunctionPatterns = reader.ReadList(SectionName, () => SkipFunctionPatterns).ToImmutableArray();
+                ExcludePreprocessorMatch = reader.ReadBool(SectionName, nameof(ExcludePreprocessorMatch), false);
+                ExcludePreprocessorUsage = reader.ReadBool(SectionName, nameof(ExcludePreprocessorUsage), false);
+                RequireDoxygenReference = reader.ReadBool(SectionName, nameof(RequireDoxygenReference), true);
+                ValidateFunctionDefinitions = reader.ReadBool(SectionName, nameof(ValidateFunctionDefinitions), true);
+                SkipFunctionPatterns = reader.ReadList(SectionName, nameof(SkipFunctionPatterns)).ToImmutableArray();
+                CheckFunctionPatterns = reader.ReadList(SectionName, nameof(CheckFunctionPatterns)).ToImmutableArray();
             }
 
             public void Save(IConfigurarionWriter writer)
             {
-                writer.WriteBool(SectionName, () => ExcludePreprocessorMatch, ExcludePreprocessorMatch);
-                writer.WriteBool(SectionName, () => ExcludePreprocessorUsage, ExcludePreprocessorUsage);
-                writer.WriteBool(SectionName, () => RequireDoxygenReference, RequireDoxygenReference);
-                writer.WriteBool(SectionName, () => ValidateFunctionDefinitions, ValidateFunctionDefinitions);
-                writer.WriteList(SectionName, () => SkipFunctionPatterns, SkipFunctionPatterns);
+                writer.WriteBool(SectionName, nameof(ExcludePreprocessorMatch), ExcludePreprocessorMatch);
+                writer.WriteBool(SectionName, nameof(ExcludePreprocessorUsage), ExcludePreprocessorUsage);
+                writer.WriteBool(SectionName, nameof(RequireDoxygenReference), RequireDoxygenReference);
+                writer.WriteBool(SectionName, nameof(ValidateFunctionDefinitions), ValidateFunctionDefinitions);
+                writer.WriteList(SectionName, nameof(SkipFunctionPatterns), SkipFunctionPatterns);
+                writer.WriteList(SectionName, nameof(CheckFunctionPatterns), CheckFunctionPatterns);
             }
         }
 
@@ -233,8 +265,9 @@ namespace TSP.DoxygenEditor.Models
         public ValidationCppOptions ValidationCpp { get; }
         public BuildOptions Build { get; }
 
-        public WorkspaceModel(string filePath)
+        public WorkspaceModel(string filePath, WorkspaceModelVersion version)
         {
+            Version = version;
             FilePath = filePath;
             View = new ViewOptions();
             History = new HistoryOptions();
@@ -245,6 +278,7 @@ namespace TSP.DoxygenEditor.Models
 
         public void Assign(WorkspaceModel other)
         {
+            Version = other.Version;
             FilePath = other.FilePath;
             View.Assign(other.View);
             History.Assign(other.History);
@@ -260,12 +294,17 @@ namespace TSP.DoxygenEditor.Models
                 Result<bool> loadRes = reader.Load(filePath);
                 if (!loadRes.Success)
                     return new Result<WorkspaceModel>(loadRes.Error);
-                WorkspaceModel result = new WorkspaceModel(filePath);
+
+                WorkspaceModelVersion version = reader.ReadEnum<WorkspaceModelVersion>(RootSection, nameof(Version), WorkspaceModelVersion.Initial);
+
+                WorkspaceModel result = new WorkspaceModel(filePath, version);
+
                 result.View.Load(reader);
                 result.History.Load(reader);
                 result.ParserCpp.Load(reader);
                 result.ValidationCpp.Load(reader);
                 result.Build.Load(reader);
+
                 return new Result<WorkspaceModel>(result);
             }
         }
@@ -275,11 +314,14 @@ namespace TSP.DoxygenEditor.Models
             Debug.Assert(!string.IsNullOrWhiteSpace(FilePath));
             using (IConfigurarionWriter writer = new JSONConfigurationStore("Workspace", new DefaultConfigurationConverter()))
             {
+                writer.WriteEnum<WorkspaceModelVersion>(RootSection, nameof(Version), Version);
+
                 View.Save(writer);
                 History.Save(writer);
                 ParserCpp.Save(writer);
                 ValidationCpp.Save(writer);
                 Build.Save(writer);
+
                 writer.Save(FilePath);
             }
         }
