@@ -1083,7 +1083,7 @@ namespace TSP.DoxygenEditor.Views
 
         private static readonly Regex _rexRefWithIdent = new Regex("^(@ref\\s+[a-zA-Z_][a-zA-Z0-9_]+)$", RegexOptions.Compiled);
 
-        private static bool ValidateFunctionDefinition(WorkspaceModel.ValidationCppOptions options, CppEntity entity)
+        private static bool ValidateFunctionDefinition(ValidationCppOptions options, CppEntity entity)
         {
             // (fpl__[a-zA-Z0-9_]+)|(fplAtomic[a-zA-Z0-9_]+)|(fpl[A-Z][a-z0-9_]+)|
             if (entity.Kind == CppEntityKind.FunctionDefinition)
