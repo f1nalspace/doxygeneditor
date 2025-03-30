@@ -9,7 +9,7 @@ namespace TSP.DoxygenEditor.Editor
     delegate void FocusChangedEventHandler(IEditor sender, bool focused);
     delegate void JumpToEditorEventHandler(ISymbolTableId id, int position);
 
-    interface IEditor : ISymbolTableId, IDisposable
+    internal interface IEditor : ISymbolTableId, IDisposable
     {
         TabPage Tab { get; }
         string Name { get; set; }
