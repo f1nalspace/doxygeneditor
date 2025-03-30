@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace TSP.DoxygenEditor.TextAnalysis
 {
-    public struct TextRange : IEquatable<TextRange>
+    public readonly struct TextRange : IEquatable<TextRange>
     {
         public TextPosition Position { get; }
         public int Length { get; }
@@ -11,7 +11,7 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public int Index => Position.Index;
         public int End => Index + Math.Max(0, Length - 1);
 
-        public static TextRange Invalid => new TextRange(new TextPosition(-1), 0);
+        public static TextRange Invalid => new TextRange(TextPosition.Invalid, 0);
 
         public TextRange(TextPosition pos, int length)
         {
@@ -33,5 +33,8 @@ namespace TSP.DoxygenEditor.TextAnalysis
         public override bool Equals([NotNullWhen(true)] object obj) => obj is TextRange range && Equals(range);
         public override int GetHashCode() => HashCode.Combine(Index, Length);
         public override string ToString() => $"{Position}, {Length}";
+
+        public static bool operator ==(TextRange left, TextRange right) => left.Equals(right);
+        public static bool operator !=(TextRange left, TextRange right) => !(left == right);
     }
 }
