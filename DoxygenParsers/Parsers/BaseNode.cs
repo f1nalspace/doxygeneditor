@@ -13,10 +13,10 @@ namespace TSP.DoxygenEditor.Parsers
         public IEnumerable<IBaseNode> Children => _children;
         public IEnumerable<BaseNode<TEntity>> TypedChildren => _children.Select(c => (BaseNode<TEntity>)c);
         public TEntity Entity { get; set; }
-        public TextRange StartRange => Entity.StartRange;
-        public TextRange EndRange => Entity.EndRange;
-        public string Id => Entity.Id;
-        public string Value => Entity.Value;
+        public TextRange StartRange => Entity?.StartRange ?? TextRange.Invalid;
+        public TextRange EndRange => Entity?.EndRange ?? TextRange.Invalid;
+        public string Id => Entity?.Id;
+        public string Value => Entity?.Value;
         public virtual bool ShowChildren => false;
 
         public IEnumerable<TChild> GetChildrenAs<TChild>() where TChild : IBaseNode
@@ -64,13 +64,13 @@ namespace TSP.DoxygenEditor.Parsers
             return (null);
         }
 
-        public override string ToString() => $"{Level} -> {Entity} ({Entity.StartRange} - {Entity.EndRange}, {Entity.Length})";
+        public override string ToString() => $"{Level} -> {Entity} ({StartRange} - {EndRange}, {Entity?.Length})";
 
         public int CompareTo(object obj)
         {
             if (obj == null)
                 return (-1);
-            System.Type t = obj.GetType();
+            Type t = obj.GetType();
             if (!typeof(IEntityBaseNode<TEntity>).IsAssignableFrom(t))
                 return (-1);
             IEntityBaseNode<TEntity> a = (IEntityBaseNode<TEntity>)obj;
