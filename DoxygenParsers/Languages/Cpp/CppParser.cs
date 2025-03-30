@@ -641,12 +641,14 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 // C pointer operator
                 CppTokenKind.MulOp,
 
+#if false
                 // C++ reference operator
                 CppTokenKind.AndOp,
 
-                // Template shit
+                // C++ template
                 CppTokenKind.LessThanOp,
                 CppTokenKind.GreaterThanOp,
+#endif
             };
 
             HashSet<CppTokenKind> notAllowedBefore = new HashSet<CppTokenKind>()
@@ -656,11 +658,14 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 CppTokenKind.PreprocessorEnd,
                 CppTokenKind.EqOp,
                 CppTokenKind.OrOp,
+                CppTokenKind.AndOp,
                 CppTokenKind.XorOp,
                 CppTokenKind.AddOp,
                 CppTokenKind.SubOp,
                 CppTokenKind.DivOp,
                 CppTokenKind.ModOp,
+                CppTokenKind.LessThanOp,
+                CppTokenKind.GreaterThanOp,
                 CppTokenKind.LeftParen,
                 CppTokenKind.RightParen,
                 CppTokenKind.LeftBrace,
