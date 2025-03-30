@@ -328,12 +328,16 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         kind = CppEntityKind.ForwardStruct;
                     stream.Next();
                 }
+
                 CppEntity structEntity = new CppEntity(kind, identToken, structIdent)
                 {
                     DocumentationNode = FindDocumentationNode(identTokenResult.Node, 1),
                 };
+
                 CppNode structNode = new CppNode(Top, structEntity);
+
                 Add(structNode);
+
                 LocalSymbolTable.AddSymbol(new SourceSymbol(identToken.Lang, SourceSymbolKind.CppStruct, structIdent, identToken.Range, structNode));
             }
 
@@ -465,15 +469,102 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             MacroUsage
         }
 
+        private static CppMacroDefinition ParseMacroDefinition(CppNode defineNode, LinkedListNode<IBaseToken> tree)
+        {
+            // #	define UINT32_MAX (0xFFFFFFFFU)
+            // #	define FPL_IS_CPP
+            // #define FPL_IMPLEMENTATION
+            // #define FPL_IMPLEMENTATION
+            // #define fpl_null fpl__m_null
+            // #define fpl__m_StructSet(ptr, type, value) *(ptr) = (type)value
+            // #define fpl__m_StructInit(type, ...) (type){__VA_ARGS__}
+            // #define fplGetAlignmentOffset(value, alignment) ( (((alignment) > 1) && (((value) & ((alignment) - 1)) != 0)) ? ((alignment) - ((value) & (alignment - 1))) : 0)			
+
+            if (tree is null || tree.Value is null)
+                return null;
+
+            // Find preprocessor start/end tokens
+            LinkedListNode<IBaseToken> startTokenNode = tree;
+            LinkedListNode<IBaseToken> endTokenNode = null;
+            LinkedListNode<IBaseToken> cur = tree;
+            while (cur is not null)
+            {
+                if (!cur.Value.IsValid || cur.Value.IsEOF)
+                    break;
+                if (cur.Value is CppToken cppToken)
+                {
+                    if (cppToken.Kind == CppTokenKind.PreprocessorEnd)
+                    {
+                        endTokenNode = cur;
+                        break;
+                    }
+                }
+                cur = cur.Next;
+            }
+
+            if (endTokenNode is null)
+                return null;
+
+            TextRange startRange = startTokenNode.Value.Range;
+
+            if (startTokenNode == endTokenNode.Previous)
+                return new CppMacroDefinition(defineNode, startRange, startTokenNode.Value.Range, Enumerable.Empty<CppFunctionArgument>(), true);
+
+            TextRange endRange = endTokenNode.Previous.Value.Range;
+
+            List<CppToken> argumentTokens = new List<CppToken>();
+
+            // Get argument tokens
+            bool hasParens = false;
+            if (startTokenNode.Next.Value is CppToken nextToken)
+            {
+                if (nextToken.Kind == CppTokenKind.LeftParen)
+                {
+                    hasParens = true;
+                    cur = startTokenNode.Next.Next;
+                    while (cur is not null && cur != endTokenNode)
+                    {
+                        if (cur.Value is CppToken token)
+                        {
+                            if (token.Kind == CppTokenKind.RightParen)
+                                break;
+                            argumentTokens.Add(token);
+                        }
+                        cur = cur.Next;
+                    }
+                }
+            }
+
+            List<CppFunctionArgument> args = new List<CppFunctionArgument>();
+
+            foreach (CppToken argToken in argumentTokens)
+            {
+                // NOTE(final): No need to handle comma, because preprocessor argument is just a literal
+                if (argToken.Kind == CppTokenKind.PreprocessorDefineArgument)
+                {
+                    CppFunctionArgument arg = new CppFunctionArgument(defineNode, argToken.Range, argToken.Range, argToken.Value, argToken.Value, null);
+                    args.Add(arg);
+                }
+            }
+
+            return new CppMacroDefinition(defineNode, startRange, endRange, args, !hasParens);
+        }
+
         private void AddPreprocessorDefine(CppToken token, LinkedListNode<IBaseToken> node, CppEntityKind entityKind, PreprocessorMacroKind macroKind)
         {
             CppEntity defineKeyEntity = new CppEntity(entityKind, token, token.Value)
             {
                 DocumentationNode = FindDocumentationNode(node, 1),
-                Value = token.Value
+                Value = token.Value,
             };
+
             CppNode defineNode = new CppNode(Top, defineKeyEntity);
+
+            if (entityKind == CppEntityKind.MacroDefinition)
+                defineKeyEntity.Value = ParseMacroDefinition(defineNode, node);
+
             Add(defineNode);
+
             if (macroKind == PreprocessorMacroKind.Source)
                 LocalSymbolTable.AddSymbol(new SourceSymbol(token.Lang, SourceSymbolKind.CppMacro, token.Value, token.Range, defineNode));
             else
@@ -610,8 +701,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 StringBuilder valueString = new StringBuilder();
                 foreach (CppToken token in tokens)
                 {
-                    if (valueString.Length > 0)
-                        valueString.Append(" ");
+                    if (valueString.Length > 0 && valueString[^1] != '*')
+                        valueString.Append(' ');
                     valueString.Append(token.Value);
                 }
 
@@ -622,8 +713,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 {
                     if (token == lastToken)
                         break;
-                    if (typeValueString.Length > 0)
-                        typeValueString.Append(" ");
+                    if (typeValueString.Length > 0 && valueString[^1] != '*')
+                        typeValueString.Append(' ');
                     typeValueString.Append(token.Value);
                     typeValueEndRange = token.Range;
                 }
@@ -692,8 +783,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             StringBuilder returnTypeValue = new StringBuilder();
             foreach (CppToken token in resultTypeTokens)
             {
-                if (returnTypeValue.Length > 0)
-                    returnTypeValue.Append(" ");
+                if (returnTypeValue.Length > 0 && returnTypeValue[^1] != '*')
+                    returnTypeValue.Append(' ');
                 returnTypeValue.Append(token.Value);
                 if (returnTypeStart == TextRange.Invalid)
                     returnTypeStart = returnTypeEnd = token.Range;
@@ -736,6 +827,9 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             // static inline size_t bar(short *arr[] myArray, size_t count);
             // void variadic(int a, int b, ...);
             // my_custom_inline bar(int a, int b, ...);
+            // int bar(...);
+            // int foo(void);
+            // void foo(void);
 
             // Function calls
             // ----------------------------------------------------------------------------------------
@@ -815,6 +909,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 beforeTokens.Add(tok);
                 beforeNode = beforeNode.Previous;
             }
+            beforeTokens.Reverse();
 
             //
             // Skip any parameters
@@ -874,8 +969,17 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                 else
                 {
                     Debug.Assert(endingTokenResult.Token.Kind == CppTokenKind.Semicolon);
-                    if (beforeTokens.Count > 0)
+                    if (beforeTokens.Count == 1)
+                    {
+                        var token = beforeTokens[0];
+                        if (token.Kind == CppTokenKind.ReservedKeyword)
+                        {
+                            if ("void".Equals(token.Value))
+                                kind = CppEntityKind.FunctionDefinition;
+                        } 
+                    } else if (beforeTokens.Count > 0) {
                         kind = CppEntityKind.FunctionDefinition;
+                    }
                 }
             }
 

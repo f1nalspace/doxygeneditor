@@ -62,6 +62,37 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             Ident = node.Id;
         }
 
-        public override string ToString() => $"{ReturnType} {Ident}({string.Join(", ", Arguments)})";
+        public override string ToString()
+        {
+            return $"{ReturnType}{(ReturnType.Value.EndsWith("*") ? "" : " ")}{Ident}({string.Join(", ", Arguments)})";
+        }
+    }
+
+    public class CppMacroDefinition
+    {
+        public CppNode Node { get; }
+        public TextRange StartRange { get; }
+        public TextRange EndRange { get; }
+        public ImmutableArray<CppFunctionArgument> Arguments { get; }
+        public string Ident { get; }
+        public bool NoBraces { get; }
+
+        public CppMacroDefinition(CppNode node, TextRange startRange, TextRange endRange, IEnumerable<CppFunctionArgument> arguments, bool noBraces)
+        {
+            Node = node ?? throw new ArgumentNullException(nameof(node));
+            StartRange = startRange;
+            EndRange = endRange;
+            Arguments = arguments?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(arguments));
+            Ident = node.Id;
+            NoBraces = noBraces;
+        }
+
+        public override string ToString()
+        {
+            if (NoBraces)
+                return $"#define {Ident}";
+            else
+                    return $"#define {Ident}({string.Join(", ", Arguments)})";
+        }
     }
 }
