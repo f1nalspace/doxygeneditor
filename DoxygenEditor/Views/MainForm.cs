@@ -1018,6 +1018,27 @@ namespace TSP.DoxygenEditor.Views
                 miFileRecentFiles.DropDownItems.Add(newItem);
             }
         }
+
+        private void MenuActionToolsParseAPIPrototypes(object sender, EventArgs e)
+        {
+            if (tcFiles.SelectedTab is null)
+                return;
+
+            IEditor editor = (IEditor)tcFiles.SelectedTab.Tag;
+
+            string text = editor.GetText();
+
+            miToolsParseAPIPrototypes.Enabled = false;
+            try
+            {
+                ParseSourceForm form = new ParseSourceForm(ParseSourceActionType.APIPrototypes, editor, text);
+                form.ShowDialog();
+            }
+            finally 
+            {
+                miToolsParseAPIPrototypes.Enabled = true;
+            }
+        }
         #endregion
 
         #region Issues
