@@ -101,7 +101,7 @@ namespace TSP.DoxygenEditor.Editor
             _parseWorker.CancelAsync();
         }
 
-        class TokenizerTimingStats
+        public class TokenizerTimingStats
         {
             public TimeSpan CppDuration = new TimeSpan();
             public TimeSpan DoxyDuration = new TimeSpan();
@@ -119,7 +119,7 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        class TokenizeResult : IDisposable
+        public class TokenizeResult : IDisposable
         {
             private readonly List<IBaseToken> _tokens = new List<IBaseToken>();
             private readonly List<TextError> _errors = new List<TextError>();
@@ -165,7 +165,7 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private TokenizeResult TokenizeCpp(string text, int index, int length, TextPosition pos, LanguageKind lang)
+        internal static TokenizeResult TokenizeCpp(string text, int index, int length, TextPosition pos, LanguageKind lang)
         {
             TokenizeResult result = new TokenizeResult();
             Stopwatch timer = new Stopwatch();
@@ -196,7 +196,7 @@ namespace TSP.DoxygenEditor.Editor
             return (result);
         }
 
-        private TokenizeResult TokenizeHtml(string text, int index, int length, TextPosition pos)
+        internal static TokenizeResult TokenizeHtml(string text, int index, int length, TextPosition pos)
         {
             TokenizeResult result = new TokenizeResult();
             Stopwatch timer = Stopwatch.StartNew();
@@ -228,7 +228,7 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private TokenizeResult TokenizeDoxy(string text, int index, int length, TextPosition pos)
+        internal static TokenizeResult TokenizeDoxy(string text, int index, int length, TextPosition pos)
         {
             TokenizeResult result = new TokenizeResult();
 
@@ -415,91 +415,111 @@ namespace TSP.DoxygenEditor.Editor
             }
         }
 
-        private void Parse(string text, IStylerData stylerData)
+        internal class ParseTreeResult
         {
-            // Clear stream from all invalid tokens
-            _tokens.RemoveAll(d => d.IsEOF || (!d.IsMarker && d.Length == 0));
+            public IBaseNode DoxygenTree { get; }
+            public IBaseNode CppTree { get; }
+            public IBaseNode DoxyConfigTree { get; }
 
-            // @NOTE(final): Right know, the tokens are not in incremental range
-            // Several reasons for this:
-            // - No tokens gets replaced by another range
-            // - Start/End marker tokens
-            // - Zero-length tokens
-            // - Tokens with same start, but different type (Doxygen block vs Cpp documentation)
-#if false
-            // Validate token stream
+            public ParseTreeResult(IBaseNode doxygenTree, IBaseNode cppTree, IBaseNode doxyConfigTree)
             {
-                LinkedListStream<BaseToken> tokenStream = new LinkedListStream<BaseToken>(_tokens);
-                while (!tokenStream.IsEOF)
-                {
-                    var tokenNode = tokenStream.CurrentNode;
-                    if (tokenNode.Next != null)
-                    {
-                        int endIndex = tokenNode.Value.Index;
-                        int startIndex = tokenNode.Next.Value.Index;
-                        Debug.Assert(startIndex >= endIndex);
-                    }
-                    tokenStream.Next();
-                }
+                DoxygenTree = doxygenTree;
+                CppTree = cppTree;
+                DoxyConfigTree = doxyConfigTree;
             }
-#endif
+        }
+
+        internal static ParseTreeResult ParseTokens(SymbolTable localSymbolTable, WorkspaceModel workspace, List<IBaseToken> tokens, List<TextError> errors, List<PerformanceItemModel> performanceItems, IEditor editor, string source)
+        {
+            ArgumentNullException.ThrowIfNull(localSymbolTable);
+            ArgumentNullException.ThrowIfNull(workspace);
+            ArgumentNullException.ThrowIfNull(tokens);
+            ArgumentNullException.ThrowIfNull(errors);
+            ArgumentNullException.ThrowIfNull(performanceItems);
+            ArgumentNullException.ThrowIfNull(editor);
+
+            tokens.RemoveAll(d => d.IsEOF || (!d.IsMarker && d.Length == 0));
+
+            IBaseNode doxygenTree = new DoxygenBlockNode(null, null);
+
+            IBaseNode cppTree = new CppNode(null, null);
+
+            IBaseNode doxyConfigTree = new DoxygenConfigNode(null, null);
+
             Stopwatch timer = new Stopwatch();
             int doxyNodeCount = 0;
 
-            if (_editor.FileType == EditorFileType.Cpp || _editor.FileType == EditorFileType.DoxyDocs)
+            if (editor.FileType == EditorFileType.Cpp || editor.FileType == EditorFileType.DoxyDocs)
             {
                 // Doxygen parsing
                 timer.Restart();
-                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(_editor))
+                using (DoxygenBlockParser doxyParser = new DoxygenBlockParser(editor))
                 {
-                    doxyParser.ParseTokens(text, _tokens);
-                    _errors.InsertRange(0, doxyParser.ParseErrors);
-                    DoxyBlockTree = doxyParser.Root;
+                    doxyParser.ParseTokens(source, tokens);
+                    errors.InsertRange(0, doxyParser.ParseErrors);
+                    doxygenTree = doxyParser.Root;
                     doxyNodeCount = doxyParser.TotalNodeCount;
-                    LocalSymbolTable.AddTable(doxyParser.LocalSymbolTable);
+                    localSymbolTable.AddTable(doxyParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen block parser", timer.Elapsed));
+
+                performanceItems.Add(new PerformanceItemModel(editor, editor.Name, editor.TabIndex, $"{tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen block parser", timer.Elapsed));
 
                 // C++ parsing
                 timer.Restart();
                 int cppNodeCount = 0;
                 CppParser.CppConfiguration cppParserConfiguration = new CppParser.CppConfiguration()
                 {
-                    ExcludeFunctionBodies = _workspace.ParserCpp.ExcludeFunctionBodies,
-                    ExcludeFunctionBodySymbols = _workspace.ParserCpp.ExcludeFunctionBodySymbols,
-                    ExcludeFunctionCallSymbols = _workspace.ParserCpp.ExcludeFunctionCallSymbols,
+                    ExcludeFunctionBodies = workspace.ParserCpp.ExcludeFunctionBodies,
+                    ExcludeFunctionBodySymbols = workspace.ParserCpp.ExcludeFunctionBodySymbols,
+                    ExcludeFunctionCallSymbols = workspace.ParserCpp.ExcludeFunctionCallSymbols,
                 };
-                using (CppParser cppParser = new CppParser(_editor, cppParserConfiguration))
+                using (CppParser cppParser = new CppParser(editor, cppParserConfiguration))
                 {
                     cppParser.GetDocumentationNode += (token) =>
                     {
-                        IBaseNode result = DoxyBlockTree.FindNodeByRange(token.Range);
+                        IBaseNode result = doxygenTree.FindNodeByRange(token.Range);
                         return (result);
                     };
-                    cppParser.ParseTokens(text, _tokens);
-                    _errors.InsertRange(0, cppParser.ParseErrors);
-                    CppTree = cppParser.Root;
+                    cppParser.ParseTokens(source, tokens);
+                    errors.InsertRange(0, cppParser.ParseErrors);
+                    cppTree = cppParser.Root;
                     cppNodeCount = cppParser.TotalNodeCount;
-                    LocalSymbolTable.AddTable(cppParser.LocalSymbolTable);
+                    localSymbolTable.AddTable(cppParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
+                performanceItems.Add(new PerformanceItemModel(editor, editor.Name, editor.TabIndex, $"{tokens.Count} tokens", $"{cppNodeCount} nodes", "C++ parser", timer.Elapsed));
             }
-            else if (_editor.FileType == EditorFileType.DoxyConfig)
+            else if (editor.FileType == EditorFileType.DoxyConfig)
             {
                 timer.Restart();
-                using (DoxygenConfigParser configParser = new DoxygenConfigParser(_editor))
+                using (DoxygenConfigParser configParser = new DoxygenConfigParser(editor))
                 {
-                    configParser.ParseTokens(text, _tokens);
-                    _errors.InsertRange(0, configParser.ParseErrors);
+                    configParser.ParseTokens(source, tokens);
+                    errors.InsertRange(0, configParser.ParseErrors);
                     doxyNodeCount = configParser.TotalNodeCount;
-                    DoxyConfigTree = configParser.Root;
-                    LocalSymbolTable.AddTable(configParser.LocalSymbolTable);
+                    doxyConfigTree = configParser.Root;
+                    localSymbolTable.AddTable(configParser.LocalSymbolTable);
                 }
                 timer.Stop();
-                _performanceItems.Add(new PerformanceItemModel(_editor, _editor.Name, _editor.TabIndex, $"{_tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen config parser", timer.Elapsed));
+                performanceItems.Add(new PerformanceItemModel(editor, editor.Name, editor.TabIndex, $"{tokens.Count} tokens", $"{doxyNodeCount} nodes", "Doxygen config parser", timer.Elapsed));            
             }
+
+            return new ParseTreeResult(doxygenTree, cppTree, doxyConfigTree);
+        }
+
+        private void Parse(string text, IStylerData stylerData)
+        {
+            ParseTreeResult res = ParseTokens(
+                LocalSymbolTable,
+                _workspace,
+                _tokens,
+                _errors,
+                _performanceItems,
+                _editor,
+                text);
+
+            Stopwatch timer = new Stopwatch();
 
             // Refresh data for styler
             timer.Restart();
