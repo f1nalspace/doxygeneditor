@@ -72,34 +72,16 @@ namespace TSP.DoxygenEditor.Views
 
             Dictionary<string, CppFunctionDefinition> funcs = new Dictionary<string, CppFunctionDefinition>();
 
+            Dictionary<string, CppMacroDefinition> macros = new Dictionary<string, CppMacroDefinition>();
+
             void ProcessNode(IBaseNode node) 
             {
-                if (node is CppNode cppNode)
+                if (node is CppNode cppNode && cppNode.Entity?.DocumentationNode is not null)
                 {
-                    if (cppNode.Entity is not null && cppNode.Entity.DocumentationNode is not null)
-                    {
-                        switch (cppNode.Entity.Kind)
-                        {
-                            case CppEntityKind.FunctionDefinition:
-                                if (cppNode.Value is CppFunctionDefinition funcDef)
-                                    funcs.Add(cppNode.Id, funcDef);
-                                break;
-                            case CppEntityKind.Typedef:
-                                break;
-                            case CppEntityKind.FunctionTypedef:
-                                break;
-                            case CppEntityKind.Enum:
-                                break;
-                            case CppEntityKind.EnumValue:
-                                break;
-                            case CppEntityKind.Struct:
-                                break;
-                            case CppEntityKind.Class:
-                                break;
-                            case CppEntityKind.MacroDefinition:
-                                break;
-                        }
-                    }
+                    if (cppNode.Value is CppFunctionDefinition funcDef)
+                        funcs.TryAdd(cppNode.Id, funcDef);
+                    else if(cppNode.Value is CppMacroDefinition macroDef)
+                        macros.TryAdd(cppNode.Id, macroDef);
                 }
 
                 foreach (IBaseNode child in node.Children)
@@ -110,8 +92,19 @@ namespace TSP.DoxygenEditor.Views
 
             ImmutableSortedDictionary<string, CppFunctionDefinition> sortedFuncs = funcs.ToImmutableSortedDictionary(StringComparer.InvariantCultureIgnoreCase);
 
+            ImmutableSortedDictionary<string, CppMacroDefinition> sortedMacros = macros.ToImmutableSortedDictionary(StringComparer.InvariantCultureIgnoreCase);
+
+            AddToLog(string.Empty);
+            AddToLog("Functions:");
+            AddToLog(string.Empty);
             foreach (var functionPair in sortedFuncs)
-                AddToLog($"Function: {functionPair.Value}");
+                AddToLog($"{functionPair.Value}");
+
+            AddToLog(string.Empty);
+            AddToLog("Macros:");
+            AddToLog(string.Empty);
+            foreach (var macroPair in sortedMacros)
+                AddToLog($"{macroPair.Value}");
 
             AddToLog($"Done");
         });
