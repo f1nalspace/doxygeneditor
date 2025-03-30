@@ -369,40 +369,40 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         case 'r':
                         case 't':
                         case 'v':
-                            {
-                                Buffer.AdvanceColumns(2);
-                                ++count;
-                                continue;
-                            }
+                        {
+                            Buffer.AdvanceColumns(2);
+                            ++count;
+                            continue;
+                        }
 
                         case 'x':
                         case 'X':
                         case 'u':
                         case 'U':
+                        {
+                            Buffer.AdvanceColumns(2);
+                            if (SyntaxUtils.IsHex(Buffer.Peek()))
                             {
-                                Buffer.AdvanceColumns(2);
-                                if (SyntaxUtils.IsHex(Buffer.Peek()))
+                                int len = 0;
+                                while (!Buffer.IsEOF)
                                 {
-                                    int len = 0;
-                                    while (!Buffer.IsEOF)
+                                    if (!SyntaxUtils.IsHex(Buffer.Peek()))
+                                        break;
+                                    else
                                     {
-                                        if (!SyntaxUtils.IsHex(Buffer.Peek()))
-                                            break;
-                                        else
-                                        {
-                                            ++len;
-                                            Buffer.AdvanceColumn();
-                                        }
+                                        ++len;
+                                        Buffer.AdvanceColumn();
                                     }
                                 }
-                                else
-                                {
-                                    AddError(Buffer.TextPosition, $"Unsupported hex escape character '{Buffer.Peek()}'!", what: whatName);
-                                    break;
-                                }
-                                ++count;
-                                continue;
                             }
+                            else
+                            {
+                                AddError(Buffer.TextPosition, $"Unsupported hex escape character '{Buffer.Peek()}'!", what: whatName);
+                                break;
+                            }
+                            ++count;
+                            continue;
+                        }
 
                         default:
                             if (SyntaxUtils.IsOctal(second))
@@ -740,215 +740,218 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         switch (identToken.Value)
                         {
                             case "define":
+                            {
+                                if (wasFirstIdent)
                                 {
-                                    if (wasFirstIdent)
+
+                                    if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
                                     {
+                                        AddError(Buffer.TextPosition, $"Expect identifier for define, but got '{Buffer.Peek()}'", "Preprocessor");
+                                        goto preprocessorDone;
+                                    }
+                                    LexResult defineValueResult = LexIdent(false);
+                                    CppToken defineValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineSource, Buffer.LexemeRange, defineValueResult.IsComplete);
+                                    PushToken(defineValueToken);
 
-                                        if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
+                                    // Multi define styles:
+                                    // #define JUST_A_DEFINE
+                                    // #define DEFINE_WITH_VALUE 42
+                                    // #define DEFINE_TO_OTHER_DEFINE OTHER_DEFINE
+                                    // #define DEFINE_TO_OTHER_DEFINE_INSIDE_PARENS ( OTHER_DEFINE )
+                                    // #define DEFINE_WITH_VALUE_COMPLEX_EXPRESSION (42 * -1 + 33 + MY_CONSTANT)
+                                    // #define DEFINE_WITHOUT_ARGUMENTS ()
+                                    // #define DEFINE_WITH_ARGUMENTS (name, type)
+                                    // #define DEFINE_WITH_ARGUMENTS_AND_VARIADIC (name, type, ...)
+                                    // There are spaces allowed everywhere
+
+                                    bool hadSpaces = false;
+                                    if (SyntaxUtils.IsSpacing(Buffer.Peek()) || Buffer.Peek() == '\t')
+                                    {
+                                        hadSpaces = true;
+                                        Buffer.SkipSpaces(RepeatKind.All);
+                                    }
+
+                                    if (!state.Preprocessor.HasDefine)
+                                    {
+                                        state.Preprocessor.HasDefine = true;
+                                        state.Preprocessor.ClearDefineArguments();
+
+                                        if (!hadSpaces && Buffer.Peek() == '(')
                                         {
-                                            AddError(Buffer.TextPosition, $"Expect identifier for define, but got '{Buffer.Peek()}'", "Preprocessor");
-                                            goto preprocessorDone;
-                                        }
-                                        LexResult defineValueResult = LexIdent(false);
-                                        CppToken defineValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineSource, Buffer.LexemeRange, defineValueResult.IsComplete);
-                                        PushToken(defineValueToken);
-
-                                        // Multi define styles:
-                                        // #define JUST_A_DEFINE
-                                        // #define DEFINE_WITH_VALUE 42
-                                        // #define DEFINE_TO_OTHER_DEFINE OTHER_DEFINE
-                                        // #define DEFINE_TO_OTHER_DEFINE_INSIDE_PARENS ( OTHER_DEFINE )
-                                        // #define DEFINE_WITH_VALUE_COMPLEX_EXPRESSION (42 * -1 + 33 + MY_CONSTANT)
-                                        // #define DEFINE_WITHOUT_ARGUMENTS ()
-                                        // #define DEFINE_WITH_ARGUMENTS (name, type)
-                                        // #define DEFINE_WITH_ARGUMENTS_AND_VARIADIC (name, type, ...)
-                                        // There are spaces allowed everywhere
-
-                                        bool hadSpaces = false;
-                                        if (SyntaxUtils.IsSpacing(Buffer.Peek()) || Buffer.Peek() == '\t')
-                                        {
-                                            hadSpaces = true;
-                                            Buffer.SkipSpaces(RepeatKind.All);
-                                        }
-
-                                        if (!state.Preprocessor.HasDefine)
-                                        {
-                                            state.Preprocessor.HasDefine = true;
-                                            state.Preprocessor.ClearDefineArguments();
-
-                                            if (!hadSpaces && Buffer.Peek() == '(')
+                                            // Define with arguments
+                                            PushToken(CppTokenPool.Make(_lang, CppTokenKind.LeftParen, new TextRange(Buffer.TextPosition, 1), true));
+                                            defineValueToken.Kind = CppTokenKind.PreprocessorFunctionSource;
+                                            Buffer.AdvanceColumn();
+                                            Buffer.StartLexeme();
+                                            bool isComplete = false;
+                                            bool requireIdent = false;
+                                            while (!Buffer.IsEOF)
                                             {
-                                                // Define with arguments
-                                                defineValueToken.Kind = CppTokenKind.PreprocessorFunctionSource;
-                                                Buffer.AdvanceColumn();
+                                                Buffer.SkipSpaces(RepeatKind.All);
                                                 Buffer.StartLexeme();
-                                                bool isComplete = false;
-                                                bool requireIdent = false;
-                                                while (!Buffer.IsEOF)
+
+                                                char c0 = Buffer.Peek();
+                                                char c1 = Buffer.Peek(1);
+                                                char c2 = Buffer.Peek(2);
+
+                                                if (requireIdent)
                                                 {
-                                                    Buffer.SkipSpaces(RepeatKind.All);
-                                                    Buffer.StartLexeme();
-
-                                                    char c0 = Buffer.Peek();
-                                                    char c1 = Buffer.Peek(1);
-                                                    char c2 = Buffer.Peek(2);
-
-                                                    if (requireIdent)
+                                                    if (SyntaxUtils.IsIdentStart(c0))
                                                     {
-                                                        if (SyntaxUtils.IsIdentStart(c0))
+                                                        LexResult defineArgumentResult = LexIdent(false);
+                                                        CppToken defineArgumentToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, defineArgumentResult.IsComplete);
+                                                        PushToken(defineArgumentToken);
+                                                        state.Preprocessor.AddDefineArgument(defineArgumentToken);
+                                                    }
+                                                    else if (c0 == '.')
+                                                    {
+                                                        if (c1 == '.' && c2 == '.')
                                                         {
-                                                            LexResult defineArgumentResult = LexIdent(false);
-                                                            CppToken defineArgumentToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, defineArgumentResult.IsComplete);
+                                                            Buffer.AdvanceColumns(3);
+                                                            CppToken defineArgumentToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, true);
                                                             PushToken(defineArgumentToken);
                                                             state.Preprocessor.AddDefineArgument(defineArgumentToken);
                                                         }
-                                                        else if (c0 == '.')
-                                                        {
-                                                            if (c1 == '.' && c2 == '.')
-                                                            {
-                                                                Buffer.AdvanceColumns(3);
-                                                                CppToken defineArgumentToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineArgument, Buffer.LexemeRange, true);
-                                                                PushToken(defineArgumentToken);
-                                                                state.Preprocessor.AddDefineArgument(defineArgumentToken);
-                                                            }
-                                                            else
-                                                            {
-                                                                AddError(Buffer.TextPosition, $"Expected '...' token but got '{c0}{c1}{c2}'", "Define", defineValueToken.Value);
-                                                                goto preprocessorDone;
-                                                            }
-                                                        }
                                                         else
                                                         {
-                                                            AddError(Buffer.TextPosition, $"Expected argument identifier but got '{c0}'", "Define", defineValueToken.Value);
+                                                            AddError(Buffer.TextPosition, $"Expected '...' token but got '{c0}{c1}{c2}'", "Define", defineValueToken.Value);
                                                             goto preprocessorDone;
                                                         }
-                                                        requireIdent = false;
-                                                        continue;
-                                                    }
-
-                                                    c0 = Buffer.Peek();
-
-                                                    if (c0 == ')')
-                                                    {
-                                                        isComplete = true;
-                                                        Buffer.AdvanceColumn();
-                                                        break;
-                                                    }
-                                                    else if (SyntaxUtils.IsLineBreak(c0))
-                                                    {
-                                                        AddError(Buffer.TextPosition, $"Unexpected linebreak in preprocessor arguments", "Define", defineValueToken.Value);
-                                                        goto preprocessorDone;
-                                                    }
-
-                                                    if (c0 == ',')
-                                                    {
-                                                        requireIdent = true;
-                                                        Buffer.AdvanceColumn();
-                                                        continue;
-                                                    }
-                                                    else if (SyntaxUtils.IsIdentStart(c0) || c0 == '.')
-                                                    {
-                                                        requireIdent = true;
-                                                        continue;
                                                     }
                                                     else
                                                     {
-                                                        AddError(Buffer.TextPosition, $"Unexpected character '{c0}'", "Define", defineValueToken.Value);
+                                                        AddError(Buffer.TextPosition, $"Expected argument identifier but got '{c0}'", "Define", defineValueToken.Value);
                                                         goto preprocessorDone;
                                                     }
+                                                    requireIdent = false;
+                                                    continue;
                                                 }
-                                                if (!isComplete)
+
+                                                c0 = Buffer.Peek();
+
+                                                if (c0 == ')')
                                                 {
-                                                    AddError(Buffer.TextPosition, $"Unterminated define function", "Define", defineValueToken.Value);
+                                                    PushToken(CppTokenPool.Make(_lang, CppTokenKind.RightParen, new TextRange(Buffer.TextPosition, 1), true));
+                                                    Buffer.AdvanceColumn();
+                                                    isComplete = true;
+                                                    break;
+                                                }
+                                                else if (SyntaxUtils.IsLineBreak(c0))
+                                                {
+                                                    AddError(Buffer.TextPosition, $"Unexpected linebreak in preprocessor arguments", "Define", defineValueToken.Value);
+                                                    goto preprocessorDone;
+                                                }
+
+                                                if (c0 == ',')
+                                                {
+                                                    PushToken(CppTokenPool.Make(_lang, CppTokenKind.Comma, new TextRange(Buffer.TextPosition, 1), true));
+                                                    requireIdent = true;
+                                                    Buffer.AdvanceColumn();
+                                                    continue;
+                                                }
+                                                else if (SyntaxUtils.IsIdentStart(c0) || c0 == '.')
+                                                {
+                                                    requireIdent = true;
+                                                    continue;
+                                                }
+                                                else
+                                                {
+                                                    AddError(Buffer.TextPosition, $"Unexpected character '{c0}'", "Define", defineValueToken.Value);
                                                     goto preprocessorDone;
                                                 }
                                             }
+                                            if (!isComplete)
+                                            {
+                                                AddError(Buffer.TextPosition, $"Unterminated define function", "Define", defineValueToken.Value);
+                                                goto preprocessorDone;
+                                            }
                                         }
                                     }
                                 }
-                                break;
+                            }
+                            break;
 
                             case "defined":
+                            {
+                                if (Buffer.Peek() == '(')
                                 {
-                                    if (Buffer.Peek() == '(')
+                                    Buffer.AdvanceColumn();
+                                    Buffer.StartLexeme();
+                                    if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
                                     {
-                                        Buffer.AdvanceColumn();
-                                        Buffer.StartLexeme();
-                                        if (!SyntaxUtils.IsIdentStart(Buffer.Peek()))
-                                        {
-                                            AddError(Buffer.TextPosition, $"Expect identifier for defined, but got '{Buffer.Peek()}'", "Preprocessor");
-                                            goto preprocessorDone;
-                                        }
-                                        LexResult definedValueResult = LexIdent(false);
-                                        CppToken definedValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineMatch, Buffer.LexemeRange, definedValueResult.IsComplete);
-                                        PushToken(definedValueToken);
-                                        Buffer.SkipSpaces(RepeatKind.All);
-                                        if (Buffer.Peek() != ')')
-                                        {
-                                            AddError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
-                                            goto preprocessorDone;
-                                        }
+                                        AddError(Buffer.TextPosition, $"Expect identifier for defined, but got '{Buffer.Peek()}'", "Preprocessor");
+                                        goto preprocessorDone;
+                                    }
+                                    LexResult definedValueResult = LexIdent(false);
+                                    CppToken definedValueToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorDefineMatch, Buffer.LexemeRange, definedValueResult.IsComplete);
+                                    PushToken(definedValueToken);
+                                    Buffer.SkipSpaces(RepeatKind.All);
+                                    if (Buffer.Peek() != ')')
+                                    {
+                                        AddError(Buffer.TextPosition, $"Unterminated defined token, expect ')' but got '{Buffer.Peek()}'", "Preprocessor");
+                                        goto preprocessorDone;
                                     }
                                 }
-                                break;
+                            }
+                            break;
 
                             case "include":
+                            {
+                                if (wasFirstIdent)
                                 {
-                                    if (wasFirstIdent)
+                                    char n = Buffer.Peek();
+                                    if (n == '<' || n == '"')
                                     {
-                                        char n = Buffer.Peek();
-                                        if (n == '<' || n == '"')
-                                        {
-                                            bool isComplete = false;
-                                            Buffer.AdvanceColumn();
-                                            char quote = (n == '<') ? '>' : n;
-                                            while (!Buffer.IsEOF)
-                                            {
-                                                if (Buffer.Peek() == quote)
-                                                {
-                                                    isComplete = true;
-                                                    Buffer.AdvanceColumn();
-                                                    break;
-                                                }
-                                                Buffer.AdvanceColumn();
-                                            }
-                                            CppToken includeToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorInclude, Buffer.LexemeRange, isComplete);
-                                            PushToken(includeToken);
-                                        }
-                                        else
-                                        {
-                                            AddError(Buffer.TextPosition, $"Unsupported include character '{n}'", "Include");
-                                            goto preprocessorDone;
-                                        }
-                                    }
-                                }
-                                break;
-
-                            case "pragma":
-                                {
-                                    // @TODO(final): Proper pragma lexing
-                                    Buffer.SkipSpaces(RepeatKind.All);
-                                    if (Buffer.Peek() == '(')
-                                    {
+                                        bool isComplete = false;
                                         Buffer.AdvanceColumn();
+                                        char quote = (n == '<') ? '>' : n;
                                         while (!Buffer.IsEOF)
                                         {
-                                            char c = Buffer.Peek();
-                                            if (c == ')')
+                                            if (Buffer.Peek() == quote)
                                             {
+                                                isComplete = true;
                                                 Buffer.AdvanceColumn();
                                                 break;
                                             }
-                                            else if (SyntaxUtils.IsLineBreak(c))
-                                                break;
-                                            else if (c == '\t')
-                                                Buffer.AdvanceTab();
-                                            else
-                                                Buffer.AdvanceColumn();
+                                            Buffer.AdvanceColumn();
                                         }
+                                        CppToken includeToken = CppTokenPool.Make(_lang, CppTokenKind.PreprocessorInclude, Buffer.LexemeRange, isComplete);
+                                        PushToken(includeToken);
+                                    }
+                                    else
+                                    {
+                                        AddError(Buffer.TextPosition, $"Unsupported include character '{n}'", "Include");
+                                        goto preprocessorDone;
                                     }
                                 }
-                                break;
+                            }
+                            break;
+
+                            case "pragma":
+                            {
+                                // @TODO(final): Proper pragma lexing
+                                Buffer.SkipSpaces(RepeatKind.All);
+                                if (Buffer.Peek() == '(')
+                                {
+                                    Buffer.AdvanceColumn();
+                                    while (!Buffer.IsEOF)
+                                    {
+                                        char c = Buffer.Peek();
+                                        if (c == ')')
+                                        {
+                                            Buffer.AdvanceColumn();
+                                            break;
+                                        }
+                                        else if (SyntaxUtils.IsLineBreak(c))
+                                            break;
+                                        else if (c == '\t')
+                                            Buffer.AdvanceTab();
+                                        else
+                                            Buffer.AdvanceColumn();
+                                    }
+                                }
+                            }
+                            break;
                         }
                     }
                 }
@@ -958,7 +961,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                         goto preprocessorDone;
                 }
             } while (!Buffer.IsEOF);
-preprocessorDone:
+        preprocessorDone:
 
             state.Preprocessor.End();
 
@@ -984,264 +987,264 @@ preprocessorDone:
             switch (first)
             {
                 case '&':
+                {
+                    if (second == '&')
                     {
-                        if (second == '&')
-                        {
-                            lexRes.Kind = CppTokenKind.LogicalAndOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.AndAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.AndOp;
-                            Buffer.AdvanceColumn();
-                        }
+                        lexRes.Kind = CppTokenKind.LogicalAndOp;
+                        Buffer.AdvanceColumns(2);
                     }
-                    break;
+                    else if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.AndAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.AndOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
 
                 case '|':
+                {
+                    if (second == '|')
                     {
-                        if (second == '|')
-                        {
-                            lexRes.Kind = CppTokenKind.LogicalOrOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.OrAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.OrOp;
-                            Buffer.AdvanceColumn();
-                        }
+                        lexRes.Kind = CppTokenKind.LogicalOrOp;
+                        Buffer.AdvanceColumns(2);
                     }
-                    break;
+                    else if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.OrAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.OrOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
 
                 case '=':
+                {
+                    if (second == '=')
                     {
-                        if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.LogicalEqualsOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.EqOp;
-                            Buffer.AdvanceColumn();
-                        }
+                        lexRes.Kind = CppTokenKind.LogicalEqualsOp;
+                        Buffer.AdvanceColumns(2);
                     }
-                    break;
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.EqOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
 
                 case '!':
+                {
+                    if (second == '=')
                     {
-                        if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.LogicalNotEqualsOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.ExclationMark;
-                            Buffer.AdvanceColumn();
-                        }
+                        lexRes.Kind = CppTokenKind.LogicalNotEqualsOp;
+                        Buffer.AdvanceColumns(2);
                     }
-                    break;
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.ExclationMark;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
 
                 case '<':
+                {
+                    if (second == '<')
                     {
-                        if (second == '<')
+                        if (third == '=')
                         {
-                            if (third == '=')
-                            {
-                                lexRes.Kind = CppTokenKind.LeftShiftAssign;
-                                Buffer.AdvanceColumns(3);
-                            }
-                            else
-                            {
-                                lexRes.Kind = CppTokenKind.LeftShiftOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                        }
-                        else if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.LessOrEqualOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.LessThanOp;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '>':
-                    {
-                        if (second == '>')
-                        {
-                            if (third == '=')
-                            {
-                                lexRes.Kind = CppTokenKind.RightShiftAssign;
-                                Buffer.AdvanceColumns(3);
-                            }
-                            else
-                            {
-                                lexRes.Kind = CppTokenKind.RightShiftOp;
-                                Buffer.AdvanceColumns(2);
-                            }
-                        }
-                        else if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.GreaterOrEqualOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.GreaterThanOp;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '+':
-                    {
-                        if (second == '+')
-                        {
-                            lexRes.Kind = CppTokenKind.IncOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.AddAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.AddOp;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '-':
-                    {
-                        if (second == '-')
-                        {
-                            lexRes.Kind = CppTokenKind.DecOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.SubAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else if (second == '>')
-                        {
-                            lexRes.Kind = CppTokenKind.PtrOp;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.SubOp;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '/':
-                    {
-                        if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.DivAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else if (second == '/')
-                        {
-                            lexRes = LexSingleLineComment(Buffer, true);
-                            if (!lexRes.IsComplete)
-                                AddError(Buffer.LexemeStart, $"Unterminated single-line comment, expect '\n' or '\r' but found '{Buffer.Peek()}'", lexRes.Kind.ToString());
-                        }
-                        else if (second == '*')
-                        {
-                            lexRes = LexMultiLineComment(Buffer, true);
-                            if (!lexRes.IsComplete)
-                                AddError(Buffer.LexemeStart, $"Unterminated single-line comment, expect '*/' but found '{Buffer.Peek()}'", lexRes.Kind.ToString());
-                        }
-                        else
-                        {
-                            Buffer.AdvanceColumn();
-                            lexRes.Kind = CppTokenKind.DivOp;
-                        }
-                    }
-                    break;
-
-                case '*':
-                    {
-                        if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.MulAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.MulOp;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '%':
-                    {
-                        if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.ModAssign;
-                            Buffer.AdvanceColumns(2);
-                        }
-                        else
-                        {
-                            lexRes.Kind = CppTokenKind.ModOp;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '.':
-                    {
-                        if (second == '.' && third == '.')
-                        {
-                            lexRes.Kind = CppTokenKind.Ellipsis;
+                            lexRes.Kind = CppTokenKind.LeftShiftAssign;
                             Buffer.AdvanceColumns(3);
                         }
-                        else if (SyntaxUtils.IsNumeric(second))
-                            lexRes = LexNumber();
                         else
                         {
-                            lexRes.Kind = CppTokenKind.Dot;
-                            Buffer.AdvanceColumn();
-                        }
-                    }
-                    break;
-
-                case '^':
-                    {
-                        if (second == '=')
-                        {
-                            lexRes.Kind = CppTokenKind.XorAssign;
+                            lexRes.Kind = CppTokenKind.LeftShiftOp;
                             Buffer.AdvanceColumns(2);
                         }
+                    }
+                    else if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.LessOrEqualOp;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.LessThanOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '>':
+                {
+                    if (second == '>')
+                    {
+                        if (third == '=')
+                        {
+                            lexRes.Kind = CppTokenKind.RightShiftAssign;
+                            Buffer.AdvanceColumns(3);
+                        }
                         else
                         {
-                            lexRes.Kind = CppTokenKind.XorOp;
-                            Buffer.AdvanceColumn();
+                            lexRes.Kind = CppTokenKind.RightShiftOp;
+                            Buffer.AdvanceColumns(2);
                         }
                     }
-                    break;
+                    else if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.GreaterOrEqualOp;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.GreaterThanOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '+':
+                {
+                    if (second == '+')
+                    {
+                        lexRes.Kind = CppTokenKind.IncOp;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.AddAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.AddOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '-':
+                {
+                    if (second == '-')
+                    {
+                        lexRes.Kind = CppTokenKind.DecOp;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.SubAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else if (second == '>')
+                    {
+                        lexRes.Kind = CppTokenKind.PtrOp;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.SubOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '/':
+                {
+                    if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.DivAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else if (second == '/')
+                    {
+                        lexRes = LexSingleLineComment(Buffer, true);
+                        if (!lexRes.IsComplete)
+                            AddError(Buffer.LexemeStart, $"Unterminated single-line comment, expect '\n' or '\r' but found '{Buffer.Peek()}'", lexRes.Kind.ToString());
+                    }
+                    else if (second == '*')
+                    {
+                        lexRes = LexMultiLineComment(Buffer, true);
+                        if (!lexRes.IsComplete)
+                            AddError(Buffer.LexemeStart, $"Unterminated single-line comment, expect '*/' but found '{Buffer.Peek()}'", lexRes.Kind.ToString());
+                    }
+                    else
+                    {
+                        Buffer.AdvanceColumn();
+                        lexRes.Kind = CppTokenKind.DivOp;
+                    }
+                }
+                break;
+
+                case '*':
+                {
+                    if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.MulAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.MulOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '%':
+                {
+                    if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.ModAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.ModOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '.':
+                {
+                    if (second == '.' && third == '.')
+                    {
+                        lexRes.Kind = CppTokenKind.Ellipsis;
+                        Buffer.AdvanceColumns(3);
+                    }
+                    else if (SyntaxUtils.IsNumeric(second))
+                        lexRes = LexNumber();
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.Dot;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
+
+                case '^':
+                {
+                    if (second == '=')
+                    {
+                        lexRes.Kind = CppTokenKind.XorAssign;
+                        Buffer.AdvanceColumns(2);
+                    }
+                    else
+                    {
+                        lexRes.Kind = CppTokenKind.XorOp;
+                        Buffer.AdvanceColumn();
+                    }
+                }
+                break;
 
                 case '#':
                     return LexPreprocessor(state);
@@ -1304,43 +1307,43 @@ preprocessorDone:
                     break;
 
                 default:
+                {
+                    if (SyntaxUtils.IsLineBreak(first) && allowWhitespaces)
                     {
-                        if (SyntaxUtils.IsLineBreak(first) && allowWhitespaces)
+                        lexRes.Kind = CppTokenKind.EndOfLine;
+                        int nb = SyntaxUtils.GetLineBreakChars(first, second);
+                        Buffer.AdvanceLine(nb);
+                    }
+                    else if (first == '\t' && allowWhitespaces)
+                    {
+                        lexRes.Kind = CppTokenKind.Spacings;
+                        while (!Buffer.IsEOF)
                         {
-                            lexRes.Kind = CppTokenKind.EndOfLine;
-                            int nb = SyntaxUtils.GetLineBreakChars(first, second);
-                            Buffer.AdvanceLine(nb);
-                        }
-                        else if (first == '\t' && allowWhitespaces)
-                        {
-                            lexRes.Kind = CppTokenKind.Spacings;
-                            while (!Buffer.IsEOF)
-                            {
-                                if (Buffer.Peek() != '\t')
-                                    break;
-                                Buffer.AdvanceTab();
-                            }
-                        }
-                        else if (SyntaxUtils.IsSpacing(first) && allowWhitespaces)
-                        {
-                            lexRes.Kind = CppTokenKind.Spacings;
-                            Buffer.AdvanceColumnsWhile(SyntaxUtils.IsSpacing);
-                        }
-                        else if (SyntaxUtils.IsIdentStart(first))
-                        {
-                            Debug.Assert(!state.Preprocessor.IsInside);
-                            lexRes = LexIdent(false);
-                        }
-                        else if (SyntaxUtils.IsNumeric(first))
-                            lexRes = LexNumber();
-                        else
-                        {
-                            AddError(Buffer.TextPosition, $"Skipped unexpected character '{first}'", "Character");
-                            Buffer.AdvanceColumn();
-                            lexRes.Kind = CppTokenKind.Unknown;
+                            if (Buffer.Peek() != '\t')
+                                break;
+                            Buffer.AdvanceTab();
                         }
                     }
-                    break;
+                    else if (SyntaxUtils.IsSpacing(first) && allowWhitespaces)
+                    {
+                        lexRes.Kind = CppTokenKind.Spacings;
+                        Buffer.AdvanceColumnsWhile(SyntaxUtils.IsSpacing);
+                    }
+                    else if (SyntaxUtils.IsIdentStart(first))
+                    {
+                        Debug.Assert(!state.Preprocessor.IsInside);
+                        lexRes = LexIdent(false);
+                    }
+                    else if (SyntaxUtils.IsNumeric(first))
+                        lexRes = LexNumber();
+                    else
+                    {
+                        AddError(Buffer.TextPosition, $"Skipped unexpected character '{first}'", "Character");
+                        Buffer.AdvanceColumn();
+                        lexRes.Kind = CppTokenKind.Unknown;
+                    }
+                }
+                break;
             }
             return PushToken(CppTokenPool.Make(_lang, lexRes.Kind, Buffer.LexemeRange, lexRes.IsComplete), lexRes.Intern);
         }
