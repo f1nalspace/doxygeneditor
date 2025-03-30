@@ -14,7 +14,7 @@ namespace TSP.DoxygenEditor.Parsers
         public int Length => EndRange.Index - StartRange.Index;
         public abstract string DisplayName { get; }
         public abstract string Id { get; set; }
-        public abstract string Value { get; set; }
+        public abstract object Value { get; set; }
 
         public BaseEntity(TextRange range)
         {

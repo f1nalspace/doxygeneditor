@@ -8,7 +8,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
     public class DoxygenConfigEntity : BaseEntity
     {
         public DoxygenConfigEntityKind Kind { get; }
-        public override string Value { get; set; }
+        public override object Value { get; set; }
         public override string Id { get; set; }
 
         private readonly List<string> _settings = new List<string>();

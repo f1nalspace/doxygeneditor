@@ -7,8 +7,8 @@ namespace TSP.DoxygenEditor.Languages.Cpp
     public class CppEntity : BaseEntity
     {
         public CppEntityKind Kind { get; }
-        public override string DisplayName => Value;
-        public override string Value { get; set; }
+        public override string DisplayName => Value?.ToString();
+        public override object Value { get; set; }
         public override string Id { get; set; }
 
         public IBaseNode DocumentationNode { get; set; }

@@ -10,7 +10,7 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
     public class DoxygenBlockEntity : BaseEntity
     {
         public DoxygenBlockEntityKind Kind { get; }
-        public override string Value { get; set; }
+        public override object Value { get; set; }
         public override string Id { get; set; }
 
         public class Parameter
@@ -86,10 +86,11 @@ namespace TSP.DoxygenEditor.Languages.Doxygen
             {
                 if (s.Length > 0) s.Append(", ");
                 s.Append(Id);
-                if (!string.IsNullOrWhiteSpace(Value))
+                string valueString = Value?.ToString();
+                if (!string.IsNullOrWhiteSpace(valueString))
                 {
                     s.Append(", '");
-                    s.Append(Value);
+                    s.Append(valueString);
                     s.Append("'");
                 }
             }

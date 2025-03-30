@@ -9,6 +9,6 @@ namespace TSP.DoxygenEditor.Parsers
         int Length { get; }
         string DisplayName { get; }
         string Id { get; set; }
-        string Value { get; set; }
+        object Value { get; set; }
     }
 }

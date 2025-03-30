@@ -16,7 +16,7 @@ namespace TSP.DoxygenEditor.Parsers
         public TextRange StartRange => Entity?.StartRange ?? TextRange.Invalid;
         public TextRange EndRange => Entity?.EndRange ?? TextRange.Invalid;
         public string Id => Entity?.Id;
-        public string Value => Entity?.Value;
+        public object Value => Entity?.Value;
         public virtual bool ShowChildren => false;
 
         public IEnumerable<TChild> GetChildrenAs<TChild>() where TChild : IBaseNode
