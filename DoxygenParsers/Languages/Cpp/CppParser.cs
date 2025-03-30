@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
+using System.Xml.Linq;
 using TSP.DoxygenEditor.Collections;
 using TSP.DoxygenEditor.Languages.Doxygen;
 using TSP.DoxygenEditor.Lexers;
@@ -590,6 +592,122 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             return (result);
         }
 
+        private static CppFunctionArgument ParseFunctionArgument(CppNode parent, IReadOnlyCollection<CppToken> tokens)
+        {
+            if (tokens.Count >= 2)
+            {
+                var firstToken = tokens.First();
+                var lastToken = tokens.Last();
+
+                if (!(lastToken.Kind == CppTokenKind.IdentLiteral || lastToken.Kind == CppTokenKind.ReservedKeyword))
+                    throw new NotSupportedException($"Expect identier as last argument token, but got '{lastToken.Kind}'");
+
+                var startRange = firstToken.Range;
+                var endRange = lastToken.Range;
+
+                string name = lastToken.Value;
+
+                StringBuilder valueString = new StringBuilder();
+                foreach (CppToken token in tokens)
+                {
+                    if (valueString.Length > 0)
+                        valueString.Append(" ");
+                    valueString.Append(token.Value);
+                }
+
+                TextRange typeValueStartRange = firstToken.Range;
+                TextRange typeValueEndRange = firstToken.Range;
+                StringBuilder typeValueString = new StringBuilder();
+                foreach (CppToken token in tokens)
+                {
+                    if (token == lastToken)
+                        break;
+                    if (typeValueString.Length > 0)
+                        typeValueString.Append(" ");
+                    typeValueString.Append(token.Value);
+                    typeValueEndRange = token.Range;
+                }
+
+                CppTypeValue typeValue = new CppTypeValue(typeValueStartRange, typeValueEndRange, typeValueString.ToString());
+
+                CppFunctionArgument result = new CppFunctionArgument(parent, startRange, endRange, valueString.ToString(), name, typeValue);
+
+                return result;
+            } 
+            else
+            {
+                // Void argument without any name
+                Debug.Assert(tokens.Count == 1);
+                CppToken token = tokens.First();
+                if ((token.Kind == CppTokenKind.ReservedKeyword && "void".Equals(token.Value)) || (token.Kind == CppTokenKind.Ellipsis))
+                {
+                    CppTypeValue typeValue = new CppTypeValue(token.Range, token.Range, token.Value);
+                    CppFunctionArgument result = new CppFunctionArgument(parent, token.Range, token.Range, token.Value, token.Value, typeValue);
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        private static CppFunctionDefinition ParseFunctionDefinition(CppEntity entity, CppNode node, IReadOnlyCollection<CppToken> argumentTokens, IReadOnlyCollection<CppToken> resultTypeTokens)
+        {
+            Debug.Assert(entity.Kind == CppEntityKind.FunctionDefinition);
+            Debug.Assert(resultTypeTokens.Count > 0);
+
+            List<CppFunctionArgument> arguments = new List<CppFunctionArgument>();
+            if (argumentTokens.Count > 0)
+            {
+                Queue<CppToken> tokenQueue = new Queue<CppToken>();
+                LinkedList<CppToken> argumentTokenList = new LinkedList<CppToken>(argumentTokens);
+                LinkedListNode<CppToken> cur = argumentTokenList.First;
+                while (cur is not null)
+                {
+                    CppToken argToken = cur.Value;
+
+                    if (argToken.Kind != CppTokenKind.Comma)
+                        tokenQueue.Enqueue(argToken);
+                    else  
+                    {
+                        CppFunctionArgument arg = ParseFunctionArgument(node, tokenQueue);
+                        if (arg is not null)
+                            arguments.Add(arg);
+                        tokenQueue.Clear();
+                    }
+
+                    cur = cur.Next;
+                }
+
+                if (tokenQueue.Count > 0)
+                {
+                    CppFunctionArgument arg = ParseFunctionArgument(node, tokenQueue);
+                    if (arg is not null)
+                        arguments.Add(arg);
+                    tokenQueue.Clear();
+                }
+            }
+
+            TextRange returnTypeStart = TextRange.Invalid;
+            TextRange returnTypeEnd = TextRange.Invalid;
+
+            StringBuilder returnTypeValue = new StringBuilder();
+            foreach (CppToken token in resultTypeTokens)
+            {
+                if (returnTypeValue.Length > 0)
+                    returnTypeValue.Append(" ");
+                returnTypeValue.Append(token.Value);
+                if (returnTypeStart == TextRange.Invalid)
+                    returnTypeStart = returnTypeEnd = token.Range;
+                else
+                    returnTypeEnd = token.Range;
+            }
+
+            CppTypeValue returnType = new CppTypeValue(returnTypeStart, returnTypeEnd, returnTypeValue.ToString());
+
+            CppFunctionDefinition result = new CppFunctionDefinition(node, node.StartRange, node.EndRange, arguments, returnType);
+
+            return result;
+        }
+
         private ParseTokenResult ParseFunction(LinkedListStream<IBaseToken> stream)
         {
             LinkedListNode<IBaseToken> functionIdentNode = stream.CurrentNode;
@@ -701,6 +819,7 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             //
             // Skip any parameters
             //
+            List<CppToken> argumentTokens = new List<CppToken>();
             Stack<CppToken> parenStack = new Stack<CppToken>();
             parenStack.Push(openParenToken);
             while (!stream.IsEOF && parenStack.Count > 0)
@@ -725,6 +844,10 @@ namespace TSP.DoxygenEditor.Languages.Cpp
                     AddError(argToken.Position, $"Braces inside function arguments are not supported yet!", "Function", functionName);
                     return (ParseTokenResult.AlreadyAdvanced);
                 }
+
+                Debug.Assert(argToken.Kind != CppTokenKind.LeftParen && argToken.Kind != CppTokenKind.RightParen);
+                argumentTokens.Add(argToken);
+
                 Debug.Assert(parenStack.Count > 0);
                 stream.Next();
             }
@@ -760,7 +883,12 @@ namespace TSP.DoxygenEditor.Languages.Cpp
             {
                 DocumentationNode = FindDocumentationNode(functionIdentNode, 1),
             };
+
             CppNode functionNode = new CppNode(Top, functionEntity);
+
+            if (kind == CppEntityKind.FunctionDefinition)
+                functionEntity.Value = ParseFunctionDefinition(functionEntity, functionNode, argumentTokens, beforeTokens);
+
             Add(functionNode);
 
             if (kind == CppEntityKind.FunctionCall && !Configuration.ExcludeFunctionCallSymbols)
