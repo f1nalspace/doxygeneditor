@@ -519,6 +519,10 @@ namespace TSP.DoxygenEditor.Editor
                 _editor,
                 text);
 
+            DoxyBlockTree = res.DoxygenTree;
+            CppTree = res.CppTree;
+            DoxyConfigTree = res.DoxyConfigTree;
+
             Stopwatch timer = new Stopwatch();
 
             // Refresh data for styler

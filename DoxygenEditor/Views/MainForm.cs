@@ -1135,7 +1135,7 @@ namespace TSP.DoxygenEditor.Views
             {
                 CppNode cppNode = (CppNode)rootNode;
                 CppEntity cppEntity = cppNode.Entity;
-                if (cppEntity.IsDefinition && cppEntity.DocumentationNode is DoxygenBlockNode doxyNode)
+                if (cppEntity is not null && cppEntity.IsDefinition && cppEntity.DocumentationNode is DoxygenBlockNode doxyNode)
                 {
                     if (_workspace.ValidationCpp.RequireDoxygenReference)
                     {
